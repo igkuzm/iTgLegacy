@@ -1,0 +1,3 @@
+[submodule "libtg"]
+	path = libtg
+	url = https://github.com/igkuzm/libtg
