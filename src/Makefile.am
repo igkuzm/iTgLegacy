@@ -4,6 +4,7 @@ bin_PROGRAMS = iTgLegacy
 iTgLegacy_SOURCES = \
 		AppDelegate.m \
 		RootViewController.m \
+		ChatsViewController.m \
 		main.m
 
 iTgLegacy_CFLAGS = \
@@ -32,7 +33,7 @@ _images:
 iTgLegacy.app: iTgLegacy _dir _plist _images
 	cp -f iTgLegacy iTgLegacy.app/. 
 	cp -r ../libs iTgLegacy.app/.
-	cp -f libs/tg/.libs/*.dylib iTgLegacy/libs/.
+	cp -f ../libtg/tg/.libs/*.dylib iTgLegacy.app/.
 	cd iTgLegacy.app; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libssl.0.9.8.dylib @executable_path/libs/libssl.dylib iTgLegacy; \
