@@ -94,7 +94,7 @@ char * tg_connect_cb(
 			24646404, 
 			"818803c99651e8b777c54998e6ded6a0");
 	
-	tg_connect(tg, NULL, tg_connect_cb);
+	tg_connect(tg, self, tg_connect_cb);
 
 	return true;
 }
