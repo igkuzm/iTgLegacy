@@ -5,6 +5,13 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_OBJC
 
+AC_ARG_WITH([test],
+						[AS_HELP_STRING([--with-test],
+														[enable test (default=no)])],
+						[enable_test=$withval],
+						[enable_test=no])
+AM_CONDITIONAL([MAKE_TEST], [test x$enable_test = xyes])
+
 AS_VAR_IF([INSTALL_NAME_TOOL], [], [ 
 	AC_PATH_PROG(INSTALL_NAME_TOOL,install_name_tool,none)
 	AS_IF([test x"$INSTALL_NAME_TOOL" == x"none"], 
