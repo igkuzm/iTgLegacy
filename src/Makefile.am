@@ -24,22 +24,26 @@ _dir:
 	mkdir -p iTgLegacy.app
 
 _plist:
-	sed -e 's/VERSION/${PACKAGE_VERSION}/g' Info.plist > iTgLegacy.app/Info.plist
+	sed -e 's/PACKAGE_VERSION/${PACKAGE_VERSION}/g' Info.plist | \
+	sed -e 's/PRODUCT_NAME/${PACKAGE_NAME}/g' - | \
+	sed -e 's/EXECUTABLE_NAME/${PACKAGE_NAME}/g' - | \
+	sed -e 's/TELEGRAPH_BUNDLE_ID/kuzm.ig.iTgLegacy/g' - > iTgLegacy.app/Info.plist
 
 _images:
 	cp -f ../images/Icon*.png iTgLegacy.app/.
-#cp -f ../images/Directory*.png iTgLegacy.app/.
 
 iTgLegacy.app: iTgLegacy _dir _plist _images
-	cp -f iTgLegacy iTgLegacy.app/. 
+	cp -f .libs/iTgLegacy iTgLegacy.app/. 
 	cp -r ../libs iTgLegacy.app/.
-	cp -f ../libtg/tg/.libs/*.dylib iTgLegacy.app/.
+	cp -f ../libtg/tg/.libs/*.dylib iTgLegacy.app/libs/.
 	cd iTgLegacy.app; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libssl.0.9.8.dylib @executable_path/libs/libssl.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcurl.4.dylib @executable_path/libs/libcurl.dylib iTgLegacy; \
+		$(INSTALL_NAME_TOOL) -change /usr/local/lib/libtg.0.dylib @executable_path/libs/libtg.dylib iTgLegacy; \
 	cd libs; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libssl.dylib; \
+		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libtg.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libssl.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libcrypto.dylib;
 
