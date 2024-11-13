@@ -34,6 +34,8 @@ _images:
 
 iTgLegacy.app: iTgLegacy _dir _plist _images
 	cp -f .libs/iTgLegacy iTgLegacy.app/. 
+	cp -f ../libtg/.libs/tgtest iTgLegacy.app/. 
+	cp -f ../libtg/pub.pkcs iTgLegacy.app/. 
 	cp -r ../libs iTgLegacy.app/.
 	cp -f ../libtg/tg/.libs/*.dylib iTgLegacy.app/libs/.
 	cd iTgLegacy.app; \
@@ -41,6 +43,8 @@ iTgLegacy.app: iTgLegacy _dir _plist _images
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libssl.0.9.8.dylib @executable_path/libs/libssl.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcurl.4.dylib @executable_path/libs/libcurl.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/local/lib/libtg.0.dylib @executable_path/libs/libtg.dylib iTgLegacy; \
+		$(INSTALL_NAME_TOOL) -change /usr/local/lib/libtg.0.dylib @executable_path/libs/libtg.dylib tgtest; \
+		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib tgtest; \
 	cd libs; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libssl.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libtg.dylib; \

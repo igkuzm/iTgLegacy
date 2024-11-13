@@ -18,7 +18,8 @@
 char * tg_connect_cb(
 			void *userdata,
 			TG_AUTH auth,
-			const tl_t *tl)
+			const tl_t *tl,
+			const char *error)
 {
 	AppDelegate *self = userdata;
 	switch (auth) {
@@ -51,15 +52,7 @@ char * tg_connect_cb(
 			break;
 		case TG_AUTH_ERROR:
 			{
-				if (tl && tl->_id == id_bad_msg_notification){
-					[self showMessage:[NSString stringWithFormat:
-						@"bad_msg_notification: %d", 
-							((tl_bad_msg_notification_t *)tl)->error_code_
-					]];
-				}
-				else {
-					[self showMessage:@"error!"];
-				}
+				[self showMessage:[NSString stringWithUTF8String:error]];
 			}
 			break;
 

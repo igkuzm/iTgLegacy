@@ -5,12 +5,14 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_OBJC
 
-AC_ARG_WITH([test],
-						[AS_HELP_STRING([--with-test],
-														[enable test (default=no)])],
-						[enable_test=$withval],
-						[enable_test=no])
-AM_CONDITIONAL([MAKE_TEST], [test x$enable_test = xyes])
+AC_CONFIG_HEADER(libtg/config.h)
+
+AC_ARG_WITH([tgtest],
+						[AS_HELP_STRING([--with-tgtest],
+														[enable tgtest (default=no)])],
+						[enable_tgtest=$withval],
+						[enable_tgtest=no])
+AM_CONDITIONAL([MAKE_TEST], [test "$enable_tgtest" = "yes"])
 
 AS_VAR_IF([INSTALL_NAME_TOOL], [], [ 
 	AC_PATH_PROG(INSTALL_NAME_TOOL,install_name_tool,none)
