@@ -26,6 +26,8 @@ char * tg_connect_cb(
 		case TG_AUTH_PHONE_NUMBER:
 			{
 				[self askInput:@"enter phone number (+7XXXXXXXXXX)"];
+				[self showMessage:self.askInputText];
+				return NULL;
 				return [self.askInputText UTF8String];
 			}
 			break;
@@ -148,6 +150,7 @@ char * tg_connect_cb(
 }
 
 -(void)askInput:(NSString *)msg{
+	self.askInputText = nil;	
 	UIAlertView *alert = 
 			[[UIAlertView alloc]initWithTitle:@"" 
 			message:msg 
