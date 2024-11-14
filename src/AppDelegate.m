@@ -15,56 +15,46 @@
 
 @implementation AppDelegate
 
-char * tg_connect_cb(
-			void *userdata,
-			TG_AUTH auth,
-			const tl_t *tl,
-			const char *error)
+static void on_err(void *d, tl_t *tl, const char *err)
 {
-	AppDelegate *self = userdata;
-	switch (auth) {
-		case TG_AUTH_PHONE_NUMBER:
-			{
-				[self askInput:@"enter phone number (+7XXXXXXXXXX)"];
-				[self showMessage:self.askInputText];
-				return NULL;
-				return [self.askInputText UTF8String];
-			}
-			break;
-		case TG_AUTH_SENDCODE:
-			{
-				[self askInput:@"enter code"];
-				return [self.askInputText UTF8String];
-			}
-			break;
-		case TG_AUTH_PASSWORD_NEEDED:
-			{
-				[self showMessage:@"password needed - not implyed yet"];
-			}
-			break;
-		case TG_AUTH_SUCCESS:
-			{
-				tl_user_t *user = (tl_user_t *)tl;
-				[self showMessage:[NSString stringWithFormat:
-					@"Connected as %s (%s)!", 
-						string_from_buf(user->username_), 
-						string_from_buf(user->phone_)
-				]];
-			}
-			break;
-		case TG_AUTH_ERROR:
-			{
-				[self showMessage:[NSString stringWithUTF8String:error]];
-			}
-			break;
-
-		default:
-			break;
-	}
-
-	return NULL;
+	AppDelegate *self = d;
+	[self showMessage: 
+			[NSString stringWithFormat:@"%s", err]];	
 }
 
+-(void)signIn:(NSString *)phone_number 
+				 code:(NSString *)code 
+		 sentCode:(tl_auth_sentCode_t *)sentCode
+{
+	[self showMessage:
+		[NSString stringWithFormat:@"phone_code hash: %s",
+		sentCode->phone_code_hash_.data]];
+	return;
+	tl_user_t *user = tg_auth_signIn(
+			self.tg, 
+			sentCode, 
+			[phone_number UTF8String], 
+			[code UTF8String], 
+			self, on_err);
+	if (user)
+		[self showMessage:@"authorized!"];
+}
+
+-(void)sendCode:(NSString *)phone_number
+{
+	tl_auth_sentCode_t *sentCode =
+		tg_auth_sendCode(
+				self.tg,
+			 	[phone_number UTF8String], 
+				self, on_err);
+	if (sentCode){
+		[self askInput:@"enter phone_code" 
+						onDone:^(NSString *text){
+							[self signIn:phone_number 
+											code:text sentCode:sentCode];
+						}];
+	}
+}
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
@@ -77,25 +67,43 @@ char * tg_connect_cb(
 			[[RootViewController alloc]init];
 	[self.window setRootViewController:vc];
 	[self.window makeKeyAndVisible];	
-	
+
+	// change current directory path to bundle
+	[[NSFileManager defaultManager]changeCurrentDirectoryPath:
+		[[NSBundle mainBundle] bundlePath]];
+
 	// connect to telegram
 	NSString *databasePath = [[NSSearchPathForDirectoriesInDomains(
 			NSDocumentDirectory, NSUserDomainMask, YES) 
 						objectAtIndex:0] 
 			stringByAppendingPathComponent:@"tgdata.db"];
 	
-	tg_t *tg = tg_new(
+	self.tg = tg_new(
 			[databasePath UTF8String],
 			24646404, 
 			"818803c99651e8b777c54998e6ded6a0");
+	if (!self.tg){
+		[self showMessage:@"can't open database"];
+		return true;
+	}
 	
-	tg_connect(tg, self, tg_connect_cb);
+	// check authorized 
+	tl_user_t *user = 
+		tg_is_authorized(self.tg, NULL, NULL);
+
+	// authorize if needed
+	if (!user){
+		[self askInput:@"enter phone number (+7XXXXXXXXXX)" 
+						onDone:^(NSString *text){
+							[self sendCode:text];
+						}];
+	}
 
 	return true;
 }
 
 - (void)remoteControlReceivedWithEvent:(UIEvent *)event {
-	if (event.type == UIEventTypeRemoteControl) {
+	//if (event.type == UIEventTypeRemoteControl) {
 		//switch (event.subtype) {
 			//case UIEventSubtypeRemoteControlTogglePlayPause:
 					//// Pause or play action
@@ -129,7 +137,7 @@ char * tg_connect_cb(
 					//// catch all action
 					//break;
 		//}
-	}
+	//}
 }
 
 -(void)playButtonPushed:(id)sender{
@@ -149,8 +157,8 @@ char * tg_connect_cb(
 		[alert show];
 }
 
--(void)askInput:(NSString *)msg{
-	self.askInputText = nil;	
+-(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone{
+	self.askInput_onDone = onDone;
 	UIAlertView *alert = 
 			[[UIAlertView alloc]initWithTitle:@"" 
 			message:msg 
@@ -164,10 +172,11 @@ char * tg_connect_cb(
 
 -(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{	
 	UITextField *textField = [alertView textFieldAtIndex:0];
-	self.askInputText = textField.text;
 	//if (buttonIndex == 1){
 	//}
+	if (self.askInput_onDone)
+		self.askInput_onDone(textField.text);
 }
 @end
-// vim:ft=objc
 
+// vim:ft=objc
