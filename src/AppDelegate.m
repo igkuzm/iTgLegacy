@@ -26,10 +26,6 @@ static void on_err(void *d, tl_t *tl, const char *err)
 				 code:(NSString *)code 
 		 sentCode:(tl_auth_sentCode_t *)sentCode
 {
-	[self showMessage:
-		[NSString stringWithFormat:@"phone_code hash: %s",
-		sentCode->phone_code_hash_.data]];
-	return;
 	tl_user_t *user = tg_auth_signIn(
 			self.tg, 
 			sentCode, 
@@ -92,7 +88,9 @@ static void on_err(void *d, tl_t *tl, const char *err)
 		tg_is_authorized(self.tg, NULL, NULL);
 
 	// authorize if needed
-	if (!user){
+	if (user){
+		[self showMessage:@"authorized!"];
+	} else{
 		[self askInput:@"enter phone number (+7XXXXXXXXXX)" 
 						onDone:^(NSString *text){
 							[self sendCode:text];
