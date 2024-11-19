@@ -10,6 +10,17 @@
 #include "Foundation/Foundation.h"
 //#import "ActionSheet.h"
 
+@implementation ChatsItem
+- (id)initWithChat:(tl_chat_t *)chat 
+{
+	if (self = [super init]) {
+		self.chat = chat;	
+		self.title = [NSString stringWithFormat:@"%s", (char *)chat->title_.data];
+	}
+	return self;
+}
+@end
+
 @implementation ChatsViewController
 
 - (void)viewDidLoad {
@@ -61,10 +72,10 @@
 }
 
 -(void)filterData{
-	//if (self.searchBar.text && self.searchBar.text.length > 0)
-		//self.data = [self.loadedData filteredArrayUsingPredicate:
-				//[NSPredicate predicateWithFormat:@"self.title contains[c] %@", self.searchBar.text]];
-	//else
+	if (self.searchBar.text && self.searchBar.text.length > 0)
+		self.data = [self.loadedData filteredArrayUsingPredicate:
+				[NSPredicate predicateWithFormat:@"self.title contains[c] %@", self.searchBar.text]];
+	else
 		self.data = self.loadedData;
 	[self.tableView reloadData];
 }
@@ -73,40 +84,56 @@
 	// stop all sync
 	[self.syncData cancelAllOperations];
 	
-	//NSString *token = 
-		//[[NSUserDefaults standardUserDefaults]valueForKey:@"token"];
-	//if (!token)
-		//return;
+	if (self.appDelegate.reach.isReachable &&
+			self.appDelegate.authorizedUser)
+	{
+		// animate spinner
+		CGRect rect = self.view.bounds;
+		self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
+		if (!self.refreshControl.refreshing)
+			[self.spinner startAnimating];
 
-	// get uid
-	//NSInteger uid = 
-		//[[NSUserDefaults standardUserDefaults]integerForKey:@"uid"];
-	//if (!uid){
-		//if (token)
-			//uid = c_yandex_music_get_uid([token UTF8String]);
-		//if (uid)
-			//[[NSUserDefaults standardUserDefaults]setInteger:uid forKey:@"uid"];
-	//}
-	
-	// animate spinner
-	//CGRect rect = self.view.bounds;
-	//self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
-	//if (!self.refreshControl.refreshing)
-		//[self.spinner startAnimating];
-
-	//[self.loadedData removeAllObjects];
-	//[self.tableView reloadData];
-	//[self.syncData addOperationWithBlock:^{
-		//c_yandex_music_get_user_playlists(
-				//[token UTF8String], 
-				//"100x100", uid, 
-				//(__bridge void *)self, 
-				//get_user_playlists);
-	//}];	
+		// get dialogs
+		[self.loadedData removeAllObjects];
+		[self.tableView reloadData];
+		[self.syncData addOperationWithBlock:^{
+			tg_get_dialogs(
+					self.appDelegate.tg, 
+					0, 
+					6, 
+					self, 
+					get_dialogs_cb);
+		}];	
+	}
 }
 
 -(void)refresh:(id)sender{
 	[self reloadData];
+}
+
+static int get_dialogs_cb(void *d, tl_messages_dialogsSlice_t *ds, const char *err)
+{
+	ChatsViewController *self = d;
+	if (err){
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.appDelegate showMessage:[NSString stringWithCString:err]];
+			[self.spinner stopAnimating];
+			[self.refreshControl endRefreshing];
+		});
+		return 0;
+	}
+	int i;
+	for	(i=0; i<ds->chats_len; ++i){
+		tl_chat_t *chat = (tl_chat_t *)ds->chats_[i];
+		ChatsItem *item = [[ChatsItem alloc]initWithChat:chat];
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.loadedData addObject:item];
+			[self filterData];
+			[self.spinner stopAnimating];
+			[self.refreshControl endRefreshing];
+		});
+	}
+	return 0;
 }
 
 //static int get_user_playlists(void *data, playlist_t *playlist, const char *error)
@@ -140,20 +167,16 @@
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-	//Item *item = [self.data objectAtIndex:indexPath.item];
-	UITableViewCell *cell = nil;
-	cell = [self.tableView dequeueReusableCellWithIdentifier:@"cell"];
+	ChatsItem *item = [self.data objectAtIndex:indexPath.item];
+	UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"cell"];
 	if (cell == nil){
-		cell = [self.tableView dequeueReusableCellWithIdentifier:@"dir"];
-		if (cell == nil){
-			cell = [[UITableViewCell alloc]
-			initWithStyle: UITableViewCellStyleSubtitle 
-			reuseIdentifier: @"dir"];
-		}
-		cell.accessoryType = UITableViewCellAccessoryDetailDisclosureButton;
+		cell = [[UITableViewCell alloc]
+		initWithStyle: UITableViewCellStyleSubtitle 
+		reuseIdentifier: @"cell"];
+		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	}
 	//item.imageView = cell.imageView;
-	//[cell.textLabel setText:item.title];
+	[cell.textLabel setText:item.title];
 	//[cell.detailTextLabel setText:item.subtitle];	
 	//if (item.coverImage)
 		//[cell.imageView setImage:item.coverImage];

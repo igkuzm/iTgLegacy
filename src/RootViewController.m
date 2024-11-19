@@ -10,6 +10,7 @@
 #include "Foundation/Foundation.h"
 #include "UIKit/UIKit.h"
 #import "ChatsViewController.h"
+#import "ConfigViewController.h"
 
 @implementation RootViewController
 - (void)viewDidLoad {
@@ -19,9 +20,19 @@
 		[[ChatsViewController alloc]init];
 	UINavigationController *chatsnc =
 		[[UINavigationController alloc]initWithRootViewController:chatsvc];
-	//UITabBarItem *feedtbi = [[UITabBarItem alloc]
-			//initWithTabBarSystemItem:UITabBarSystemItemFeatured tag:0];
-	//[feednc setTabBarItem:feedtbi];
+	UITabBarItem *chatstbi = [[UITabBarItem alloc]
+			initWithTabBarSystemItem:UITabBarSystemItemContacts tag:0];
+	[chatsnc setTabBarItem:chatstbi];
+
+	// config view
+	ConfigViewController *configvc = 
+		[[ConfigViewController alloc]initWithStyle:UITableViewStyleGrouped];
+	UINavigationController *confignc =
+		[[UINavigationController alloc]initWithRootViewController:configvc];
+	UITabBarItem *configtbi = [[UITabBarItem alloc]
+			initWithTabBarSystemItem:UITabBarSystemItemMore tag:1];
+	[confignc setTabBarItem:configtbi];
+
 
 	// search view
 	//SearchViewController *searchvc = 
@@ -64,7 +75,7 @@
 
 
 	//[self setViewControllers:@[feednc, searchnc, pnc, favnc, plnc] animated:TRUE];
-	[self setViewControllers:@[chatsnc] animated:TRUE];
+	[self setViewControllers:@[chatsnc, confignc] animated:TRUE];
 }
 
 @end

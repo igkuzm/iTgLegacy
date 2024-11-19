@@ -8,7 +8,17 @@
 
 #include "Foundation/Foundation.h"
 #import <UIKit/UIKit.h>
+#import "Reachability.h"
 #include "../libtg/libtg.h"
+
+@protocol AuthorizationDelegate <NSObject>
+-(void)authorizedAs:(tl_user_t *)user;
+@end
+
+@protocol ReachabilityDelegate <NSObject>
+-(void)isOnLine;
+-(void)isOffLine;
+@end
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
@@ -16,11 +26,14 @@
 @property (strong,nonatomic) NSURL *url;
 @property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
 @property tg_t *tg;
-//@property (strong, nonatomic) PlayerController *player;
-//@property (strong) NSMutableArray *likedTracks;
-//-(void)playButtonPushed:(id)sender;
+@property tl_user_t *authorizedUser;
+@property (strong) id<AuthorizationDelegate> authorizationDelegate;
+@property (strong) Reachability *reach;
+@property (strong) id<ReachabilityDelegate> reachabilityDelegate;
+
 -(void)showMessage:(NSString *)msg;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;
+-(void)authorize;
 
 @end
 

@@ -15,50 +15,43 @@
 
 @implementation AppDelegate
 
-static void on_err(void *d, tl_t *tl, const char *err)
-{
-	AppDelegate *self = d;
-	[self showMessage: 
-			[NSString stringWithFormat:@"%s", err]];	
-}
-
--(void)signIn:(NSString *)phone_number 
-				 code:(NSString *)code 
-		 sentCode:(tl_auth_sentCode_t *)sentCode
-{
-	tl_user_t *user = tg_auth_signIn(
-			self.tg, 
-			sentCode, 
-			[phone_number UTF8String], 
-			[code UTF8String], 
-			self, on_err);
-	if (user)
-		[self showMessage:@"authorized!"];
-}
-
--(void)sendCode:(NSString *)phone_number
-{
-	tl_auth_sentCode_t *sentCode =
-		tg_auth_sendCode(
-				self.tg,
-			 	[phone_number UTF8String], 
-				self, on_err);
-	if (sentCode){
-		[self askInput:@"enter phone_code" 
-						onDone:^(NSString *text){
-							[self signIn:phone_number 
-											code:text sentCode:sentCode];
-						}];
-	}
-}
-
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
 	// Override point for customization after application launch.
 	//[[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
 	//self.player = [[PlayerController alloc]init];
 	
-		self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
+	// start reachability
+	self.reach = [Reachability reachabilityWithHostname:@"www.google.ru"];
+	// Set the blocks
+	self.reach.reachableBlock = ^(Reachability*reach)
+	{
+			// keep in mind this is called on a background thread
+			// and if you are updating the UI it needs to happen
+			// on the main thread, like this:
+
+			dispatch_async(dispatch_get_main_queue(), ^{
+					if (self.reachabilityDelegate)
+						[self.reachabilityDelegate isOnLine];
+					NSLog(@"REACHABLE!");
+			});
+	};
+
+	self.reach.unreachableBlock = ^(Reachability*reach)
+	{
+			dispatch_async(dispatch_get_main_queue(), ^{
+					if (self.reachabilityDelegate)
+						[self.reachabilityDelegate isOffLine];
+			});
+
+			NSLog(@"UNREACHABLE!");
+	};
+
+	// Start the notifier, which will cause the reachability object to retain itself!
+	[self.reach startNotifier];
+	
+	// start window
+	self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
 	RootViewController *vc = 
 			[[RootViewController alloc]init];
 	[self.window setRootViewController:vc];
@@ -68,34 +61,7 @@ static void on_err(void *d, tl_t *tl, const char *err)
 	[[NSFileManager defaultManager]changeCurrentDirectoryPath:
 		[[NSBundle mainBundle] bundlePath]];
 
-	// connect to telegram
-	NSString *databasePath = [[NSSearchPathForDirectoriesInDomains(
-			NSDocumentDirectory, NSUserDomainMask, YES) 
-						objectAtIndex:0] 
-			stringByAppendingPathComponent:@"tgdata.db"];
-	
-	self.tg = tg_new(
-			[databasePath UTF8String],
-			24646404, 
-			"818803c99651e8b777c54998e6ded6a0");
-	if (!self.tg){
-		[self showMessage:@"can't open database"];
-		return true;
-	}
-	
-	// check authorized 
-	tl_user_t *user = 
-		tg_is_authorized(self.tg, NULL, NULL);
-
-	// authorize if needed
-	if (user){
-		[self showMessage:@"authorized!"];
-	} else{
-		[self askInput:@"enter phone number (+7XXXXXXXXXX)" 
-						onDone:^(NSString *text){
-							[self sendCode:text];
-						}];
-	}
+	[self authorize];
 
 	return true;
 }
@@ -174,6 +140,106 @@ static void on_err(void *d, tl_t *tl, const char *err)
 	//}
 	if (self.askInput_onDone)
 		self.askInput_onDone(textField.text);
+}
+
+#pragma <LibTg FUNCTIONS>
+static void on_err(void *d, tl_t *tl, const char *err)
+{
+	AppDelegate *self = d;
+	[self showMessage: 
+			[NSString stringWithFormat:@"%s", err]];	
+}
+
+-(void)signIn:(NSString *)phone_number 
+				 code:(NSString *)code 
+		 sentCode:(tl_auth_sentCode_t *)sentCode
+{
+	tl_user_t *user = tg_auth_signIn(
+			self.tg, 
+			sentCode, 
+			[phone_number UTF8String], 
+			[code UTF8String], 
+			self, on_err);
+	if (user){
+		self.authorizedUser = user;
+		//[self showMessage:@"authorized!"];
+		if (self.authorizationDelegate)
+			[self.authorizationDelegate authorizedAs:user];
+		self.authorizationDelegate = nil;
+	}
+}
+
+-(void)sendCode:(NSString *)phone_number
+{
+	tl_auth_sentCode_t *sentCode =
+		tg_auth_sendCode(
+				self.tg,
+			 	[phone_number UTF8String], 
+				self, on_err);
+	if (sentCode){
+		[self askInput:@"enter phone_code" 
+						onDone:^(NSString *text){
+							[self signIn:phone_number 
+											code:text sentCode:sentCode];
+						}];
+	}
+}
+
+-(void)authorize{
+	if (!self.reach.isReachable){
+		// no network
+		[self showMessage:@"network is not reachable"];
+		return;
+	}
+
+	if (![[NSUserDefaults standardUserDefaults] valueForKey:@"ApiId"] ||
+			![[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"])
+	{
+		// no config
+		[self showMessage:@"no ApiId or ApiHash"];
+		return;
+	}
+		
+	// connect to telegram
+	NSString *databasePath = [[NSSearchPathForDirectoriesInDomains(
+			NSDocumentDirectory, NSUserDomainMask, YES) 
+						objectAtIndex:0] 
+			stringByAppendingPathComponent:@"tgdata.db"];
+	
+	self.tg = tg_new(
+			[databasePath UTF8String],
+			[[NSUserDefaults standardUserDefaults] integerForKey:@"ApiId"], 
+			[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String]);
+	if (!self.tg){
+		[self showMessage:@"can't init LibTg"];
+		return;
+	}
+	
+	dispatch_queue_t backgroundQueue = 
+		dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+
+	// do in background
+	dispatch_async(backgroundQueue, ^{
+		// check authorized 
+		tl_user_t *user = 
+			tg_is_authorized(self.tg, NULL, NULL);
+
+		// authorize if needed
+		dispatch_async(dispatch_get_main_queue(), ^{
+			if (user){
+					self.authorizedUser = user;
+					//[self showMessage:@"authorized!"];
+					if (self.authorizationDelegate)
+						[self.authorizationDelegate authorizedAs:user];
+					self.authorizationDelegate = nil;
+			} else{
+				[self askInput:@"enter phone number (+7XXXXXXXXXX)" 
+								onDone:^(NSString *text){
+									[self sendCode:text];
+								}];
+			}
+		});
+	});
 }
 @end
 

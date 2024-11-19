@@ -5,13 +5,16 @@ iTgLegacy_SOURCES = \
 		AppDelegate.m \
 		RootViewController.m \
 		ChatsViewController.m \
+		ConfigViewController.m \
+		TextEditViewController.m \
+		Reachability.m \
 		main.m
 
 iTgLegacy_CFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -fobjc-arc
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -fobjc-arc
 
 iTgLegacy_LDFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration
 
 iTgLegacy_LDADD = \
 			-lssl -lcurl -L../libs -ltg -L../libtg/tg/.libs
