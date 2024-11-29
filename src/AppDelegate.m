@@ -158,8 +158,9 @@ static void on_err(void *d, tl_t *tl, const char *err)
 			self.tg, 
 			sentCode, 
 			[phone_number UTF8String], 
-			[code UTF8String], 
-			self, on_err);
+			[code UTF8String]);
+	tg_set_on_error(self.tg, self, on_err);
+
 	if (user){
 		self.authorizedUser = user;
 		//[self showMessage:@"authorized!"];
@@ -174,8 +175,7 @@ static void on_err(void *d, tl_t *tl, const char *err)
 	tl_auth_sentCode_t *sentCode =
 		tg_auth_sendCode(
 				self.tg,
-			 	[phone_number UTF8String], 
-				self, on_err);
+			 	[phone_number UTF8String]);
 	if (sentCode){
 		[self askInput:@"enter phone_code" 
 						onDone:^(NSString *text){
@@ -209,7 +209,8 @@ static void on_err(void *d, tl_t *tl, const char *err)
 	self.tg = tg_new(
 			[databasePath UTF8String],
 			[[NSUserDefaults standardUserDefaults] integerForKey:@"ApiId"], 
-			[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String]);
+			[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String],
+		 	"pub.pkcs");
 	if (!self.tg){
 		[self showMessage:@"can't init LibTg"];
 		return;
@@ -222,7 +223,7 @@ static void on_err(void *d, tl_t *tl, const char *err)
 	dispatch_async(backgroundQueue, ^{
 		// check authorized 
 		tl_user_t *user = 
-			tg_is_authorized(self.tg, NULL, NULL);
+			tg_is_authorized(self.tg);
 
 		// authorize if needed
 		dispatch_async(dispatch_get_main_queue(), ^{

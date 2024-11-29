@@ -16,13 +16,13 @@
 	if (self = [super init]) {
 		self.chat = chat;	
 		if (chat->_id == id_chat)
-			self.title = [NSString stringWithFormat:@"%s", (char *)chat->title_.data];
+			self.title = [NSString stringWithUTF8String:(char *)chat->title_.data];
 		
 		if (chat->_id == id_channel){
 				tl_channel_t * channel = 
 					(tl_channel_t *)chat;
 
-			self.title = [NSString stringWithFormat:@"%s", (char *)channel->title_.data];
+			self.title = [NSString stringWithUTF8String:(char *)channel->title_.data];
 		}
 	}
 	return self;
