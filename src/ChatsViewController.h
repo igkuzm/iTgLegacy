@@ -6,6 +6,7 @@
 @property tg_dialog_t dialog;
 @property (strong) NSString *title;
 @property (strong) NSString *top_message;
+@property (strong) UIImage *thumb;
 -(id)initWithDialog:(const tg_dialog_t *)dialog;
 @end
 

@@ -19,6 +19,13 @@
 		self.top_message = 
 			[NSString stringWithUTF8String:
 			(char *)dialog->top_message->message_.data];
+		if (dialog->thumb.size){
+			NSData *thumbData = 
+			[NSData dataWithBytes:dialog->thumb.data 
+										 length:dialog->thumb.size];
+			if (thumbData.length > 0)
+				self.thumb = [UIImage imageWithData:thumbData];
+		}
 	}
 	return self;
 }
@@ -173,6 +180,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	//item.imageView = cell.imageView;
 	[cell.textLabel setText:item.title];
 	[cell.detailTextLabel setText:item.top_message];	
+	[cell.imageView setImage:item.thumb];
 	//if (item.coverImage)
 		//[cell.imageView setImage:item.coverImage];
 	
