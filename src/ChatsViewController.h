@@ -3,9 +3,10 @@
 #import "AppDelegate.h"
 
 @interface ChatsItem : NSObject
-@property tl_chat_t *chat;
+@property tg_dialog_t dialog;
 @property (strong) NSString *title;
--(id)initWithChat:(tl_chat_t *)chat;
+@property (strong) NSString *top_message;
+-(id)initWithDialog:(const tg_dialog_t *)dialog;
 @end
 
 @interface ChatsViewController : UITableViewController
@@ -18,6 +19,8 @@
 @property (strong) UISearchBar *searchBar;
 @property (strong) NSOperationQueue *syncData;
 @property (strong) UIActivityIndicatorView *spinner;
+@property long msg_hash;
+@property int folder_id;
 @end
 
 // vim:ft=objc

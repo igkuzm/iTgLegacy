@@ -11,19 +11,14 @@
 //#import "ActionSheet.h"
 
 @implementation ChatsItem
-- (id)initWithChat:(tl_chat_t *)chat 
+- (id)initWithDialog:(const tg_dialog_t *)dialog 
 {
 	if (self = [super init]) {
-		self.chat = chat;	
-		if (chat->_id == id_chat)
-			self.title = [NSString stringWithUTF8String:(char *)chat->title_.data];
-		
-		if (chat->_id == id_channel){
-				tl_channel_t * channel = 
-					(tl_channel_t *)chat;
-
-			self.title = [NSString stringWithUTF8String:(char *)channel->title_.data];
-		}
+		self.dialog = *dialog;	
+		self.title = [NSString stringWithUTF8String:dialog->name];
+		self.top_message = 
+			[NSString stringWithUTF8String:
+			(char *)dialog->top_message->message_.data];
 	}
 	return self;
 }
@@ -37,8 +32,9 @@
 	self.syncData = [[NSOperationQueue alloc]init];
 	self.loadedData = [NSMutableArray array];
 	self.data = [NSArray array];
-	//self.token = [[NSUserDefaults standardUserDefaults]valueForKey:@"token"];
-	
+	self.msg_hash = 0;	
+	self.folder_id = 0;
+
 	// search bar
 	self.searchBar = 
 		[[UISearchBar alloc] initWithFrame:CGRectMake(0,70,320,44)];
@@ -108,7 +104,10 @@
 			tg_get_dialogs(
 					self.appDelegate.tg, 
 					0, 
-					6, 
+					6,
+					0,
+				  NULL,
+					NULL,	
 					self, 
 					get_dialogs_cb);
 		}];	
@@ -119,28 +118,16 @@
 	[self reloadData];
 }
 
-static int get_dialogs_cb(void *d, tl_messages_dialogsSlice_t *ds, const char *err)
+static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 {
 	ChatsViewController *self = d;
-	if (err){
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.appDelegate showMessage:[NSString stringWithCString:err]];
-			[self.spinner stopAnimating];
-			[self.refreshControl endRefreshing];
-		});
-		return 0;
-	}
-	int i;
-	for	(i=0; i<ds->chats_len; ++i){
-		tl_chat_t *chat = (tl_chat_t *)ds->chats_[i];
-		ChatsItem *item = [[ChatsItem alloc]initWithChat:chat];
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.loadedData addObject:item];
-			[self filterData];
-			[self.spinner stopAnimating];
-			[self.refreshControl endRefreshing];
-		});
-	}
+	ChatsItem *item = [[ChatsItem alloc]initWithDialog:dialog];
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		[self.loadedData addObject:item];
+		[self filterData];
+		[self.spinner stopAnimating];
+		[self.refreshControl endRefreshing];
+	});
 	return 0;
 }
 
@@ -185,7 +172,7 @@ static int get_dialogs_cb(void *d, tl_messages_dialogsSlice_t *ds, const char *e
 	}
 	//item.imageView = cell.imageView;
 	[cell.textLabel setText:item.title];
-	//[cell.detailTextLabel setText:item.subtitle];	
+	[cell.detailTextLabel setText:item.top_message];	
 	//if (item.coverImage)
 		//[cell.imageView setImage:item.coverImage];
 	
