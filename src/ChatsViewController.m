@@ -11,18 +11,20 @@
 //#import "ActionSheet.h"
 
 @implementation ChatsItem
-- (id)initWithDialog:(const tg_dialog_t *)dialog 
+- (id)initWithDialog:(const tg_dialog_t *)d 
 {
 	if (self = [super init]) {
-		self.dialog = *dialog;	
-		self.title = [NSString stringWithUTF8String:dialog->name];
-		self.top_message = 
-			[NSString stringWithUTF8String:
-			(char *)dialog->top_message->message_.data];
-		if (dialog->thumb.size){
+		if (d->name)
+			self.title = [NSString stringWithUTF8String:d->name];
+		
+		if (d->top_message_text)
+			self.top_message = 
+				[NSString stringWithUTF8String:d->top_message_text];
+		
+		if (d->thumb){
+			buf_t b64 = buf_from_base64(d->thumb);
 			NSData *thumbData = 
-			[NSData dataWithBytes:dialog->thumb.data 
-										 length:dialog->thumb.size];
+				[NSData dataWithBytes:b64.data length:b64.size];
 			if (thumbData.length > 0)
 				self.thumb = [UIImage imageWithData:thumbData];
 		}
@@ -108,13 +110,8 @@
 		[self.loadedData removeAllObjects];
 		[self.tableView reloadData];
 		[self.syncData addOperationWithBlock:^{
-			tg_get_dialogs(
+			tg_get_dialogs_from_database(
 					self.appDelegate.tg, 
-					0, 
-					6,
-					0,
-				  NULL,
-					NULL,	
 					self, 
 					get_dialogs_cb);
 		}];	

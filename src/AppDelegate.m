@@ -13,6 +13,7 @@
 #include "UIKit/UIKit.h"
 #include "RootViewController.h"
 #include "../libtg/libtg.h"
+#include "../libtg/tg/dialogs.h"
 
 @implementation AppDelegate
 
@@ -52,11 +53,10 @@
 	[self.reach startNotifier];
 
 	// open log file
-	NSString *logPath = [[NSSearchPathForDirectoriesInDomains(
+	self.log = [[NSSearchPathForDirectoriesInDomains(
 			NSDocumentDirectory, NSUserDomainMask, YES) 
 						objectAtIndex:0] 
 			stringByAppendingPathComponent:@"libtg.log"];
-	self.log = fopen(logPath.UTF8String, "w");
 	
 	// start window
 	self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
@@ -163,10 +163,13 @@ static void on_err(void *d, tl_t *tl, const char *err)
 static void on_log(void *d, const char *msg)
 {
 	AppDelegate *self = d;
-	if (self.log){
+	FILE *fp = fopen(self.log.UTF8String, "w");
+	if (fp){
+		fseek(fp, 0, SEEK_END);
 		char log[BUFSIZ];
 		snprintf(log, BUFSIZ-1, "%d: %s\n", time(NULL), msg);	
-		fputs(log, self.log);
+		fputs(log, fp);
+		fclose(fp);
 	}
 }
 
@@ -180,6 +183,7 @@ static void on_log(void *d, const char *msg)
 			[phone_number UTF8String], 
 			[code UTF8String]);
 	tg_set_on_error(self.tg, self, on_err);
+	tg_set_on_log(self.tg, self, on_log);
 
 	if (user){
 		self.authorizedUser = user;
@@ -187,6 +191,7 @@ static void on_log(void *d, const char *msg)
 		if (self.authorizationDelegate)
 			[self.authorizationDelegate authorizedAs:user];
 		self.authorizationDelegate = nil;
+		tg_async_dialogs_to_database(self.tg, 100);	
 	}
 }
 
@@ -228,6 +233,7 @@ static void on_log(void *d, const char *msg)
 	
 	self.tg = tg_new(
 			[databasePath UTF8String],
+			0,
 			[[NSUserDefaults standardUserDefaults] integerForKey:@"ApiId"], 
 			[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String],
 		 	"pub.pkcs");
@@ -253,6 +259,7 @@ static void on_log(void *d, const char *msg)
 					if (self.authorizationDelegate)
 						[self.authorizationDelegate authorizedAs:user];
 					self.authorizationDelegate = nil;
+					tg_async_dialogs_to_database(self.tg, 100);	
 			} else{
 				[self askInput:@"enter phone number (+7XXXXXXXXXX)" 
 								onDone:^(NSString *text){
