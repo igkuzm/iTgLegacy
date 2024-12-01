@@ -8,6 +8,7 @@
 
 #include "Foundation/Foundation.h"
 #import <UIKit/UIKit.h>
+#include <stdio.h>
 #import "Reachability.h"
 #include "../libtg/libtg.h"
 
@@ -30,6 +31,7 @@
 @property (strong) id<AuthorizationDelegate> authorizationDelegate;
 @property (strong) Reachability *reach;
 @property (strong) id<ReachabilityDelegate> reachabilityDelegate;
+@property FILE *log;
 
 -(void)showMessage:(NSString *)msg;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;

@@ -7,6 +7,7 @@
  */
 
 #import "AppDelegate.h"
+#include <stdio.h>
 #import <UIKit/UIResponder.h>
 #include "Foundation/Foundation.h"
 #include "UIKit/UIKit.h"
@@ -49,6 +50,13 @@
 
 	// Start the notifier, which will cause the reachability object to retain itself!
 	[self.reach startNotifier];
+
+	// open log file
+	NSString *logPath = [[NSSearchPathForDirectoriesInDomains(
+			NSDocumentDirectory, NSUserDomainMask, YES) 
+						objectAtIndex:0] 
+			stringByAppendingPathComponent:@"libtg.log"];
+	self.log = fopen(logPath.UTF8String, "w");
 	
 	// start window
 	self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
@@ -146,8 +154,20 @@
 static void on_err(void *d, tl_t *tl, const char *err)
 {
 	AppDelegate *self = d;
-	[self showMessage: 
-			[NSString stringWithFormat:@"%s", err]];	
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self showMessage: 
+				[NSString stringWithFormat:@"%s", err]];	
+	});	
+}
+
+static void on_log(void *d, const char *msg)
+{
+	AppDelegate *self = d;
+	if (self.log){
+		char log[BUFSIZ];
+		snprintf(log, BUFSIZ-1, "%d: %s\n", time(NULL), msg);	
+		fputs(log, self.log);
+	}
 }
 
 -(void)signIn:(NSString *)phone_number 
