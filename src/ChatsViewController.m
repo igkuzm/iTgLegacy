@@ -6,9 +6,11 @@
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #import "ChatsViewController.h"
+#include "ChatViewController.h"
 #include "UIKit/UIKit.h"
 #include "Foundation/Foundation.h"
 //#import "ActionSheet.h"
+#import "Base64/Base64.h"
 
 @implementation ChatsItem
 - (id)initWithDialog:(const tg_dialog_t *)d 
@@ -22,12 +24,17 @@
 				[NSString stringWithUTF8String:d->top_message_text];
 		
 		if (d->thumb){
-			buf_t b64 = buf_from_base64(d->thumb);
+			//buf_t b64 = buf_from_base64(d->thumb);
 			NSData *thumbData = 
-				[NSData dataWithBytes:b64.data length:b64.size];
+				[NSData dataFromBase64String:[NSString stringWithUTF8String:d->thumb]];
+				//[NSData dataWithBytes:b64.data length:b64.size];
 			if (thumbData.length > 0)
 				self.thumb = [UIImage imageWithData:thumbData];
 		}
+
+		self.accessHash = d->access_hash;
+		self.peerId = d->peer_id;
+		self.peerType = d->peer_type;
 	}
 	return self;
 }
@@ -59,7 +66,7 @@
 
 	// edit button
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
-	
+		
 	// load data
 	[self reloadData];
 }
@@ -82,6 +89,9 @@
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
     [self.tableView setContentOffset:CGPointMake(0, 44) animated:YES];
     [self.searchBar resignFirstResponder];
+	
+		// load data
+		[self reloadData];
 }
 
 -(void)filterData{
@@ -97,25 +107,21 @@
 	// stop all sync
 	[self.syncData cancelAllOperations];
 	
-	if (self.appDelegate.reach.isReachable &&
-			self.appDelegate.authorizedUser)
-	{
-		// animate spinner
-		CGRect rect = self.view.bounds;
-		self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
-		if (!self.refreshControl.refreshing)
-			[self.spinner startAnimating];
+	// animate spinner
+	CGRect rect = self.view.bounds;
+	self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
+	if (!self.refreshControl.refreshing)
+		[self.spinner startAnimating];
 
-		// get dialogs
-		[self.loadedData removeAllObjects];
-		[self.tableView reloadData];
-		[self.syncData addOperationWithBlock:^{
-			tg_get_dialogs_from_database(
-					self.appDelegate.tg, 
-					self, 
-					get_dialogs_cb);
-		}];	
-	}
+	// get dialogs
+	[self.loadedData removeAllObjects];
+	[self.tableView reloadData];
+	[self.syncData addOperationWithBlock:^{
+		tg_get_dialogs_from_database(
+				self.appDelegate.tg, 
+				self, 
+				get_dialogs_cb);
+	}];	
 }
 
 -(void)refresh:(id)sender{
@@ -186,9 +192,17 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	
-	//self.selected = [self.data objectAtIndex:indexPath.item];
+	self.selected = [self.data objectAtIndex:indexPath.item];
 	//TrackListViewController *vc = [[TrackListViewController alloc]initWithParent:self.selected];
 	//[self.navigationController pushViewController:vc animated:true];
+
+	ChatViewController *vc = 
+		[[ChatViewController alloc]
+			initWithPeerId:self.selected.peerId 
+			peerType:self.selected.peerType 
+			accessHash:self.selected.accessHash];
+
+	[self.navigationController pushViewController:vc animated:TRUE];
 		
 		// unselect row
 	[tableView deselectRowAtIndexPath:indexPath animated:true];

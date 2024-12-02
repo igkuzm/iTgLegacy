@@ -58,16 +58,33 @@
 						objectAtIndex:0] 
 			stringByAppendingPathComponent:@"libtg.log"];
 	
+		// change current directory path to bundle
+	[[NSFileManager defaultManager]changeCurrentDirectoryPath:
+		[[NSBundle mainBundle] bundlePath]];
+
+	// connect to libtg
+	NSString *databasePath = [[NSSearchPathForDirectoriesInDomains(
+			NSDocumentDirectory, NSUserDomainMask, YES) 
+						objectAtIndex:0] 
+			stringByAppendingPathComponent:@"tgdata.db"];
+	
+	self.tg = tg_new(
+			[databasePath UTF8String],
+			0,
+			[[NSUserDefaults standardUserDefaults] integerForKey:@"ApiId"], 
+			[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String],
+		 	"pub.pkcs");
+	if (!self.tg){
+		[self showMessage:@"can't init LibTg"];
+		return true;
+	}
+
 	// start window
 	self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
 	RootViewController *vc = 
 			[[RootViewController alloc]init];
 	[self.window setRootViewController:vc];
 	[self.window makeKeyAndVisible];	
-
-	// change current directory path to bundle
-	[[NSFileManager defaultManager]changeCurrentDirectoryPath:
-		[[NSBundle mainBundle] bundlePath]];
 
 	[self authorize];
 
@@ -225,24 +242,7 @@ static void on_log(void *d, const char *msg)
 		return;
 	}
 		
-	// connect to telegram
-	NSString *databasePath = [[NSSearchPathForDirectoriesInDomains(
-			NSDocumentDirectory, NSUserDomainMask, YES) 
-						objectAtIndex:0] 
-			stringByAppendingPathComponent:@"tgdata.db"];
-	
-	self.tg = tg_new(
-			[databasePath UTF8String],
-			0,
-			[[NSUserDefaults standardUserDefaults] integerForKey:@"ApiId"], 
-			[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String],
-		 	"pub.pkcs");
-	if (!self.tg){
-		[self showMessage:@"can't init LibTg"];
-		return;
-	}
-	
-	dispatch_queue_t backgroundQueue = 
+		dispatch_queue_t backgroundQueue = 
 		dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
 	// do in background

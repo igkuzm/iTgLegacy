@@ -8,16 +8,29 @@ iTgLegacy_SOURCES = \
 		ConfigViewController.m \
 		TextEditViewController.m \
 		Reachability.m \
+		BubbleView/NSBubbleData.m \
+		BubbleView/UIBubbleHeaderTableViewCell.m \
+		BubbleView/UIBubbleTableView.m \
+		BubbleView/UIBubbleTableViewCell.m \
+		BubbleView/UIBubbleTypingTableViewCell.m \
+		APLSlideMenu/APLSlideMenuSegue.m \
+		APLSlideMenu/APLSlideMenuViewController.m \
+		SVProgressHUD/SVProgressHUD.m \
+		TRMalleableFrameView/TRMalleableFrameView.m \
+		Base64/Base64.m \
+		UIImage+Utils/UIImage+Utils.m \
+		RequestFactory/CaRequestFactory.m \
+		ChatViewController.m \
 		main.m
 
 iTgLegacy_CFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -fobjc-arc
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -fobjc-arc
 
 iTgLegacy_LDFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -fobjc-arc
 
 iTgLegacy_LDADD = \
-			-lssl -lcurl -L../libs -ltg -L../libtg/tg/.libs
+			-lssl -lcurl -L../libs -ltg -L../libtg/tg/.libs 
 
 bin_SCRIPTS = iTgLegacy.ipa
 CLEANiFILES = $(bin_SCRIPTS)
@@ -34,6 +47,7 @@ _plist:
 
 _images:
 	cp -f ../images/Icon*.png iTgLegacy.app/.
+	cp -f BubbleView/images/*.png iTgLegacy.app/.
 
 iTgLegacy.app: iTgLegacy _dir _plist _images
 	cp -f .libs/iTgLegacy iTgLegacy.app/. 

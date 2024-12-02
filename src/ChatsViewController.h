@@ -7,13 +7,16 @@
 @property (strong) NSString *title;
 @property (strong) NSString *top_message;
 @property (strong) UIImage *thumb;
+@property long peerId;
+@property int peerType;
+@property long accessHash;
 -(id)initWithDialog:(const tg_dialog_t *)dialog;
 @end
 
 @interface ChatsViewController : UITableViewController
 <UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate, UIActionSheetDelegate>
 @property (strong) AppDelegate *appDelegate;
-//@property (strong) Item *selected;
+@property (strong) ChatsItem *selected;
 @property (strong) NSString  *token;
 @property (strong) NSArray *data;
 @property (strong) NSMutableArray *loadedData;
