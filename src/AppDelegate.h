@@ -32,7 +32,6 @@
 @property (strong) id<AuthorizationDelegate> authorizationDelegate;
 @property (strong) Reachability *reach;
 @property (strong) id<ReachabilityDelegate> reachabilityDelegate;
-@property (strong) NSString *log;
 
 -(void)showMessage:(NSString *)msg;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;

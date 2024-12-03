@@ -24,6 +24,13 @@
 	//[[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
 	//self.player = [[PlayerController alloc]init];
 	
+	// logging
+	//NSString *doc = 
+		//[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) 
+		//objectAtIndex:0];
+	//NSString *log = [NSString stringWithFormat:@"%@.log", [NSDate date]];
+	//freopen([log UTF8String], "a+", stderr);
+	
 	// start reachability
 	self.reach = [Reachability reachabilityWithHostname:@"www.google.ru"];
 	// Set the blocks
@@ -53,12 +60,6 @@
 	// Start the notifier, which will cause the reachability object to retain itself!
 	[self.reach startNotifier];
 
-	// open log file
-	self.log = [[NSSearchPathForDirectoriesInDomains(
-			NSDocumentDirectory, NSUserDomainMask, YES) 
-						objectAtIndex:0] 
-			stringByAppendingPathComponent:@"libtg.log"];
-	
 	// change current directory path to bundle
 	[[NSFileManager defaultManager]changeCurrentDirectoryPath:
 		[[NSBundle mainBundle] bundlePath]];
@@ -175,8 +176,8 @@
 		if (!self.tg){
 			[self showMessage:@"can't init LibTg"];
 		}
-		tg_set_on_error(self.tg, self, on_err);
-		tg_set_on_log(self.tg, self, on_log);
+		//tg_set_on_error(self.tg, self, on_err);
+		//tg_set_on_log(self.tg, self, on_log);
 	}
 }
 
@@ -192,14 +193,7 @@ static void on_err(void *d, tl_t *tl, const char *err)
 static void on_log(void *d, const char *msg)
 {
 	AppDelegate *self = d;
-	FILE *fp = fopen(self.log.UTF8String, "w");
-	if (fp){
-		fseek(fp, 0, SEEK_END);
-		char log[BUFSIZ];
-		snprintf(log, BUFSIZ-1, "%d: %s\n", time(NULL), msg);	
-		fwrite(log, strlen(log), 1, fp);
-		fclose(fp);
-	}
+	NSLog(@"%s", msg);
 }
 
 -(void)signIn:(NSString *)phone_number 
