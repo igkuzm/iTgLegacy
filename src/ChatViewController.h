@@ -19,6 +19,10 @@
 @property (nonatomic, strong) NSMutableArray *bubbleDataArray;
 @property (strong) UIImagePickerController *imagePicker;
 @property (strong) UIRefreshControl *refreshControl;
+@property (strong) UIActivityIndicatorView *spinner;
+@property (strong) NSOperationQueue *syncData;
+
+@property () int position;
 
 -(ChatViewController *)initWithDialog:(TGDialog *)dialog;
 @end

@@ -1,4 +1,5 @@
 #import "ChatViewController.h"
+#include "UIKit/UIKit.h"
 #include "CoreGraphics/CoreGraphics.h"
 #include "Foundation/Foundation.h"
 #include "BubbleView/NSBubbleData.h"
@@ -36,6 +37,10 @@
 
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	
+	self.syncData = [[NSOperationQueue alloc]init];
+	self.spinner = [[UIActivityIndicatorView alloc]initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhite];
+	[self.view addSubview:self.spinner]; 
+	
 	self.bubbleTableView.bubbleDataSource = self;
 	self.bubbleTableView.watchingInRealTime = YES;
 	self.bubbleTableView.snapInterval = 2800;
@@ -61,28 +66,41 @@
 		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
 		return;
 	}
+	
+	[self.syncData cancelAllOperations];
+
+	// animate spinner
+	CGRect rect = self.bubbleTableView.bounds;
+	self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
+	if (!self.refreshControl.refreshing)
+		[self.spinner startAnimating];
 
 	[self.bubbleDataArray removeAllObjects];
 
-	buf_t peer = 
-		tg_inputPeer(self.dialog.peerType,
-				self.dialog.peerId,
-			 	self.dialog.accessHash);
-	
-		tg_messages_getHistory(
-			self.appDelegate.tg, 
-			&peer, 
-			0, 
-			time(NULL), 
-			0, 
-			20, 
-			0, 
-			0, 
-			NULL, 
-			self, 
-			messages_callback);
-
-	[self.bubbleTableView reloadData];
+	[self.syncData addOperationWithBlock:^{
+		buf_t peer = 
+			tg_inputPeer(self.dialog.peerType,
+					self.dialog.peerId,
+					self.dialog.accessHash);
+		
+			tg_messages_getHistory(
+				self.appDelegate.tg, 
+				&peer, 
+				0, 
+				time(NULL), 
+				0, 
+				20, 
+				0, 
+				0, 
+				NULL, 
+				self, 
+				messages_callback);
+		
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.spinner stopAnimating];
+			[self.bubbleTableView reloadData];
+		});
+	}];	
 }
 
 - (void)appendDataFrom:(int)p {
@@ -91,26 +109,37 @@
 		return;
 	}
 
-	buf_t peer = 
-		tg_inputPeer(self.dialog.peerType,
-				self.dialog.peerId,
-			 	self.dialog.accessHash);
+	self.position = p;
 	
-		tg_messages_getHistory(
-			self.appDelegate.tg, 
-			&peer, 
-			0, 
-			time(NULL), 
-			p, 
-			20, 
-			0, 
-			0, 
-			NULL, 
-			self, 
-			messages_callback);
+	[self.syncData cancelAllOperations];
 
-	[self.bubbleTableView reloadData];
-	[self.refreshControl endRefreshing];
+	[self.syncData addOperationWithBlock:^{
+		buf_t peer = 
+			tg_inputPeer(self.dialog.peerType,
+					self.dialog.peerId,
+					self.dialog.accessHash);
+		
+			tg_messages_getHistory(
+				self.appDelegate.tg, 
+				&peer, 
+				0, 
+				time(NULL), 
+				p, 
+				20, 
+				0, 
+				0, 
+				NULL, 
+				self, 
+				messages_callback);
+
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.refreshControl endRefreshing];
+			[self.bubbleTableView reloadData];
+			//[self.bubbleTableView 
+				//scrollToRowAtIndexPath:[NSIndexPath indexPathWithIndex:self.bubbleDataArray.count - self.position] 
+							//atScrollPosition:UITableViewScrollPositionTop animated:YES];
+		});
+	}];	
 }
 
 -(void)refresh:(id)sender{

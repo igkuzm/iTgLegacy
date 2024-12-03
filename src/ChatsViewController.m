@@ -23,6 +23,10 @@
 	self.msg_hash = 0;	
 	self.folder_id = 0;
 
+	// spinner
+	self.spinner = [[UIActivityIndicatorView alloc]initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+	[self.view addSubview:self.spinner]; 
+
 	// search bar
 	self.searchBar = 
 		[[UISearchBar alloc] initWithFrame:CGRectMake(0,70,320,44)];
