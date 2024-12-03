@@ -7,6 +7,7 @@
  */
 
 #import "AppDelegate.h"
+#include <string.h>
 #include <stdio.h>
 #import <UIKit/UIResponder.h>
 #include "Foundation/Foundation.h"
@@ -171,7 +172,7 @@
 static void on_err(void *d, tl_t *tl, const char *err)
 {
 	AppDelegate *self = d;
-	dispatch_async(dispatch_get_main_queue(), ^{
+	dispatch_sync(dispatch_get_main_queue(), ^{
 		[self showMessage: 
 				[NSString stringWithFormat:@"%s", err]];	
 	});	
@@ -185,7 +186,7 @@ static void on_log(void *d, const char *msg)
 		fseek(fp, 0, SEEK_END);
 		char log[BUFSIZ];
 		snprintf(log, BUFSIZ-1, "%d: %s\n", time(NULL), msg);	
-		fputs(log, fp);
+		fwrite(log, strlen(log), 1, fp);
 		fclose(fp);
 	}
 }

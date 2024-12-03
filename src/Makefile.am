@@ -8,6 +8,7 @@ iTgLegacy_SOURCES = \
 		ConfigViewController.m \
 		TextEditViewController.m \
 		Reachability.m \
+		TGDialog.m \
 		BubbleView/NSBubbleData.m \
 		BubbleView/UIBubbleHeaderTableViewCell.m \
 		BubbleView/UIBubbleTableView.m \

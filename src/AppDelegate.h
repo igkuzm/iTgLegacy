@@ -28,6 +28,7 @@
 @property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
 @property tg_t *tg;
 @property tl_user_t *authorizedUser;
+@property long *user_id;
 @property (strong) id<AuthorizationDelegate> authorizationDelegate;
 @property (strong) Reachability *reach;
 @property (strong) id<ReachabilityDelegate> reachabilityDelegate;

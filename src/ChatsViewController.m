@@ -6,39 +6,11 @@
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #import "ChatsViewController.h"
+#include "TGDialog.h"
 #include "ChatViewController.h"
 #include "UIKit/UIKit.h"
 #include "Foundation/Foundation.h"
 //#import "ActionSheet.h"
-#import "Base64/Base64.h"
-
-@implementation ChatsItem
-- (id)initWithDialog:(const tg_dialog_t *)d 
-{
-	if (self = [super init]) {
-		if (d->name)
-			self.title = [NSString stringWithUTF8String:d->name];
-		
-		if (d->top_message_text)
-			self.top_message = 
-				[NSString stringWithUTF8String:d->top_message_text];
-		
-		if (d->thumb){
-			//buf_t b64 = buf_from_base64(d->thumb);
-			NSData *thumbData = 
-				[NSData dataFromBase64String:[NSString stringWithUTF8String:d->thumb]];
-				//[NSData dataWithBytes:b64.data length:b64.size];
-			if (thumbData.length > 0)
-				self.thumb = [UIImage imageWithData:thumbData];
-		}
-
-		self.accessHash = d->access_hash;
-		self.peerId = d->peer_id;
-		self.peerType = d->peer_type;
-	}
-	return self;
-}
-@end
 
 @implementation ChatsViewController
 
@@ -100,6 +72,7 @@
 				[NSPredicate predicateWithFormat:@"self.title contains[c] %@", self.searchBar.text]];
 	else
 		self.data = self.loadedData;
+
 	[self.tableView reloadData];
 }
 
@@ -121,6 +94,12 @@
 				self.appDelegate.tg, 
 				self, 
 				get_dialogs_cb);
+		
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.spinner stopAnimating];
+			[self.refreshControl endRefreshing];
+			[self filterData];
+		});
 	}];	
 }
 
@@ -131,36 +110,10 @@
 static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 {
 	ChatsViewController *self = d;
-	ChatsItem *item = [[ChatsItem alloc]initWithDialog:dialog];
-	dispatch_sync(dispatch_get_main_queue(), ^{
+	TGDialog *item = [[TGDialog alloc]initWithDialog:dialog];
 		[self.loadedData addObject:item];
-		[self filterData];
-		[self.spinner stopAnimating];
-		[self.refreshControl endRefreshing];
-	});
 	return 0;
 }
-
-//static int get_user_playlists(void *data, playlist_t *playlist, const char *error)
-//{ 
-	//PlaylistsViewController *self = (__bridge PlaylistsViewController *)data;
-	//if (error){
-		//NSLog(@"%s", error);
-	//}
-
-	//if (playlist){
-		//Item *t = [[Item alloc]initWithPlaylist:playlist token:self.token];
-		//dispatch_sync(dispatch_get_main_queue(), ^{
-			//// Update your UI
-			//[self.loadedData addObject:t];
-			//[self filterData];
-			//[self.spinner stopAnimating];
-			//[self.refreshControl endRefreshing];
-		//});
-	//}
-	//return 0;
-//}
-
 
 #pragma mark <TableViewDelegate Meythods>
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -172,7 +125,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-	ChatsItem *item = [self.data objectAtIndex:indexPath.item];
+	TGDialog *item = [self.data objectAtIndex:indexPath.item];
 	UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"cell"];
 	if (cell == nil){
 		cell = [[UITableViewCell alloc]
@@ -192,16 +145,13 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	
-	self.selected = [self.data objectAtIndex:indexPath.item];
+	TGDialog *dialog = [self.data objectAtIndex:indexPath.item];
+	self.selected = dialog;
 	//TrackListViewController *vc = [[TrackListViewController alloc]initWithParent:self.selected];
 	//[self.navigationController pushViewController:vc animated:true];
-
-	ChatViewController *vc = 
-		[[ChatViewController alloc]
-			initWithPeerId:self.selected.peerId 
-			peerType:self.selected.peerType 
-			accessHash:self.selected.accessHash];
-
+	
+	ChatViewController *vc = [[ChatViewController alloc]init];
+	vc.dialog = dialog;
 	[self.navigationController pushViewController:vc animated:TRUE];
 		
 		// unselect row

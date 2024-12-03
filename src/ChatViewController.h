@@ -1,4 +1,5 @@
 #include "BubbleView/UIBubbleTableView.h"
+#include "TGDialog.h"
 #include "UIKit/UIKit.h"
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
@@ -13,11 +14,13 @@
 
 @property (strong) UIBubbleTableView *bubbleTableView;
 
+@property (strong, nonatomic) TGDialog *dialog;
 @property (strong, nonatomic) NSString *currentImage;
 @property (nonatomic, strong) NSMutableArray *bubbleDataArray;
 @property (strong) UIImagePickerController *imagePicker;
+@property (strong) UIRefreshControl *refreshControl;
 
--(ChatViewController *)initWithPeerId:(long)peerId peerType:(int)type accessHash:(long)accessHash;
+-(ChatViewController *)initWithDialog:(TGDialog *)dialog;
 @end
 
 // vim:ft=objc
