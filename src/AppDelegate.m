@@ -59,26 +59,12 @@
 						objectAtIndex:0] 
 			stringByAppendingPathComponent:@"libtg.log"];
 	
-		// change current directory path to bundle
+	// change current directory path to bundle
 	[[NSFileManager defaultManager]changeCurrentDirectoryPath:
 		[[NSBundle mainBundle] bundlePath]];
 
-	// connect to libtg
-	NSString *databasePath = [[NSSearchPathForDirectoriesInDomains(
-			NSDocumentDirectory, NSUserDomainMask, YES) 
-						objectAtIndex:0] 
-			stringByAppendingPathComponent:@"tgdata.db"];
-	
-	self.tg = tg_new(
-			[databasePath UTF8String],
-			0,
-			[[NSUserDefaults standardUserDefaults] integerForKey:@"ApiId"], 
-			[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String],
-		 	"pub.pkcs");
-	if (!self.tg){
-		[self showMessage:@"can't init LibTg"];
-		return true;
-	}
+	// load tglib
+	[self loadTgLib];
 
 	// start window
 	self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
@@ -169,6 +155,31 @@
 }
 
 #pragma <LibTg FUNCTIONS>
+
+-(void)loadTgLib{
+	// connect to libtg
+	NSString *databasePath = [[NSSearchPathForDirectoriesInDomains(
+			NSDocumentDirectory, NSUserDomainMask, YES) 
+						objectAtIndex:0] 
+			stringByAppendingPathComponent:@"tgdata.db"];
+	
+	if ([[NSUserDefaults standardUserDefaults] valueForKey:@"ApiId"] &&
+			[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"])
+	{
+		self.tg = tg_new(
+				[databasePath UTF8String],
+				0,
+				[[NSUserDefaults standardUserDefaults] integerForKey:@"ApiId"], 
+				[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String],
+				"pub.pkcs");
+		if (!self.tg){
+			[self showMessage:@"can't init LibTg"];
+		}
+		tg_set_on_error(self.tg, self, on_err);
+		tg_set_on_log(self.tg, self, on_log);
+	}
+}
+
 static void on_err(void *d, tl_t *tl, const char *err)
 {
 	AppDelegate *self = d;
@@ -200,8 +211,6 @@ static void on_log(void *d, const char *msg)
 			sentCode, 
 			[phone_number UTF8String], 
 			[code UTF8String]);
-	tg_set_on_error(self.tg, self, on_err);
-	tg_set_on_log(self.tg, self, on_log);
 
 	if (user){
 		self.authorizedUser = user;
@@ -242,8 +251,14 @@ static void on_log(void *d, const char *msg)
 		[self showMessage:@"no ApiId or ApiHash"];
 		return;
 	}
+
+	if (!self.tg)
+		[self loadTgLib];
+	
+	if (!self.tg)
+		return;
 		
-		dispatch_queue_t backgroundQueue = 
+	dispatch_queue_t backgroundQueue = 
 		dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
 	// do in background

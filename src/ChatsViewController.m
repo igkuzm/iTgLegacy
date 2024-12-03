@@ -83,6 +83,9 @@
 -(void)reloadData{
 	// stop all sync
 	[self.syncData cancelAllOperations];
+
+	if (!self.appDelegate.tg)
+		return;
 	
 	// animate spinner
 	CGRect rect = self.view.bounds;
