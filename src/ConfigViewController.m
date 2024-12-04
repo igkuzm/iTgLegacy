@@ -78,7 +78,7 @@
 															UITableViewCellAccessoryCheckmark];
 														[cell.textLabel setText:@"Authorized!"];
 														[cell.detailTextLabel setText:
-															[NSString stringWithFormat:@"\@%s", (char *)self.appDelegate.authorizedUser->username_.data]];
+															[NSString stringWithFormat:@"%s", (char *)self.appDelegate.authorizedUser->username_.data]];
 													} else {
 														[cell setAccessoryType:
 															UITableViewCellAccessoryNone];
