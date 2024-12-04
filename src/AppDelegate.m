@@ -196,6 +196,17 @@ static void on_log(void *d, const char *msg)
 	NSLog(@"%s", msg);
 }
 
+-(void)afteLoginUser:(tl_user_t *)user {
+	self.authorizedUser = user;
+	//[self showMessage:@"authorized!"];
+	if (self.authorizationDelegate)
+		[self.authorizationDelegate authorizedAs:user];
+	self.authorizationDelegate = nil;
+
+	// get dialogs
+	tg_async_dialogs_to_database(self.tg, 100);	
+}
+
 -(void)signIn:(NSString *)phone_number 
 				 code:(NSString *)code 
 		 sentCode:(tl_auth_sentCode_t *)sentCode
@@ -207,12 +218,7 @@ static void on_log(void *d, const char *msg)
 			[code UTF8String]);
 
 	if (user){
-		self.authorizedUser = user;
-		//[self showMessage:@"authorized!"];
-		if (self.authorizationDelegate)
-			[self.authorizationDelegate authorizedAs:user];
-		self.authorizationDelegate = nil;
-		tg_async_dialogs_to_database(self.tg, 100);	
+		[self afteLoginUser:user];
 	}
 }
 
@@ -264,12 +270,7 @@ static void on_log(void *d, const char *msg)
 		// authorize if needed
 		dispatch_async(dispatch_get_main_queue(), ^{
 			if (user){
-					self.authorizedUser = user;
-					//[self showMessage:@"authorized!"];
-					if (self.authorizationDelegate)
-						[self.authorizationDelegate authorizedAs:user];
-					self.authorizationDelegate = nil;
-					tg_async_dialogs_to_database(self.tg, 100);	
+				[self afteLoginUser:user];
 			} else{
 				[self askInput:@"enter phone number (+7XXXXXXXXXX)" 
 								onDone:^(NSString *text){

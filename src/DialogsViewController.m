@@ -80,20 +80,25 @@
 	[self.tableView reloadData];
 }
 
--(void)appendDataFromDate:(NSDate *)date{
-	// stop all sync
-	[self.syncData cancelAllOperations];
-
+-(void)reloadData{
 	if (!self.appDelegate.tg)
 		return;
+	
+		// remove loaded data
+	[self.syncData cancelAllOperations];
+	[self.loadedData removeAllObjects];
+	[self.tableView reloadData];
+	
+	// animate spinner
+	CGRect rect = self.view.bounds;
+	self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
+	if (!self.refreshControl.refreshing)
+		[self.spinner startAnimating];
 
+	// get dialogs
 	[self.syncData addOperationWithBlock:^{
-		tg_get_dialogs(
+		tg_get_dialogs_from_database(
 				self.appDelegate.tg, 
-				10, 
-				[date timeIntervalSince1970], 
-				NULL, 
-				NULL, 
 				self, 
 				get_dialogs_cb);
 		
@@ -103,23 +108,6 @@
 			[self filterData];
 		});
 	}];
-}
-
--(void)reloadData{
-	if (!self.appDelegate.tg)
-		return;
-	
-	// animate spinner
-	CGRect rect = self.view.bounds;
-	self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
-	if (!self.refreshControl.refreshing)
-		[self.spinner startAnimating];
-
-	// get dialogs
-	[self.loadedData removeAllObjects];
-	[self.tableView reloadData];
-
-	[self appendDataFromDate:[NSDate date]];
 }
 
 -(void)refresh:(id)sender{
@@ -225,8 +213,8 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
 	// append data to array
-	TGDialog *last = [self.loadedData lastObject];
-	[self appendDataFromDate:last.date];
+	//TGDialog *last = [self.loadedData lastObject];
+	//[self appendDataFromDate:last.date];
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
