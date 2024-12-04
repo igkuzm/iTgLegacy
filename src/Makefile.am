@@ -4,7 +4,8 @@ bin_PROGRAMS = iTgLegacy
 iTgLegacy_SOURCES = \
 		AppDelegate.m \
 		RootViewController.m \
-		ChatsViewController.m \
+		DialogsViewController.m \
+		ChatViewController.m \
 		ConfigViewController.m \
 		TextEditViewController.m \
 		Reachability.m \
@@ -21,7 +22,6 @@ iTgLegacy_SOURCES = \
 		Base64/Base64.m \
 		UIImage+Utils/UIImage+Utils.m \
 		RequestFactory/CaRequestFactory.m \
-		ChatViewController.m \
 		main.m
 
 iTgLegacy_CFLAGS = \

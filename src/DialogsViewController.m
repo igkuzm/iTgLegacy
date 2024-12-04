@@ -5,14 +5,14 @@
  * Last Modified Date: 13.09.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
-#import "ChatsViewController.h"
+#import "DialogsViewController.h"
 #include "TGDialog.h"
 #include "ChatViewController.h"
 #include "UIKit/UIKit.h"
 #include "Foundation/Foundation.h"
 //#import "ActionSheet.h"
 
-@implementation ChatsViewController
+@implementation DialogsViewController
 
 - (void)viewDidLoad {
 	self.title = @"Чаты";
@@ -80,10 +80,32 @@
 	[self.tableView reloadData];
 }
 
--(void)reloadData{
+-(void)appendDataFromDate:(NSDate *)date{
 	// stop all sync
 	[self.syncData cancelAllOperations];
 
+	if (!self.appDelegate.tg)
+		return;
+
+	[self.syncData addOperationWithBlock:^{
+		tg_get_dialogs(
+				self.appDelegate.tg, 
+				10, 
+				[date timeIntervalSince1970], 
+				NULL, 
+				NULL, 
+				self, 
+				get_dialogs_cb);
+		
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.spinner stopAnimating];
+			[self.refreshControl endRefreshing];
+			[self filterData];
+		});
+	}];
+}
+
+-(void)reloadData{
 	if (!self.appDelegate.tg)
 		return;
 	
@@ -96,18 +118,8 @@
 	// get dialogs
 	[self.loadedData removeAllObjects];
 	[self.tableView reloadData];
-	[self.syncData addOperationWithBlock:^{
-		tg_get_dialogs_from_database(
-				self.appDelegate.tg, 
-				self, 
-				get_dialogs_cb);
-		
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.spinner stopAnimating];
-			[self.refreshControl endRefreshing];
-			[self filterData];
-		});
-	}];	
+
+	[self appendDataFromDate:[NSDate date]];
 }
 
 -(void)refresh:(id)sender{
@@ -116,9 +128,20 @@
 
 static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 {
-	ChatsViewController *self = d;
+	DialogsViewController *self = d;
 	TGDialog *item = [[TGDialog alloc]initWithDialog:dialog];
+	
+	Boolean eql = NO;
+	for (TGDialog *_item in self.loadedData) {
+		if (_item.peerId == item.peerId){
+			eql = YES;	
+			break;
+		}
+	}
+	
+	if (!eql)
 		[self.loadedData addObject:item];
+	
 	return 0;
 }
 
@@ -193,9 +216,21 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	//}
 }
 
+#pragma mark <SCROLLVIEW DELEGATE>
+
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
 	// hide keyboard
 	[self.searchBar resignFirstResponder];
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+	// append data to array
+	TGDialog *last = [self.loadedData lastObject];
+	[self appendDataFromDate:last.date];
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+
 }
 
 #pragma mark <SEARCHBAR FUNCTIONS>

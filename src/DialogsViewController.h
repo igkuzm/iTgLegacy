@@ -3,8 +3,10 @@
 #import "AppDelegate.h"
 #import "TGDialog.h"
 
-@interface ChatsViewController : UITableViewController
-<UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate, UIActionSheetDelegate>
+@interface DialogsViewController : UITableViewController
+<UITableViewDelegate, UITableViewDataSource, 
+ UISearchBarDelegate, UIActionSheetDelegate,
+ UIScrollViewDelegate>
 @property (strong) AppDelegate *appDelegate;
 @property (strong) TGDialog *selected;
 @property (strong) NSString  *token;

@@ -9,15 +9,15 @@
 #include "AppDelegate.h"
 #include "Foundation/Foundation.h"
 #include "UIKit/UIKit.h"
-#import "ChatsViewController.h"
+#import "DialogsViewController.h"
 #import "ConfigViewController.h"
 
 @implementation RootViewController
 - (void)viewDidLoad {
 	
 	// chats view
-	ChatsViewController *chatsvc = 
-		[[ChatsViewController alloc]init];
+	DialogsViewController *chatsvc = 
+		[[DialogsViewController alloc]init];
 	UINavigationController *chatsnc =
 		[[UINavigationController alloc]initWithRootViewController:chatsvc];
 	UITabBarItem *chatstbi = [[UITabBarItem alloc]
