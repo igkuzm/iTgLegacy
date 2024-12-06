@@ -229,7 +229,7 @@ static int messages_callback(void *d, const tg_message_t *m){
 			tg_get_file(
 					self.appDelegate.tg, 
 					&location, 
-					self, 
+					&img_data, 
 					photo_callback, 
 					NULL, 
 					NULL);
@@ -266,13 +266,9 @@ static int messages_callback(void *d, const tg_message_t *m){
 static int photo_callback(void *d, const tg_file_t *p) {
 	if (!p->bytes_)
 		return 0;
-	ChatViewController *self = d;
-	dispatch_sync(dispatch_get_main_queue(), ^{
-		[self.appDelegate showMessage:[NSString stringWithUTF8String:p->bytes_]];
-	});
 	
-	//char **img_data = d;
-	//*img_data = strdup(p->bytes_);
+	char **img_data = d;
+	*img_data = strdup(p->bytes_);
 
 	return 0;
 } 
