@@ -4,8 +4,10 @@
 #include "Foundation/Foundation.h"
 #include "BubbleView/NSBubbleData.h"
 #include "BubbleView/UIBubbleTableView.h"
+#include "Base64/Base64.h"
 #include "../libtg/tg/peer.h"
 #include "../libtg/tg/messages.h"
+#include "../libtg/tg/files.h"
 
 @interface  ChatViewController()
 {
@@ -61,7 +63,7 @@
 	[self.bubbleTableView addSubview:self.refreshControl];
 
 	// ToolBar
-	self.textField = [[UITextField alloc]initWithFrame:CGRectMake(0,0,self.navigationController.toolbar.frame.size.width - 70, 30)];
+	self.textField = [[UITextField alloc]initWithFrame:CGRectMake(0,0,self.navigationController.toolbar.frame.size.width - 95, 30)];
 	[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
 	UIBarButtonItem *textFieldItem = [[UIBarButtonItem alloc] initWithCustomView:self.textField];
 	UIBarButtonItem *flexibleSpace = [[UIBarButtonItem alloc] 
@@ -69,7 +71,7 @@
 	  target:nil
 		action:nil];
 	[self.textField setDelegate:self];
-	UIBarButtonItem *send = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemPlay target:self action:@selector(onSend:)];
+	UIBarButtonItem *send = [[UIBarButtonItem alloc]initWithTitle:@"send" style:UIBarButtonItemStyleDone target:self action:@selector(onSend:)];
 	UIBarButtonItem *add = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(onAdd:)];
 
 	[self setToolbarItems:@[flexibleSpace, add, flexibleSpace, textFieldItem, flexibleSpace, send, flexibleSpace] animated:NO];
@@ -203,23 +205,77 @@
 }
 
 #pragma mark <messages_getHistory callback>
+struct photo_data {
+	ChatViewController *self;
+	NSBubbleData *bd;
+};
+
 static int messages_callback(void *d, const tg_message_t *m){
 	ChatViewController *self = d;
 	if (m->message_ && m->peer_id_ == self.dialog.peerId){
 		bool me = (m->from_id_ == self.appDelegate.authorizedUser->id_);
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			NSBubbleData *bd = 
-				[[NSBubbleData alloc]
-					initWithText:[NSString stringWithUTF8String:m->message_] 
-					date:[NSDate dateWithTimeIntervalSince1970:m->date_] 
-					type:me?BubbleTypeMine:BubbleTypeSomeoneElse];
+		UIImage *img = NULL;
+		if (m->photo_id){
+			// download image
+			buf_t fr = buf_from_base64(m->photo_file_reference);
+			char *img_data = NULL;
+			InputFileLocation location = 
+					tl_inputPhotoFileLocation(
+							m->photo_id, 
+							m->photo_access_hash, 
+							&fr, 
+							"s");
 
+			tg_get_file(
+					self.appDelegate.tg, 
+					&location, 
+					self, 
+					photo_callback, 
+					NULL, 
+					NULL);
+			
+			if (img_data){
+				NSData *data = [NSData dataFromBase64String:
+						[NSString stringWithUTF8String:img_data]];
+				img = [UIImage imageWithData:data];
+			}
+		}
+		
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			NSBubbleData *bd; 
+			if (img){
+				bd = [[NSBubbleData alloc]
+						initWithImage:img 
+						date:[NSDate dateWithTimeIntervalSince1970:m->date_] 
+						type:me?BubbleTypeMine:BubbleTypeSomeoneElse];
+			} else {
+				bd = [[NSBubbleData alloc]
+						initWithText:[NSString stringWithUTF8String:m->message_] 
+						date:[NSDate dateWithTimeIntervalSince1970:m->date_] 
+						type:me?BubbleTypeMine:BubbleTypeSomeoneElse];
+			}
+	
 			[self.bubbleDataArray addObject:bd];
+
 		});
 	}
 
 	return 0;
 }
+
+static int photo_callback(void *d, const tg_file_t *p) {
+	if (!p->bytes_)
+		return 0;
+	ChatViewController *self = d;
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		[self.appDelegate showMessage:[NSString stringWithUTF8String:p->bytes_]];
+	});
+	
+	//char **img_data = d;
+	//*img_data = strdup(p->bytes_);
+
+	return 0;
+} 
 
 #pragma mark <UIBubbleTableViewDelegate>
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectRow:(int)row 
