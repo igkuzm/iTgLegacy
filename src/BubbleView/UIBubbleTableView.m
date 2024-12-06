@@ -44,6 +44,12 @@
 		
 		self.snapInterval = 120;
 		self.typingBubble = NSBubbleTypingTypeNobody;
+
+		// tap gesture
+		// on tap
+		UITapGestureRecognizer *gestureRecognizer = 
+			[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onTap)];
+		[self addGestureRecognizer:gestureRecognizer];
 }
 
 - (id)init
@@ -85,6 +91,11 @@
 #endif
 
 #pragma mark - Override
+
+-(void)onTap{
+	if (self.bubbleDelegate)
+		[self.bubbleDelegate bubbleTableViewOnTap:self];
+}
 
 - (void)reloadData
 {
@@ -149,7 +160,7 @@
     }
     
     [super reloadData];
-    [self scrollToBottomWithAnimation:YES];
+    //[self scrollToBottomWithAnimation:YES];
 }
 
 - (BOOL) scrollToBottomWithAnimation:(BOOL)animatedBool {
@@ -173,25 +184,26 @@
 
 #pragma mark - UITableViewDelegate implementation
 
-- (void)tableView:(UITableView *)tableView
-didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+//- (void)tableView:(UITableView *)tableView
+//didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+	//return;
     
-    // Now typing
-	if (indexPath.section >= [self.bubbleSection count])
-    {
-        return;
-    }
+    //// Now typing
+	//if (indexPath.section >= [self.bubbleSection count])
+    //{
+        //return;
+    //}
     
-    // Header
-    if (indexPath.row == 0)
-    {
-        return ;
-    }
+    //// Header
+    //if (indexPath.row == 0)
+    //{
+        //return ;
+    //}
     
-    NSBubbleData *data = [[self.bubbleSection objectAtIndex:indexPath.section] objectAtIndex:indexPath.row - 1];
-		if (self.bubbleDelegate)
-			[self.bubbleDelegate bubbleTableView:self didSelectRow:data.index];
-}
+    //NSBubbleData *data = [[self.bubbleSection objectAtIndex:indexPath.section] objectAtIndex:indexPath.row - 1];
+		//if (self.bubbleDelegate)
+			//[self.bubbleDelegate bubbleTableView:self didSelectRow:data.index];
+//}
 
 #pragma mark - UITableViewDataSource implementation
 
@@ -207,7 +219,7 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     // This is for now typing bubble
 	if (section >= [self.bubbleSection count]) return 1;
     
-    return [[self.bubbleSection objectAtIndex:section] count] + 1;
+  return [[self.bubbleSection objectAtIndex:section] count] + 1;
 }
 
 - (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -244,8 +256,8 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
         return cell;
     }
 
-    // Header with date and time
-    if (indexPath.row == 0)
+   // Header with date and time
+  if (indexPath.row == 0)
     {
         static NSString *cellId = @"tblBubbleHeaderCell";
         UIBubbleHeaderTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellId];
@@ -258,7 +270,7 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
         return cell;
     }
     
-    // Standard bubble    
+  // Standard bubble    
     static NSString *cellId = @"tblBubbleCell";
     UIBubbleTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellId];
     NSBubbleData *data = [[self.bubbleSection objectAtIndex:indexPath.section] objectAtIndex:indexPath.row - 1];
@@ -280,6 +292,9 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     CGFloat distanceFromBottom = scrollView.contentSize.height - contentYoffset;
     
     self.watchingInRealTime = distanceFromBottom - 20 <= height;
+
+		if (self.bubbleDelegate)
+			[self.bubbleDelegate bubbleTableView:self didScroll:scrollView];
 }
 
 #pragma mark - Public interface

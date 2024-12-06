@@ -14,4 +14,8 @@
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 didSelectRow:(int)row;
 
+- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
+didScroll:(UIScrollView *)scrollView;
+
+- (void)bubbleTableViewOnTap:(UIBubbleTableView *)bubbleTableView;
 @end

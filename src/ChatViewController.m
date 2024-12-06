@@ -15,7 +15,7 @@
 @implementation ChatViewController
 
 - (void)viewWillAppear:(BOOL)animated {
-    [UINavigationBar.appearance setBackgroundImage:nil forBarMetrics:UIBarMetricsDefault];
+    //[UINavigationBar.appearance setBackgroundImage:nil forBarMetrics:UIBarMetricsDefault];
     //[UINavigationBar.appearance setTintColor:[UIColor colorWithRed:200/255.0 green:200/255.0 blue:200/255.0 alpha:1.0]];
 }
 
@@ -27,13 +27,14 @@
 				0, 
 				0, 
 				self.view.frame.size.width, 
-				self.view.frame.size.height - 85);
+				self.view.frame.size.height - 44 - 44);
 
 	UIBubbleTableView *bubbleTableView = 
 			[[UIBubbleTableView alloc]initWithFrame:frame
 			style:UITableViewStylePlain];
 		[self.view addSubview:bubbleTableView];
-		self.bubbleTableView = bubbleTableView;
+	self.bubbleTableView = bubbleTableView;
+	[self.bubbleTableView setBubbleDelegate:self];
 
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	
@@ -45,7 +46,8 @@
 	self.bubbleTableView.watchingInRealTime = YES;
 	self.bubbleTableView.snapInterval = 2800;
 	self.bubbleDataArray = [NSMutableArray array];
-	self.bubbleTableView.showAvatars = [[NSUserDefaults standardUserDefaults] boolForKey:@"showPFP"];
+	self.bubbleTableView.showAvatars = YES; 
+		//= [[NSUserDefaults standardUserDefaults] boolForKey:@"showPFP"];
 	[self.bubbleTableView reloadData];
 		
   //self.imagePicker = [[UIImagePickerController alloc] init];
@@ -58,60 +60,93 @@
 	[self.refreshControl addTarget:self action:@selector(refresh:) forControlEvents:UIControlEventValueChanged];
 	[self.bubbleTableView addSubview:self.refreshControl];
 
+	// ToolBar
+	self.textField = [[UITextField alloc]initWithFrame:CGRectMake(0,0,self.navigationController.toolbar.frame.size.width - 70, 30)];
+	[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
+	UIBarButtonItem *textFieldItem = [[UIBarButtonItem alloc] initWithCustomView:self.textField];
+	UIBarButtonItem *flexibleSpace = [[UIBarButtonItem alloc] 
+		initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+	  target:nil
+		action:nil];
+	[self.textField setDelegate:self];
+	UIBarButtonItem *send = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemPlay target:self action:@selector(onSend:)];
+	UIBarButtonItem *add = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(onAdd:)];
+
+	[self setToolbarItems:@[flexibleSpace, add, flexibleSpace, textFieldItem, flexibleSpace, send, flexibleSpace] animated:NO];
+	[self.navigationController setToolbarHidden:NO];
+
+	// keyboard
+	[[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(keyboardWillHideOrShow:)
+                                                 name:UIKeyboardWillHideNotification
+                                               object:nil];
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(keyboardWillHideOrShow:)
+                                                 name:UIKeyboardWillShowNotification
+                                               object:nil];
+
+		// load data
 	[self reloadData];
 }
 
-- (void)reloadData {
-	if (!self.dialog){
-		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
-		return;
-	}
+- (void)onSend:(id)sender{
+	buf_t peer = tg_inputPeer(
+			self.dialog.peerType, 
+			self.dialog.peerId, 
+			self.dialog.accessHash);
 	
-	[self.syncData cancelAllOperations];
+	tg_send_message(
+			self.appDelegate.tg, 
+			&peer, self.textField.text.UTF8String);
 
-	// animate spinner
-	CGRect rect = self.bubbleTableView.bounds;
-	self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
-	if (!self.refreshControl.refreshing)
-		[self.spinner startAnimating];
+	NSBubbleData *bd = 
+				[[NSBubbleData alloc]
+					initWithText:self.textField.text
+					date:[NSDate date] 
+					type:BubbleTypeMine];
 
-	[self.bubbleDataArray removeAllObjects];
-
-	[self.syncData addOperationWithBlock:^{
-		buf_t peer = 
-			tg_inputPeer(self.dialog.peerType,
-					self.dialog.peerId,
-					self.dialog.accessHash);
-		
-			tg_messages_getHistory(
-				self.appDelegate.tg, 
-				&peer, 
-				0, 
-				time(NULL), 
-				0, 
-				20, 
-				0, 
-				0, 
-				NULL, 
-				self, 
-				messages_callback);
-		
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.spinner stopAnimating];
-			[self.bubbleTableView reloadData];
-		});
-	}];	
+	[self.textField setText:@""];
+	[self.bubbleDataArray addObject:bd];
+	[self.bubbleTableView reloadData];
+	[self.bubbleTableView scrollToBottomWithAnimation:YES];
 }
 
-- (void)appendDataFrom:(int)p {
+- (void)onAdd:(id)sender{
+
+}
+
+- (void)keyboardWillHideOrShow:(NSNotification *)note
+{
+    NSDictionary *userInfo = note.userInfo;
+    NSTimeInterval duration = [[userInfo objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
+    UIViewAnimationCurve curve = [[userInfo objectForKey:UIKeyboardAnimationCurveUserInfoKey] intValue];
+
+    CGRect keyboardFrame = [[userInfo objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
+    CGRect keyboardFrameForToolbar = [self.navigationController.toolbar.superview convertRect:keyboardFrame fromView:nil];
+    CGRect keyboardFrameForTableView = [self.bubbleTableView.superview convertRect:keyboardFrame fromView:nil];
+
+    CGRect newToolbarFrame = self.navigationController.toolbar.frame;
+    newToolbarFrame.origin.y = keyboardFrameForToolbar.origin.y - newToolbarFrame.size.height;
+
+    CGRect newTableViewFrame = self.bubbleTableView.frame;
+    newTableViewFrame.size.height = keyboardFrameForTableView.origin.y - newToolbarFrame.size.height;
+
+    [UIView animateWithDuration:duration
+                          delay:0
+                        options:UIViewAnimationOptionBeginFromCurrentState | curve
+                     animations:^{self.navigationController.toolbar.frame = newToolbarFrame;
+                         self.bubbleTableView.frame =newTableViewFrame;}
+                     completion:nil];
+
+	[self.navigationController setToolbarHidden: NO];
+}
+
+- (void)appendDataFrom:(int)p onDone:(void (^)())onDone
+{
 	if (!self.dialog){
 		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
 		return;
 	}
-
-	self.position = p;
-	
-	[self.syncData cancelAllOperations];
 
 	[self.syncData addOperationWithBlock:^{
 		buf_t peer = 
@@ -135,15 +170,36 @@
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			[self.refreshControl endRefreshing];
 			[self.bubbleTableView reloadData];
-			//[self.bubbleTableView 
-				//scrollToRowAtIndexPath:[NSIndexPath indexPathWithIndex:self.bubbleDataArray.count - self.position] 
-							//atScrollPosition:UITableViewScrollPositionTop animated:YES];
+			onDone();
 		});
-	}];	
+	}];
+}
+
+- (void)reloadData {
+	[self.syncData cancelAllOperations];
+
+	// animate spinner
+	CGRect rect = self.bubbleTableView.bounds;
+	self.spinner.center = CGPointMake(rect.size.width/2, rect.size.height/2);
+	if (!self.refreshControl.refreshing)
+		[self.spinner startAnimating];
+
+	[self.bubbleDataArray removeAllObjects];
+
+	[self appendDataFrom:0 onDone:^{
+		[self.spinner stopAnimating];
+		[self.bubbleTableView scrollToBottomWithAnimation:NO];
+	}];
 }
 
 -(void)refresh:(id)sender{
-	[self appendDataFrom:self.bubbleDataArray.count];
+	[self appendDataFrom:self.bubbleDataArray.count onDone:nil];
+}
+
+- (void)viewDidUnload
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [super viewDidUnload];
 }
 
 #pragma mark <messages_getHistory callback>
@@ -151,13 +207,15 @@ static int messages_callback(void *d, const tg_message_t *m){
 	ChatViewController *self = d;
 	if (m->message_ && m->peer_id_ == self.dialog.peerId){
 		bool me = (m->from_id_ == self.appDelegate.authorizedUser->id_);
-		NSBubbleData *bd = 
-			[[NSBubbleData alloc]
-				initWithText:[NSString stringWithUTF8String:m->message_] 
-				date:[NSDate dateWithTimeIntervalSince1970:m->date_] 
-				type:me?BubbleTypeMine:BubbleTypeSomeoneElse];
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			NSBubbleData *bd = 
+				[[NSBubbleData alloc]
+					initWithText:[NSString stringWithUTF8String:m->message_] 
+					date:[NSDate dateWithTimeIntervalSince1970:m->date_] 
+					type:me?BubbleTypeMine:BubbleTypeSomeoneElse];
 
-		[self.bubbleDataArray addObject:bd];
+			[self.bubbleDataArray addObject:bd];
+		});
 	}
 
 	return 0;
@@ -166,9 +224,23 @@ static int messages_callback(void *d, const tg_message_t *m){
 #pragma mark <UIBubbleTableViewDelegate>
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectRow:(int)row 
 {
-  NSLog(@"selected");
+  //NSLog(@"selected");
 }
 
+- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
+didScroll:(UIScrollView *)scrollView
+{
+	[self.textField endEditing:YES];
+	[self.textField resignFirstResponder];
+}
+
+
+- (void)bubbleTableViewOnTap:(UIBubbleTableView *)bubbleTableView
+{
+	//[self.appDelegate showMessage:@"TAP"];
+	//[self.textField endEditing:YES];
+	//[self.textField resignFirstResponder];
+}
 
 #pragma mark <UIBubbleTableViewDataSource>
 - (NSBubbleData *)bubbleTableView:(UIBubbleTableView *)tableView dataForRow:(NSInteger)row 
@@ -179,6 +251,12 @@ static int messages_callback(void *d, const tg_message_t *m){
 {
 	return self.bubbleDataArray.count;
 }
+
+#pragma mark <UITextFieldDelegate>
+- (void)textFieldDidBeginEditing:(UITextField *)textField {
+	[self.bubbleTableView scrollToBottomWithAnimation:YES];
+}
+
 
 @end
 // vim:ft=objc

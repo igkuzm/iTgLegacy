@@ -1,3 +1,4 @@
+#include "Foundation/Foundation.h"
 #include "UIKit/UIKit.h"
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
@@ -17,6 +18,7 @@
 @property (strong) UIActivityIndicatorView *spinner;
 @property long msg_hash;
 @property int folder_id;
+@property NSInteger currentIndex;
 @end
 
 // vim:ft=objc

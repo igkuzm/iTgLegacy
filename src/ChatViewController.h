@@ -6,7 +6,7 @@
 
 @interface ChatViewController : UIViewController
 <UIBubbleTableViewDataSource, UIBubbleTableViewDelegate,
-	UIImagePickerControllerDelegate>
+	UIImagePickerControllerDelegate, UITextFieldDelegate>
 {
 }
 
@@ -14,6 +14,7 @@
 
 @property (strong) UIBubbleTableView *bubbleTableView;
 
+@property (strong) UITextField *textField;
 @property (strong, nonatomic) TGDialog *dialog;
 @property (strong, nonatomic) NSString *currentImage;
 @property (nonatomic, strong) NSMutableArray *bubbleDataArray;

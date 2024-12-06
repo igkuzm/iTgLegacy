@@ -1,5 +1,5 @@
 /**
- * File              : PlaylistsViewController.m
+ * File              : DialogsViewController.m
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 22.08.2023
  * Last Modified Date: 13.09.2023
@@ -22,6 +22,7 @@
 	self.data = [NSArray array];
 	self.msg_hash = 0;	
 	self.folder_id = 0;
+	self.currentIndex = 0;
 
 	// spinner
 	self.spinner = [[UIActivityIndicatorView alloc]initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
@@ -42,7 +43,7 @@
 
 	// edit button
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
-		
+	
 	// load data
 	[self reloadData];
 }
@@ -61,7 +62,16 @@
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [self.tableView setContentOffset:CGPointMake(0, 44)];
+
+		if (self.currentIndex){
+			NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.currentIndex inSection:0];
+			[self.tableView scrollToRowAtIndexPath:indexPath	 
+				atScrollPosition:UITableViewScrollPositionTop animated:NO];
+		}
+
+		[self.navigationController setToolbarHidden: YES];
 }
+
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
     [self.tableView setContentOffset:CGPointMake(0, 44) animated:YES];
     [self.searchBar resignFirstResponder];
@@ -165,10 +175,12 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	
 	TGDialog *dialog = [self.data objectAtIndex:indexPath.item];
 	self.selected = dialog;
+	self.currentIndex = indexPath.item;
 	//TrackListViewController *vc = [[TrackListViewController alloc]initWithParent:self.selected];
 	//[self.navigationController pushViewController:vc animated:true];
 	
 	ChatViewController *vc = [[ChatViewController alloc]init];
+	vc.hidesBottomBarWhenPushed = YES;
 	vc.dialog = dialog;
 	[self.navigationController pushViewController:vc animated:TRUE];
 		
