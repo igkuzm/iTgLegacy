@@ -196,15 +196,20 @@ static void on_log(void *d, const char *msg)
 	NSLog(@"%s", msg);
 }
 
+static void on_dialogs_sync_done(void *d)
+{
+	AppDelegate *self = d;
+	if (self.dialogsSyncDelegate)
+		[self.dialogsSyncDelegate onSyncDone];
+}
+
 -(void)afteLoginUser:(tl_user_t *)user {
 	self.authorizedUser = user;
 	//[self showMessage:@"authorized!"];
 	if (self.authorizationDelegate)
 		[self.authorizationDelegate authorizedAs:user];
 	self.authorizationDelegate = nil;
-
-	// get dialogs
-	tg_async_dialogs_to_database(self.tg, 100);	
+	tg_sync_dialogs_to_database(self.tg, self, on_dialogs_sync_done);
 }
 
 -(void)signIn:(NSString *)phone_number 

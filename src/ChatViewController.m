@@ -48,6 +48,7 @@
 	self.bubbleTableView.watchingInRealTime = YES;
 	self.bubbleTableView.snapInterval = 2800;
 	self.bubbleDataArray = [NSMutableArray array];
+	self.tmpArray = [NSMutableArray array];
 	self.bubbleTableView.showAvatars = YES; 
 		//= [[NSUserDefaults standardUserDefaults] boolForKey:@"showPFP"];
 	[self.bubbleTableView reloadData];
@@ -92,14 +93,15 @@
 }
 
 - (void)onSend:(id)sender{
-	buf_t peer = tg_inputPeer(
+	tg_peer_t peer = {
 			self.dialog.peerType, 
 			self.dialog.peerId, 
-			self.dialog.accessHash);
+			self.dialog.accessHash
+	};
 	
 	tg_send_message(
 			self.appDelegate.tg, 
-			&peer, self.textField.text.UTF8String);
+			peer, self.textField.text.UTF8String);
 
 	NSBubbleData *bd = 
 				[[NSBubbleData alloc]
@@ -143,38 +145,48 @@
 	[self.navigationController setToolbarHidden: NO];
 }
 
-- (void)appendDataFrom:(int)p onDone:(void (^)())onDone
+static void on_messages_sync_done(void *data){
+	ChatViewController *self = data;
+	
+	tg_peer_t peer = {
+			self.dialog.peerType,
+			self.dialog.peerId,
+			self.dialog.accessHash
+	};
+	
+	tg_get_messages_from_database(
+				self.appDelegate.tg, 
+				peer, 
+				self, 
+				messages_callback);
+	
+	dispatch_sync(dispatch_get_main_queue(), ^{
+			[self onSyncDone];	
+	});
+}
+
+- (void)appendDataFrom:(NSDate *)date onDone:(void (^)())onDone
 {
 	if (!self.dialog){
 		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
 		return;
 	}
+	
+	[self.tmpArray removeAllObjects];
 
-	[self.syncData addOperationWithBlock:^{
-		buf_t peer = 
-			tg_inputPeer(self.dialog.peerType,
-					self.dialog.peerId,
-					self.dialog.accessHash);
-		
-			tg_messages_getHistory(
-				self.appDelegate.tg, 
-				&peer, 
-				0, 
-				time(NULL), 
-				p, 
-				20, 
-				0, 
-				0, 
-				NULL, 
-				self, 
-				messages_callback);
+	self.onSyncDone = onDone;
 
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.refreshControl endRefreshing];
-			[self.bubbleTableView reloadData];
-			onDone();
-		});
-	}];
+	tg_peer_t peer = {
+		self.dialog.peerType,
+		self.dialog.peerId,
+		self.dialog.accessHash
+	};
+
+	tg_sync_messages_to_database(
+			self.appDelegate.tg, 
+			[date timeIntervalSince1970], 
+			peer, 
+			self, on_messages_sync_done);
 }
 
 - (void)reloadData {
@@ -187,15 +199,45 @@
 		[self.spinner startAnimating];
 
 	[self.bubbleDataArray removeAllObjects];
+	[self.tmpArray removeAllObjects];
 
-	[self appendDataFrom:0 onDone:^{
-		[self.spinner stopAnimating];
-		[self.bubbleTableView scrollToBottomWithAnimation:NO];
+	tg_peer_t peer = {
+			self.dialog.peerType,
+			self.dialog.peerId,
+			self.dialog.accessHash
+	};
+
+	[self.syncData addOperationWithBlock:^{
+		tg_get_messages_from_database(
+				self.appDelegate.tg, 
+				peer, 
+				self, 
+				messages_callback);
+
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.bubbleDataArray addObjectsFromArray:self.tmpArray];
+			[self.spinner stopAnimating];
+			[self.bubbleTableView reloadData];
+			[self.bubbleTableView scrollToBottomWithAnimation:NO];
+		});	
+		
+		[self appendDataFrom:[NSDate date] onDone:^{
+			[self.spinner stopAnimating];
+			[self.bubbleDataArray removeAllObjects];
+			[self.bubbleDataArray addObjectsFromArray:self.tmpArray];
+			[self.bubbleTableView reloadData];
+		}];
 	}];
 }
 
 -(void)refresh:(id)sender{
-	[self appendDataFrom:self.bubbleDataArray.count onDone:nil];
+	NSBubbleData *bd = [self.bubbleDataArray objectAtIndex:0];
+	[self appendDataFrom:bd.date onDone:^{
+		[self.refreshControl endRefreshing];
+		[self.bubbleDataArray removeAllObjects];
+		[self.bubbleDataArray addObjectsFromArray:self.tmpArray];
+		[self.bubbleTableView reloadData];	
+	}];
 }
 
 - (void)viewDidUnload
@@ -247,15 +289,17 @@ static int messages_callback(void *d, const tg_message_t *m){
 				bd = [[NSBubbleData alloc]
 						initWithImage:img 
 						date:[NSDate dateWithTimeIntervalSince1970:m->date_] 
-						type:me?BubbleTypeMine:BubbleTypeSomeoneElse];
+						type:me?BubbleTypeMine:BubbleTypeSomeoneElse
+						msg_id:m->id_];
 			} else {
 				bd = [[NSBubbleData alloc]
 						initWithText:[NSString stringWithUTF8String:m->message_] 
 						date:[NSDate dateWithTimeIntervalSince1970:m->date_] 
-						type:me?BubbleTypeMine:BubbleTypeSomeoneElse];
+						type:me?BubbleTypeMine:BubbleTypeSomeoneElse
+						msg_id:m->id_];
 			}
-	
-			[self.bubbleDataArray addObject:bd];
+			
+			[self.tmpArray addObject:bd];
 
 		});
 	}

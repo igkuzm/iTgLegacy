@@ -12,6 +12,10 @@
 #import "Reachability.h"
 #include "../libtg/libtg.h"
 
+@protocol DialogsSyncDelegate <NSObject>
+-(void)onSyncDone;
+@end
+
 @protocol AuthorizationDelegate <NSObject>
 -(void)authorizedAs:(tl_user_t *)user;
 @end
@@ -32,6 +36,7 @@
 @property (strong) id<AuthorizationDelegate> authorizationDelegate;
 @property (strong) Reachability *reach;
 @property (strong) id<ReachabilityDelegate> reachabilityDelegate;
+@property (strong) id<DialogsSyncDelegate> dialogsSyncDelegate;
 
 -(void)showMessage:(NSString *)msg;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;

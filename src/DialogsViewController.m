@@ -43,6 +43,9 @@
 
 	// edit button
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
+
+	// hide searchbar
+  [self.tableView setContentOffset:CGPointMake(0, 44)];
 	
 	// load data
 	[self reloadData];
@@ -61,15 +64,17 @@
 //hide searchbar by default
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    [self.tableView setContentOffset:CGPointMake(0, 44)];
-
-		if (self.currentIndex){
-			NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.currentIndex inSection:0];
-			[self.tableView scrollToRowAtIndexPath:indexPath	 
-				atScrollPosition:UITableViewScrollPositionTop animated:NO];
-		}
-
+		
 		[self.navigationController setToolbarHidden: YES];
+
+		// hide searchbar
+    //[self.tableView setContentOffset:CGPointMake(0, 44)];
+
+		//if (self.currentIndex){
+			//NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.currentIndex inSection:0];
+			//[self.tableView scrollToRowAtIndexPath:indexPath	 
+				//atScrollPosition:UITableViewScrollPositionTop animated:NO];
+		//}
 }
 
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
@@ -94,7 +99,7 @@
 	if (!self.appDelegate.tg)
 		return;
 	
-		// remove loaded data
+	// remove loaded data
 	[self.syncData cancelAllOperations];
 	[self.loadedData removeAllObjects];
 	[self.tableView reloadData];

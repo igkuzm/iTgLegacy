@@ -47,9 +47,9 @@
 
 		// tap gesture
 		// on tap
-		UITapGestureRecognizer *gestureRecognizer = 
-			[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onTap)];
-		[self addGestureRecognizer:gestureRecognizer];
+		//UITapGestureRecognizer *gestureRecognizer = 
+			//[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onTap)];
+		//[self addGestureRecognizer:gestureRecognizer];
 }
 
 - (id)init
