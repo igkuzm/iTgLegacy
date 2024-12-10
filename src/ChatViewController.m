@@ -1,4 +1,5 @@
 #import "ChatViewController.h"
+#include <stdlib.h>
 #include "UIKit/UIKit.h"
 #include "CoreGraphics/CoreGraphics.h"
 #include "Foundation/Foundation.h"
@@ -19,6 +20,17 @@
 - (void)viewWillAppear:(BOOL)animated {
     //[UINavigationBar.appearance setBackgroundImage:nil forBarMetrics:UIBarMetricsDefault];
     //[UINavigationBar.appearance setTintColor:[UIColor colorWithRed:200/255.0 green:200/255.0 blue:200/255.0 alpha:1.0]];
+		//
+	// add timer
+	self.timer = [NSTimer scheduledTimerWithTimeInterval:60 
+			target:self selector:@selector(timer:) 
+				userInfo:nil repeats:YES];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+	// stop timer
+	if (self.timer)
+		[self.timer fire];
 }
 
 - (void)viewDidLoad {
@@ -92,6 +104,12 @@
 	[self reloadData];
 }
 
+-(void)timer:(id)sender{
+	// do timer funct
+	[self.syncData cancelAllOperations];
+	[self appendDataFrom:0];
+}
+
 - (void)onSend:(id)sender{
 	tg_peer_t peer = {
 			self.dialog.peerType, 
@@ -161,32 +179,46 @@ static void on_messages_sync_done(void *data){
 				messages_callback);
 	
 	dispatch_sync(dispatch_get_main_queue(), ^{
-			[self onSyncDone];	
+				[self.refreshControl endRefreshing];
+				[self.spinner stopAnimating];
+				[self.bubbleDataArray removeAllObjects];
+				[self.bubbleDataArray addObjectsFromArray:self.tmpArray];
+				[self.bubbleTableView reloadData];
 	});
 }
 
-- (void)appendDataFrom:(NSDate *)date onDone:(void (^)())onDone
+- (void)appendDataFrom:(int)offset
 {
 	if (!self.dialog){
 		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
 		return;
 	}
+
+	if (!self.appDelegate.reach.isReachable)
+	{
+		[self.refreshControl endRefreshing];
+		[self.spinner stopAnimating];
+		return;
+	}
 	
 	[self.tmpArray removeAllObjects];
 
-	self.onSyncDone = onDone;
+	[self.syncData addOperationWithBlock:^{
+		tg_peer_t peer = {
+			self.dialog.peerType,
+			self.dialog.peerId,
+			self.dialog.accessHash
+		};
 
-	tg_peer_t peer = {
-		self.dialog.peerType,
-		self.dialog.peerId,
-		self.dialog.accessHash
-	};
-
-	tg_sync_messages_to_database(
-			self.appDelegate.tg, 
-			[date timeIntervalSince1970], 
-			peer, 
-			self, on_messages_sync_done);
+		int limit = 
+			peer.type == TG_PEER_TYPE_CHANNEL?1:5;
+		tg_sync_messages_to_database(
+				self.appDelegate.tg, 
+				peer,
+			  offset,	
+				limit,
+				self, on_messages_sync_done);
+	}];
 }
 
 - (void)reloadData {
@@ -208,36 +240,46 @@ static void on_messages_sync_done(void *data){
 	};
 
 	[self.syncData addOperationWithBlock:^{
-		tg_get_messages_from_database(
+		// get photo
+		//char *photo = tg_get_peer_photo_file(
+				//self.appDelegate.tg, 
+				//&peer, 
+				//false, 
+				//self.dialog.photoId);
+		//if (photo){
+			//NSData *data = [NSData dataFromBase64String:
+			//[NSString stringWithUTF8String:photo]];
+			//if (data)
+				//self.peerPhoto = [UIImage imageWithData:data];
+			//free(photo);
+		//}
+
+		if (tg_get_messages_from_database(
 				self.appDelegate.tg, 
 				peer, 
 				self, 
-				messages_callback);
+				messages_callback))
+		{
+			// reload data again;
+				tg_get_messages_from_database(
+					self.appDelegate.tg, 
+					peer, 
+					self, 
+					messages_callback);
+		}
 
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			[self.bubbleDataArray addObjectsFromArray:self.tmpArray];
-			[self.spinner stopAnimating];
+			//[self.spinner stopAnimating];
 			[self.bubbleTableView reloadData];
 			[self.bubbleTableView scrollToBottomWithAnimation:NO];
+			[self appendDataFrom:0];
 		});	
-		
-		[self appendDataFrom:[NSDate date] onDone:^{
-			[self.spinner stopAnimating];
-			[self.bubbleDataArray removeAllObjects];
-			[self.bubbleDataArray addObjectsFromArray:self.tmpArray];
-			[self.bubbleTableView reloadData];
-		}];
 	}];
 }
 
 -(void)refresh:(id)sender{
-	NSBubbleData *bd = [self.bubbleDataArray objectAtIndex:0];
-	[self appendDataFrom:bd.date onDone:^{
-		[self.refreshControl endRefreshing];
-		[self.bubbleDataArray removeAllObjects];
-		[self.bubbleDataArray addObjectsFromArray:self.tmpArray];
-		[self.bubbleTableView reloadData];	
-	}];
+	[self appendDataFrom:[self.bubbleDataArray count]];
 }
 
 - (void)viewDidUnload
@@ -260,22 +302,13 @@ static int messages_callback(void *d, const tg_message_t *m){
 		if (m->photo_id){
 			// download image
 			buf_t fr = buf_from_base64(m->photo_file_reference);
-			char *img_data = NULL;
-			InputFileLocation location = 
-					tl_inputPhotoFileLocation(
-							m->photo_id, 
-							m->photo_access_hash, 
-							&fr, 
-							"s");
-
-			tg_get_file(
-					self.appDelegate.tg, 
-					&location, 
-					&img_data, 
-					photo_callback, 
-					NULL, 
-					NULL);
-			
+			char *img_data = 
+				tg_get_photo_file(
+						self.appDelegate.tg, 
+						m->photo_id, 
+						m->photo_access_hash, 
+						m->photo_file_reference, 
+						"s");
 			if (img_data){
 				NSData *data = [NSData dataFromBase64String:
 						[NSString stringWithUTF8String:img_data]];
@@ -298,24 +331,20 @@ static int messages_callback(void *d, const tg_message_t *m){
 						type:me?BubbleTypeMine:BubbleTypeSomeoneElse
 						msg_id:m->id_];
 			}
+
+			//if (self.peerPhoto && 
+					//self.dialog.peerType == TG_PEER_TYPE_USER)
+				//bd.avatar = self.peerPhoto;
 			
 			[self.tmpArray addObject:bd];
 
 		});
+	} else {
+		return 1;
 	}
 
 	return 0;
 }
-
-static int photo_callback(void *d, const tg_file_t *p) {
-	if (!p->bytes_)
-		return 0;
-	
-	char **img_data = d;
-	*img_data = strdup(p->bytes_);
-
-	return 0;
-} 
 
 #pragma mark <UIBubbleTableViewDelegate>
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectRow:(int)row 

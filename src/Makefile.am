@@ -49,6 +49,7 @@ _plist:
 _images:
 	cp -f ../images/Icon*.png iTgLegacy.app/.
 	cp -f BubbleView/images/*.png iTgLegacy.app/.
+	cp -f LaunchScreen.nib iTgLegacy.app/.
 
 iTgLegacy.app: iTgLegacy _dir _plist _images
 	cp -f .libs/iTgLegacy iTgLegacy.app/. 

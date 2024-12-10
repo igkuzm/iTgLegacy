@@ -7,7 +7,7 @@
 @interface DialogsViewController : UITableViewController
 <UITableViewDelegate, UITableViewDataSource, 
  UISearchBarDelegate, UIActionSheetDelegate,
- UIScrollViewDelegate>
+ UIScrollViewDelegate, DialogsSyncDelegate>
 @property (strong) AppDelegate *appDelegate;
 @property (strong) TGDialog *selected;
 @property (strong) NSString  *token;

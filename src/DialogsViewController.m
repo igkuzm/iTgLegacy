@@ -7,9 +7,11 @@
  */
 #import "DialogsViewController.h"
 #include "TGDialog.h"
+#include "../libtg/tg/files.h"
 #include "ChatViewController.h"
 #include "UIKit/UIKit.h"
 #include "Foundation/Foundation.h"
+#include "Base64/Base64.h"
 //#import "ActionSheet.h"
 
 @implementation DialogsViewController
@@ -17,6 +19,7 @@
 - (void)viewDidLoad {
 	self.title = @"Чаты";
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
+	self.appDelegate.dialogsSyncDelegate = self;
 	self.syncData = [[NSOperationQueue alloc]init];
 	self.loadedData = [NSMutableArray array];
 	self.data = [NSArray array];
@@ -122,11 +125,38 @@
 			[self.refreshControl endRefreshing];
 			[self filterData];
 		});
+
+		//for (TGDialog *d in self.loadedData){
+			//[self get_photoForDialog:d];
+		//}
 	}];
 }
 
 -(void)refresh:(id)sender{
 	[self reloadData];
+}
+
+- (void)get_photoForDialog:(TGDialog *)dialog {
+	if (!dialog)
+		return;
+	tg_peer_t peer = {
+		.id =  dialog.peerId,
+		.type = dialog.peerType,
+		.access_hash = dialog.accessHash,
+	};
+	char *photo = tg_get_peer_photo_file(
+			self.appDelegate.tg, 
+			&peer, 
+			false, 
+			dialog.photoId);
+	//if (photo){
+		//NSData *data = [NSData dataFromBase64String:
+			//[NSString stringWithUTF8String:photo]];	
+		//if (data){
+			//dialog.photo = [UIImage imageWithData:data];
+		//}
+		//free(photo);
+	//}
 }
 
 static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
@@ -142,8 +172,9 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 		}
 	}
 	
-	if (!eql)
+	if (!eql){
 		[self.loadedData addObject:item];
+	}
 	
 	return 0;
 }
@@ -169,7 +200,10 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	//item.imageView = cell.imageView;
 	[cell.textLabel setText:item.title];
 	[cell.detailTextLabel setText:item.top_message];	
-	[cell.imageView setImage:item.thumb];
+	if (item.photo)
+		[cell.imageView setImage:item.photo];
+	else
+		[cell.imageView setImage:item.thumb];
 	//if (item.coverImage)
 		//[cell.imageView setImage:item.coverImage];
 	
@@ -219,6 +253,11 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 				//otherButtonTitles:@"Удалить", nil];
 			//[alert show];
 	//}
+}
+
+#pragma mark <DIALOGSSYNC DELEGATE>
+-(void)onSyncDone{
+	[self reloadData];
 }
 
 #pragma mark <SCROLLVIEW DELEGATE>

@@ -21,6 +21,8 @@
 			if (thumbData.length > 0)
 				self.thumb = [UIImage imageWithData:thumbData];
 		}
+		self.photoId = d->photo_id;
+		self.photo = NULL;
 
 		self.accessHash = d->access_hash;
 		self.peerId = d->peer_id;

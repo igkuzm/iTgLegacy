@@ -27,6 +27,7 @@
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
+@property (strong, nonatomic) NSTimer *timer;
 @property (strong, nonatomic) UIWindow *window;
 @property (strong,nonatomic) NSURL *url;
 @property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
@@ -37,6 +38,7 @@
 @property (strong) Reachability *reach;
 @property (strong) id<ReachabilityDelegate> reachabilityDelegate;
 @property (strong) id<DialogsSyncDelegate> dialogsSyncDelegate;
+@property (strong) NSOperationQueue *syncDialogs;
 
 -(void)showMessage:(NSString *)msg;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;

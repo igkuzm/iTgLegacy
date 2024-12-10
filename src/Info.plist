@@ -63,7 +63,7 @@
 		</dict>
 	</dict>
 	<key>CFBundleIdentifier</key>
-	<string>TELEGRAPH_BUNDLE_ID</string>
+	<string>ph.telegra.Telegraph</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -113,6 +113,9 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+    <string>audio</string>
+    <string>location</string>
+    <string>voip</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<false/>

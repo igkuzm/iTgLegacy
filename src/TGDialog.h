@@ -11,6 +11,8 @@
 @property uint64_t peerId;
 @property uint32_t peerType;
 @property uint64_t accessHash;
+@property uint64_t photoId;
+@property (strong) UIImage *photo;
 
 -(id)initWithDialog:(const tg_dialog_t *)dialog;
 

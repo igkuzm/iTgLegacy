@@ -14,6 +14,7 @@
 
 @property (strong) UIBubbleTableView *bubbleTableView;
 
+@property (strong) NSTimer *timer;
 @property (strong) UITextField *textField;
 @property (strong, nonatomic) TGDialog *dialog;
 @property (strong, nonatomic) NSString *currentImage;
@@ -24,9 +25,9 @@
 @property (strong) UIActivityIndicatorView *spinner;
 @property (strong) NSOperationQueue *syncData;
 
-@property () int position;
-@property (strong) void (^onSyncDone)();
+@property (strong) UIImage *peerPhoto;
 
+@property () int position;
 -(ChatViewController *)initWithDialog:(TGDialog *)dialog;
 @end
 

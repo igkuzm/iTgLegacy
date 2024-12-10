@@ -18,18 +18,37 @@
 
 @implementation AppDelegate
 
+//- (void)resisterNotifications {
+	//// Request permission for push notifications
+	//NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+	//[center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge)
+												//completionHandler:^(BOOL granted, NSError * _Nullable error) {
+			//if (granted) {
+					//NSLog(@"Permission granted for push notifications");
+			//} else {
+					//NSLog(@"Permission denied for push notifications");
+			//}
+	//}];
+//}
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
-	// Override point for customization after application launch.
-	//[[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-	//self.player = [[PlayerController alloc]init];
-	
 	// logging
 	//NSString *doc = 
 		//[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) 
 		//objectAtIndex:0];
 	//NSString *log = [NSString stringWithFormat:@"%@.log", [NSDate date]];
 	//freopen([log UTF8String], "a+", stderr);
+	
+	self.syncDialogs = [[NSOperationQueue alloc]init];
+
+  //[[NSNotificationCenter defaultCenter] addObserver:@"" selector:@selector(callMyWebService) name:nil object:nil];
+
+	// Override point for customization after application launch.
+	[[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+	[[UIApplication sharedApplication] registerForRemoteNotificationTypes:
+		(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeSound|UIRemoteNotificationTypeAlert)];
+	//self.player = [[PlayerController alloc]init];
 	
 	// start reachability
 	self.reach = [Reachability reachabilityWithHostname:@"www.google.ru"];
@@ -45,6 +64,8 @@
 						[self.reachabilityDelegate isOnLine];
 					NSLog(@"REACHABLE!");
 			});
+
+			[self updateDialogs];
 	};
 
 	self.reach.unreachableBlock = ^(Reachability*reach)
@@ -76,8 +97,31 @@
 
 	[self authorize];
 
+	// add timer
+	self.timer = [NSTimer scheduledTimerWithTimeInterval:120 
+			target:self selector:@selector(timer:) 
+				userInfo:nil repeats:YES];
+
 	return true;
 }
+
+-(void)updateDialogs {
+	[self.syncDialogs cancelAllOperations];
+	if (self.reach.isReachable && self.authorizedUser){
+		[self.syncDialogs addOperationWithBlock:^{
+			tg_sync_dialogs_to_database(
+					self.tg, 
+					self, 
+					on_dialogs_sync_done);
+		}];
+	}
+}
+
+-(void)timer:(id)sender{
+	// do timer funct
+	[self updateDialogs];
+}
+
 
 - (void)remoteControlReceivedWithEvent:(UIEvent *)event {
 	//if (event.type == UIEventTypeRemoteControl) {
@@ -155,6 +199,28 @@
 		self.askInput_onDone(textField.text);
 }
 
+#pragma mark <NOTIFICATIONS FUNCTIONS>
+-(void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo{
+	[self showMessage:@"NOTIFICATION"];
+			//NSString *aStrEventType = userInfo[@"eventType"];
+			//if ([aStrEventType isEqualToString:@"callWebService"]) {
+								//[[NSNotificationCenter defaultCenter] postNotificationName:@"callWebService" object:nil];
+										
+			//}else{
+								//// Implement other notification here
+								////     
+			//}
+}
+
+-(void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+		 NSLog(@"TOKEN: %@", deviceToken);
+}
+
+-(void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+	NSLog(@"FAILD TO GET TOKEN: %@", error);
+} 
+
+
 #pragma <LibTg FUNCTIONS>
 
 -(void)loadTgLib{
@@ -209,7 +275,7 @@ static void on_dialogs_sync_done(void *d)
 	if (self.authorizationDelegate)
 		[self.authorizationDelegate authorizedAs:user];
 	self.authorizationDelegate = nil;
-	tg_sync_dialogs_to_database(self.tg, self, on_dialogs_sync_done);
+	[self updateDialogs];
 }
 
 -(void)signIn:(NSString *)phone_number 
@@ -262,7 +328,7 @@ static void on_dialogs_sync_done(void *d)
 	
 	if (!self.tg)
 		return;
-		
+
 	dispatch_queue_t backgroundQueue = 
 		dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
