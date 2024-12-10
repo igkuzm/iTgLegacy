@@ -34,11 +34,14 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
 	// logging
-	//NSString *doc = 
-		//[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) 
-		//objectAtIndex:0];
-	//NSString *log = [NSString stringWithFormat:@"%@.log", [NSDate date]];
-	//freopen([log UTF8String], "a+", stderr);
+	NSString *log = [[NSSearchPathForDirectoriesInDomains(
+			NSDocumentDirectory, NSUserDomainMask, YES) 
+						objectAtIndex:0] 
+			stringByAppendingPathComponent:@"iTgLegacy.log"];
+	[[NSFileManager defaultManager] removeFileAtPath:log handler:nil];
+	freopen([log UTF8String], "a+", stderr);
+
+	NSLog(@"start...");
 	
 	self.syncDialogs = [[NSOperationQueue alloc]init];
 
@@ -242,7 +245,7 @@
 		if (!self.tg){
 			[self showMessage:@"can't init LibTg"];
 		}
-		//tg_set_on_error(self.tg, self, on_err);
+		tg_set_on_error(self.tg, self, on_err);
 		//tg_set_on_log(self.tg, self, on_log);
 	}
 }
@@ -250,10 +253,11 @@
 static void on_err(void *d, tl_t *tl, const char *err)
 {
 	AppDelegate *self = d;
-	dispatch_sync(dispatch_get_main_queue(), ^{
-		[self showMessage: 
-				[NSString stringWithFormat:@"%s", err]];	
-	});	
+	NSLog(@"%s", err);
+	//dispatch_sync(dispatch_get_main_queue(), ^{
+		//[self showMessage: 
+				//[NSString stringWithFormat:@"%s", err]];	
+	//});	
 }
 
 static void on_log(void *d, const char *msg)
