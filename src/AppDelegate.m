@@ -67,8 +67,6 @@
 						[self.reachabilityDelegate isOnLine];
 					NSLog(@"REACHABLE!");
 			});
-
-			[self updateDialogs];
 	};
 
 	self.reach.unreachableBlock = ^(Reachability*reach)
@@ -100,31 +98,8 @@
 
 	[self authorize];
 
-	// add timer
-	self.timer = [NSTimer scheduledTimerWithTimeInterval:120 
-			target:self selector:@selector(timer:) 
-				userInfo:nil repeats:YES];
-
 	return true;
 }
-
--(void)updateDialogs {
-	[self.syncDialogs cancelAllOperations];
-	if (self.reach.isReachable && self.authorizedUser){
-		[self.syncDialogs addOperationWithBlock:^{
-			tg_sync_dialogs_to_database(
-					self.tg, 
-					self, 
-					on_dialogs_sync_done);
-		}];
-	}
-}
-
--(void)timer:(id)sender{
-	// do timer funct
-	[self updateDialogs];
-}
-
 
 - (void)remoteControlReceivedWithEvent:(UIEvent *)event {
 	//if (event.type == UIEventTypeRemoteControl) {
@@ -244,6 +219,8 @@
 				"pub.pkcs");
 		if (!self.tg){
 			[self showMessage:@"can't init LibTg"];
+		} else {
+				NSLog(@"LibTg inited");
 		}
 		tg_set_on_error(self.tg, self, on_err);
 		//tg_set_on_log(self.tg, self, on_log);
@@ -279,7 +256,6 @@ static void on_dialogs_sync_done(void *d)
 	if (self.authorizationDelegate)
 		[self.authorizationDelegate authorizedAs:user];
 	self.authorizationDelegate = nil;
-	[self updateDialogs];
 }
 
 -(void)signIn:(NSString *)phone_number 

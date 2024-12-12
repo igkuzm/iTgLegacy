@@ -13,6 +13,8 @@
 @property uint64_t accessHash;
 @property uint64_t photoId;
 @property (strong) UIImage *photo;
+@property int unread_count;
+@property (strong) UIImageView *imageView;
 
 -(id)initWithDialog:(const tg_dialog_t *)dialog;
 

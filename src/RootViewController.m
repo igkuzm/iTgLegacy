@@ -15,13 +15,25 @@
 @implementation RootViewController
 - (void)viewDidLoad {
 	
+	// contacts view
+	//DialogsViewController *cvc = 
+		//[[DialogsViewController alloc]init];
+	//UINavigationController *svnc =
+		//[[UINavigationController alloc]initWithRootViewController:cvc];
+	UITabBarItem *cvtbi = [[UITabBarItem alloc]
+			initWithTabBarSystemItem:UITabBarSystemItemContacts tag:0];
+	//[chatsnc setTabBarItem:chatstbi];
+
+
 	// chats view
 	DialogsViewController *chatsvc = 
 		[[DialogsViewController alloc]init];
 	UINavigationController *chatsnc =
 		[[UINavigationController alloc]initWithRootViewController:chatsvc];
 	UITabBarItem *chatstbi = [[UITabBarItem alloc]
-			initWithTabBarSystemItem:UITabBarSystemItemContacts tag:0];
+			initWithTitle:@"Messages" 
+			image:[UIImage imageNamed:@"tab-ims"] 
+			tag:1];
 	[chatsnc setTabBarItem:chatstbi];
 
 	// config view
@@ -30,7 +42,9 @@
 	UINavigationController *confignc =
 		[[UINavigationController alloc]initWithRootViewController:configvc];
 	UITabBarItem *configtbi = [[UITabBarItem alloc]
-			initWithTabBarSystemItem:UITabBarSystemItemMore tag:1];
+			initWithTitle:@"Settings" 
+			image:[UIImage imageNamed:@"tab-settings"] 
+			tag:2];
 	[confignc setTabBarItem:configtbi];
 
 
@@ -75,7 +89,7 @@
 
 
 	//[self setViewControllers:@[feednc, searchnc, pnc, favnc, plnc] animated:TRUE];
-	[self setViewControllers:@[chatsnc, confignc] animated:TRUE];
+	[self setViewControllers:@[chatsnc, chatsnc, confignc] animated:TRUE];
 }
 
 @end

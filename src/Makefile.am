@@ -4,12 +4,14 @@ bin_PROGRAMS = iTgLegacy
 iTgLegacy_SOURCES = \
 		AppDelegate.m \
 		RootViewController.m \
+		DialogViewCell.m \
 		DialogsViewController.m \
-		ChatViewController.m \
+		ChatViewControllerOld.m \
 		ConfigViewController.m \
 		TextEditViewController.m \
 		Reachability.m \
 		TGDialog.m \
+		TGMessage.m \
 		BubbleView/NSBubbleData.m \
 		BubbleView/UIBubbleHeaderTableViewCell.m \
 		BubbleView/UIBubbleTableView.m \
@@ -47,7 +49,7 @@ _plist:
 	sed -e 's/TELEGRAPH_BUNDLE_ID/kuzm.ig.iTgLegacy/g' - > iTgLegacy.app/Info.plist
 
 _images:
-	cp -f ../images/Icon*.png iTgLegacy.app/.
+	cp -f ../images/*.png iTgLegacy.app/.
 	cp -f BubbleView/images/*.png iTgLegacy.app/.
 	cp -f LaunchScreen.nib iTgLegacy.app/.
 

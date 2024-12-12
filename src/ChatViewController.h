@@ -1,34 +1,23 @@
-#include "BubbleView/UIBubbleTableView.h"
+#include "AppDelegate.h"
+#include "Foundation/Foundation.h"
 #include "TGDialog.h"
 #include "UIKit/UIKit.h"
 #import <UIKit/UIKit.h>
-#import "AppDelegate.h"
 
-@interface ChatViewController : UIViewController
-<UIBubbleTableViewDataSource, UIBubbleTableViewDelegate,
-	UIImagePickerControllerDelegate, UITextFieldDelegate>
+
+@interface ChatViewController : UITableViewController
 {
 }
-
 @property (strong) AppDelegate *appDelegate;
-
-@property (strong) UIBubbleTableView *bubbleTableView;
-
 @property (strong) NSTimer *timer;
 @property (strong) UITextField *textField;
-@property (strong, nonatomic) TGDialog *dialog;
-@property (strong, nonatomic) NSString *currentImage;
-@property (nonatomic, strong) NSMutableArray *bubbleDataArray;
-@property (nonatomic, strong) NSMutableArray *tmpArray;
-@property (strong) UIImagePickerController *imagePicker;
+@property (strong) TGDialog *dialog;
+@property (strong) NSMutableArray *data;
+@property (strong) NSMutableArray *cache;
 @property (strong) UIRefreshControl *refreshControl;
 @property (strong) UIActivityIndicatorView *spinner;
 @property (strong) NSOperationQueue *syncData;
 
-@property (strong) UIImage *peerPhoto;
-
-@property () int position;
 -(ChatViewController *)initWithDialog:(TGDialog *)dialog;
 @end
-
 // vim:ft=objc
