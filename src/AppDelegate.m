@@ -42,9 +42,14 @@
 	freopen([log UTF8String], "a+", stderr);
 
 	NSLog(@"start...");
-	
-	self.syncDialogs = [[NSOperationQueue alloc]init];
 
+	// create cache
+	self.imagesCache = 
+				[[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) 
+						objectAtIndex:0] stringByAppendingPathComponent:@"images"];
+	[NSFileManager.defaultManager 
+		createDirectoryAtPath:self.imagesCache attributes:nil];
+	
   //[[NSNotificationCenter defaultCenter] addObserver:@"" selector:@selector(callMyWebService) name:nil object:nil];
 
 	// Override point for customization after application launch.
@@ -86,9 +91,6 @@
 	[[NSFileManager defaultManager]changeCurrentDirectoryPath:
 		[[NSBundle mainBundle] bundlePath]];
 
-	// load tglib
-	[self loadTgLib];
-
 	// start window
 	self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
 	RootViewController *vc = 
@@ -96,9 +98,14 @@
 	[self.window setRootViewController:vc];
 	[self.window makeKeyAndVisible];	
 
-	[self authorize];
-
 	return true;
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+	// load tglib
+	[self loadTgLib];
+
+	[self authorize];
 }
 
 - (void)remoteControlReceivedWithEvent:(UIEvent *)event {
@@ -202,6 +209,9 @@
 #pragma <LibTg FUNCTIONS>
 
 -(void)loadTgLib{
+	if (self.tg)
+		return;
+
 	// connect to libtg
 	NSString *databasePath = [[NSSearchPathForDirectoriesInDomains(
 			NSDocumentDirectory, NSUserDomainMask, YES) 
@@ -227,7 +237,7 @@
 	}
 }
 
-static void on_err(void *d, tl_t *tl, const char *err)
+static void on_err(void *d, const char *err)
 {
 	AppDelegate *self = d;
 	NSLog(@"%s", err);
@@ -241,13 +251,6 @@ static void on_log(void *d, const char *msg)
 {
 	AppDelegate *self = d;
 	NSLog(@"%s", msg);
-}
-
-static void on_dialogs_sync_done(void *d)
-{
-	AppDelegate *self = d;
-	if (self.dialogsSyncDelegate)
-		[self.dialogsSyncDelegate onSyncDone];
 }
 
 -(void)afteLoginUser:(tl_user_t *)user {
@@ -310,14 +313,21 @@ static void on_dialogs_sync_done(void *d)
 		return;
 
 	dispatch_queue_t backgroundQueue = 
-		dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+		dispatch_get_global_queue(
+				DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
 	// do in background
 	dispatch_async(backgroundQueue, ^{
 		// check authorized 
-		tl_user_t *user = 
-			tg_is_authorized(self.tg);
-
+		tl_user_t *user = tg_is_authorized(self.tg);
+		
+		if (self.tg->key.size > 0){
+			while (!user){
+				sleep(1);	
+				user = tg_is_authorized(self.tg);
+			}
+		}
+		
 		// authorize if needed
 		dispatch_async(dispatch_get_main_queue(), ^{
 			if (user){

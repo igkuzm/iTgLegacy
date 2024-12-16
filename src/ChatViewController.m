@@ -192,7 +192,7 @@
 #pragma mark <LibTg functions>
 static int messages_callback(void *d, const tg_message_t *m){
 	ChatViewController *self = d;
-	if (m->message_ && m->peer_id_ == self.dialog.peerId){
+	if (m->peer_id_ == self.dialog.peerId){
 		// init message
 		TGMessage *msg = [[TGMessage alloc]initWithMessage:m];
 
@@ -244,6 +244,26 @@ static void on_done(void *d){
 			[self.data addObjectsFromArray:self.cache];
 			[self.tableView reloadData];
 			[self.spinner stopAnimating];
+		});
+		// get photo
+		tg_peer_t peer = {
+			self.dialog.peerType,
+			self.dialog.peerId,
+			self.dialog.accessHash
+		};
+		char *photo = 
+			tg_get_peer_photo_file(
+					self.appDelegate.tg, 
+					&peer, 
+					false, 
+					self.dialog.photoId);
+		
+		dispatch_sync(dispatch_get_main_queue(), ^{
+				if (photo){
+					[self.appDelegate showMessage:@"Photo OK!"];
+				} else {
+					[self.appDelegate showMessage:@"Photo ERR"];
+				}
 		});
 	}];
 }

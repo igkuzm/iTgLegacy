@@ -8,7 +8,7 @@
 @property (strong) UILabel *title;
 @property (strong) UILabel *message;
 @property (strong) UILabel *time;
-@property (strong) UIView *unreadView;
+@property (strong) UIImageView *unreadView;
 @property (strong) UILabel *unread;
 
 -(void)setDialog:(TGDialog *)dialog;

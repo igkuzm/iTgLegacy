@@ -7,7 +7,7 @@
 @interface DialogsViewController : UITableViewController
 <UITableViewDelegate, UITableViewDataSource, 
  UISearchBarDelegate, UIActionSheetDelegate,
- UIScrollViewDelegate, DialogsSyncDelegate>
+ UIScrollViewDelegate, AuthorizationDelegate>
 @property (strong) AppDelegate *appDelegate;
 @property (strong) TGDialog *selected;
 @property (strong) NSString  *token;
@@ -16,7 +16,6 @@
 @property (strong) NSMutableArray *cache;
 @property (strong) UISearchBar *searchBar;
 @property (strong) NSOperationQueue *syncData;
-@property (strong) NSOperationQueue *syncPhoto;
 @property (strong) UIActivityIndicatorView *spinner;
 @property (strong) UIRefreshControl *refreshControl;
 @property long msg_hash;

@@ -184,26 +184,25 @@
 
 #pragma mark - UITableViewDelegate implementation
 
-//- (void)tableView:(UITableView *)tableView
-//didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
-	//return;
-    
-    //// Now typing
-	//if (indexPath.section >= [self.bubbleSection count])
-    //{
-        //return;
-    //}
-    
-    //// Header
-    //if (indexPath.row == 0)
-    //{
-        //return ;
-    //}
-    
-    //NSBubbleData *data = [[self.bubbleSection objectAtIndex:indexPath.section] objectAtIndex:indexPath.row - 1];
-		//if (self.bubbleDelegate)
-			//[self.bubbleDelegate bubbleTableView:self didSelectRow:data.index];
-//}
+- (void)tableView:(UITableView *)tableView
+didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+		
+		// Now typing
+	if (indexPath.section >= [self.bubbleSection count])
+		{
+				return;
+		}
+		
+	// Header
+	if (indexPath.row == 0)
+	{
+			return ;
+	}
+		
+	NSBubbleData *data = [[self.bubbleSection objectAtIndex:indexPath.section] objectAtIndex:indexPath.row - 1];
+		if (self.bubbleDelegate)
+			[self.bubbleDelegate bubbleTableView:self didSelectData:data];
+}
 
 #pragma mark - UITableViewDataSource implementation
 
@@ -279,6 +278,13 @@
     
     cell.data = data;
     cell.showAvatar = self.showAvatars;
+
+		//if ([cell.data.view isKindOfClass:[UITextView class]]){
+			//UITextView *tw = (UITextView *)cell.data.view;
+			//CGRect frame = tw.frame; 
+			//frame.size.height = tw.contentSize.height + 30;
+			//tw.frame = frame;
+		//}
     
     return cell;
 }

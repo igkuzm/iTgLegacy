@@ -9,6 +9,8 @@ iTgLegacy_SOURCES = \
 		ChatViewControllerOld.m \
 		ConfigViewController.m \
 		TextEditViewController.m \
+		QuickLookController.m \
+		FilePickerController.m \
 		Reachability.m \
 		TGDialog.m \
 		TGMessage.m \
@@ -50,6 +52,7 @@ _plist:
 
 _images:
 	cp -f ../images/*.png iTgLegacy.app/.
+	cp -f ../sounds/*.m4a iTgLegacy.app/.
 	cp -f BubbleView/images/*.png iTgLegacy.app/.
 	cp -f LaunchScreen.nib iTgLegacy.app/.
 

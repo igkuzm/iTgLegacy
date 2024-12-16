@@ -6,13 +6,14 @@
 //  Copyright (c) 2021 Trevir. All rights reserved.
 //
 
+#include "NSBubbleData.h"
 #import <Foundation/Foundation.h>
 #import "UIBubbleTableView.h"
 
 @protocol UIBubbleTableViewDelegate <NSObject>
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
-didSelectRow:(int)row;
+didSelectData:(NSBubbleData *)data;
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 didScroll:(UIScrollView *)scrollView;

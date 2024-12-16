@@ -10,6 +10,7 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import "../TGMessage.h"
 
 typedef enum _NSBubbleType
 {
@@ -21,18 +22,20 @@ typedef enum _NSBubbleType
 
 @property (readonly, nonatomic, strong) NSDate *date;
 @property (readonly, nonatomic) NSBubbleType type;
-@property (readonly, nonatomic, strong) UIView *view;
+@property (nonatomic, strong) UIView *view;
+@property (strong) UIActivityIndicatorView *spinner;
 @property (readonly, nonatomic) UIEdgeInsets insets;
 @property (nonatomic, strong) UIImage *avatar;
 @property NSInteger index;
-@property uint32_t msg_id;
+@property Boolean isImage;
+@property (strong) TGMessage *message;
 
 
-- (id)initWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type msg_id:(uint32_t)msg_id;
-+ (id)dataWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type msg_id:(uint32_t)msg_id;
-- (id)initWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type msg_id:(uint32_t)msg_id;
-+ (id)dataWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type msg_id:(uint32_t)msg_id;
-- (id)initWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type msg_id:(uint32_t)msg_id insets:(UIEdgeInsets)insets;
-+ (id)dataWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type msg_id:(uint32_t)msg_id insets:(UIEdgeInsets)insets;
+- (id)initWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type;
++ (id)dataWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type;
+- (id)initWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type;
++ (id)dataWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type;
+- (id)initWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type insets:(UIEdgeInsets)insets;
++ (id)dataWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type insets:(UIEdgeInsets)insets;
 
 @end

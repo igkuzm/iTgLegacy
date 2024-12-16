@@ -6,6 +6,7 @@
 #include "UIKit/UIKit.h"
 #import "../libtg/tg/peer.h"
 #import "../libtg/tg/files.h"
+#include "UIImage+Utils/UIImage+Utils.h"
 
 @implementation DialogViewCell
 - (id)init
@@ -17,10 +18,10 @@
 		[self.contentView addSubview:self.message];
     self.time = [[UILabel alloc] init];
 		[self.contentView addSubview:self.time];
-		self.unreadView = [[UIView alloc] init];
+		self.unreadView = [[UIImageView alloc] init];
 		[self.contentView addSubview:self.unreadView];
 		self.unread = [[UILabel alloc] init];
-		[self.unreadView addSubview:self.unread];
+		//[self.unreadView addSubview:self.unread];
 	}
 	return self;
 }
@@ -64,18 +65,17 @@
 				frame.size.width - 60, 
 				16, 
 				30, 
-				14)];
+				18)];
 	self.unreadView.layer.cornerRadius = 9.0;
 	self.unreadView.backgroundColor = [UIColor grayColor];
-	[self.unread setFrame:
-			CGRectMake(
-				0, 
-				0, 
-				25, 
-				14)];
+
+	self.unread.frame = 
+		CGRectInset(self.unreadView.bounds, 3, 3);
 	self.unread.font = [UIFont systemFontOfSize:9];
 	self.unread.textColor = [UIColor whiteColor];
+	self.unread.backgroundColor = [UIColor clearColor];
 	self.unread.textAlignment = NSTextAlignmentCenter;
+	[self.unreadView addSubview:self.unread];
 }
 
 - (NSDateComponents *)dateCompFromDate:(NSDate *)date{
@@ -103,11 +103,8 @@
 	self.message.text = dialog.top_message;
 	
 	if (dialog.photo)
-		self.imageView.image = dialog.photo;
-	else if (dialog.thumb)	
-		self.imageView.image = [self 
-			imageWithImage:dialog.thumb 
-			convertToSize:CGSizeMake(50, 50)];
+		self.imageView.image = [UIImage imageWithImage:dialog.photo 
+			scaledToSize:CGSizeMake(50, 50)];
 	else
 		self.imageView.image = [UIImage imageNamed:@"missingAvatar.png"];
 
@@ -127,11 +124,18 @@
 	}
 
 	if (dialog.unread_count > 0){
-		self.unread.text = 
-			[NSString stringWithFormat:@"%d", dialog.unread_count];
-		self.unread.hidden = NO;
+		NSString *s = @"";
+		if (dialog.unread_count / 1000 > 0){
+			s = [NSString stringWithFormat:@"%dk", 
+				dialog.unread_count/1000];
+		} else {
+			s = [NSString stringWithFormat:@"%d", 
+				dialog.unread_count];
+		}
+		self.unread.text = s;
+		self.unreadView.hidden = NO;
 	} else {
-		self.unread.hidden = YES;
+		self.unreadView.hidden = YES;
 	}
 }
 @end

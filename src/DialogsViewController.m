@@ -21,9 +21,8 @@
 - (void)viewDidLoad {
 	self.title = @"Чаты";
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
-	self.appDelegate.dialogsSyncDelegate = self;
+	self.appDelegate.authorizationDelegate = self;
 	self.syncData = [[NSOperationQueue alloc]init];
-	self.syncPhoto = [[NSOperationQueue alloc]init];
 	self.loadedData = [NSMutableArray array];
 	self.cache = [NSMutableArray array];
 	self.data = [NSArray array];
@@ -78,6 +77,10 @@
 		[self.navigationController setToolbarHidden: YES];
 }
 
+- (void)viewWillDisappear:(BOOL)animated {
+	[self.syncData cancelAllOperations];
+}
+
 -(void)editing:(BOOL)editing{
 	[self setEditing:editing];
 }
@@ -88,6 +91,15 @@
 
 #pragma mark <Data functions>
 -(void)filterData{
+	[self.loadedData sortedArrayUsingComparator:
+		^NSComparisonResult(id obj1, id obj2)
+	{
+    TGDialog *d1 = (TGDialog *)obj1;
+    TGDialog *d2 = (TGDialog *)obj2;
+             
+    return [d1.date compare:d2.date];            
+	}];
+
 	if (self.searchBar.text && self.searchBar.text.length > 0)
 		self.data = [self.loadedData filteredArrayUsingPredicate:
 				[NSPredicate predicateWithFormat:@"self.title contains[c] %@", self.searchBar.text]];
@@ -121,10 +133,9 @@
 				self, 
 				get_dialogs_cb);
 		
-		[self.loadedData removeAllObjects];
-		[self.loadedData addObjectsFromArray:self.cache];
-		
 		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.loadedData removeAllObjects];
+			[self.loadedData addObjectsFromArray:self.cache];
 			[self filterData];
 			[self.refreshControl endRefreshing];
 			[self.spinner stopAnimating];
@@ -135,10 +146,9 @@
 }
 
 -(void)getDialogsFrom:(NSDate *)date{
-	if (!self.appDelegate.reach.isReachable)
-		return;
-
-	if (!self.appDelegate.authorizedUser)
+	if (!self.appDelegate.tg ||
+			!self.appDelegate.reach.isReachable ||
+			!self.appDelegate.authorizedUser)
 		return;
 
 	if (!self.refreshControl.refreshing)
@@ -148,12 +158,15 @@
 	
 	[self.syncData addOperationWithBlock:^{
 		sleep(1); //for FLOOD_WAIT
-		tg_sync_dialogs_to_database(
-			self.appDelegate.tg, 
-			10, 
-			[date timeIntervalSince1970], 
-			self, 
-			on_done);
+		tg_get_dialogs(
+				self.appDelegate.tg, 
+				20, 
+				[date timeIntervalSince1970], 
+				NULL, 
+				NULL, 
+				self, 
+				NULL,
+				on_done);
 	}];
 }
 
@@ -212,6 +225,10 @@ static void on_done(void *d){
 
 #pragma mark <UITableView Delegate>
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+
+	[self.searchBar resignFirstResponder];
+	[self.syncData cancelAllOperations];
+	[self.spinner stopAnimating];
 	
 	TGDialog *dialog = [self.data objectAtIndex:indexPath.item];
 	self.selected = dialog;
@@ -220,6 +237,7 @@ static void on_done(void *d){
 	ChatViewController *vc = [[ChatViewController alloc]init];
 	vc.hidesBottomBarWhenPushed = YES;
 	vc.dialog = dialog;
+	vc.spinner = self.spinner;
 	[self.navigationController pushViewController:vc animated:TRUE];
 		
 		// unselect row
@@ -243,11 +261,6 @@ static void on_done(void *d){
 	}
 }
 
-#pragma mark <DIALOGSSYNC DELEGATE>
--(void)onSyncDone{
-	[self reloadData];
-}
-
 #pragma mark <SCROLLVIEW DELEGATE>
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
@@ -256,10 +269,18 @@ static void on_done(void *d){
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-	// append data to array
-	TGDialog *dialog = [self.loadedData lastObject];
-	if (dialog)
-		[self getDialogsFrom:dialog.date];
+	float bottomEdge = 
+		scrollView.contentOffset.y + scrollView.frame.size.height;
+	if (bottomEdge >= scrollView.contentSize.height) {
+		// we are at the end
+		// append data to array
+		TGDialog *dialog = 
+			[self.loadedData lastObject];
+		if (dialog)
+			[self getDialogsFrom:dialog.date];
+	} else if (scrollView.contentOffset.y == 0){
+		[self getDialogsFrom:[NSDate date]];
+	} 	
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -289,6 +310,10 @@ static void on_done(void *d){
 		[self filterData];
 }
 
+#pragma mark <Authorization Delegate>
+-(void)authorizedAs:(tl_user_t *)user{
+	[self reloadData];
+}
 
 #pragma mark <AllertDelegate functions>
 //- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {

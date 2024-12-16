@@ -27,7 +27,8 @@
 		self.accessHash = d->access_hash;
 		self.peerId = d->peer_id;
 		self.peerType = d->peer_type;
-		self.date = [NSDate dateWithTimeIntervalSince1970:d->top_message_date]; 
+		self.date = 
+			[NSDate dateWithTimeIntervalSince1970:d->top_message_date]; 
 		self.unread_count = d->unread_count;
 		self.imageView = NULL;
 	}
