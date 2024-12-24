@@ -19,4 +19,13 @@ didSelectData:(NSBubbleData *)data;
 didScroll:(UIScrollView *)scrollView;
 
 - (void)bubbleTableViewOnTap:(UIBubbleTableView *)bubbleTableView;
+
+- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
+didEndDecelerationgToTop:(Boolean)top;
+
+- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
+didEndDecelerationgTo:(NSBubbleData *)data;
+
+- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
+didEndDecelerationgToBottom:(Boolean)bottom;
 @end

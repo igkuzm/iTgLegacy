@@ -15,6 +15,7 @@
 #include "Base64/Base64.h"
 #import "DialogViewCell.h"
 #include <unistd.h>
+#import "UIImage+Utils/UIImage+Utils.h"
 
 @implementation DialogsViewController
 
@@ -23,11 +24,10 @@
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	self.appDelegate.authorizationDelegate = self;
 	self.syncData = [[NSOperationQueue alloc]init];
+	self.syncData.maxConcurrentOperationCount = 1;
 	self.loadedData = [NSMutableArray array];
 	self.cache = [NSMutableArray array];
 	self.data = [NSArray array];
-	self.msg_hash = 0;	
-	self.folder_id = 0;
 	self.currentIndex = 0;
 
 	// spinner
@@ -70,6 +70,11 @@
 	
 	// load data
 	[self reloadData];
+
+	// timer
+	self.timer = [NSTimer scheduledTimerWithTimeInterval:60 
+			target:self selector:@selector(timer:) 
+				userInfo:nil repeats:YES];
 }
 
 - (void) viewWillAppear:(BOOL)animated {
@@ -78,6 +83,8 @@
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
+	if (self.timer)
+		[self.timer fire];
 	[self.syncData cancelAllOperations];
 }
 
@@ -89,16 +96,21 @@
 	[self reloadData];
 }
 
+-(void)timer:(id)sender{
+	// do timer funct
+	[self getDialogsFrom:[NSDate date]];
+}
+
 #pragma mark <Data functions>
 -(void)filterData{
-	[self.loadedData sortedArrayUsingComparator:
-		^NSComparisonResult(id obj1, id obj2)
-	{
-    TGDialog *d1 = (TGDialog *)obj1;
-    TGDialog *d2 = (TGDialog *)obj2;
-             
-    return [d1.date compare:d2.date];            
-	}];
+	//[self.loadedData sortedArrayUsingComparator:
+		//^NSComparisonResult(id obj1, id obj2)
+	//{
+		//TGDialog *d1 = (TGDialog *)obj1;
+		//TGDialog *d2 = (TGDialog *)obj2;
+						 
+		//return [d1.date compare:d2.date];            
+	//}];
 
 	if (self.searchBar.text && self.searchBar.text.length > 0)
 		self.data = [self.loadedData filteredArrayUsingPredicate:
@@ -124,25 +136,24 @@
 }
 
 -(void)getDialogsCached:(Boolean)update{
-	[self.syncData addOperationWithBlock:^{
+	
+	// do operation in thread
+	//[self.syncData addOperationWithBlock:^{
 		
-		[self.cache removeAllObjects];
+		//tg_get_dialogs_from_database(
+				//self.appDelegate.tg, 
+				//self, 
+				//get_dialogs_cached_cb);
 		
-		tg_get_dialogs_from_database(
-				self.appDelegate.tg, 
-				self, 
-				get_dialogs_cb);
-		
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.loadedData removeAllObjects];
-			[self.loadedData addObjectsFromArray:self.cache];
-			[self filterData];
-			[self.refreshControl endRefreshing];
-			[self.spinner stopAnimating];
+		//dispatch_sync(dispatch_get_main_queue(), ^{
+			//[self filterData];
+			//[self.refreshControl endRefreshing];
+			//[self.spinner stopAnimating];
+			////[self.appDelegate showMessage:@"getDialogsCached done!"];
 			if (update)
 				[self getDialogsFrom:[NSDate date]];
-		});
-	}];
+		//});
+	//}];
 }
 
 -(void)getDialogsFrom:(NSDate *)date{
@@ -153,11 +164,11 @@
 
 	if (!self.refreshControl.refreshing)
 		[self.spinner startAnimating];
-	
-	[self.cache removeAllObjects];
+
+	[self.syncData cancelAllOperations];
 	
 	[self.syncData addOperationWithBlock:^{
-		sleep(1); //for FLOOD_WAIT
+		//sleep(1); //for FLOOD_WAIT
 		tg_get_dialogs(
 				self.appDelegate.tg, 
 				20, 
@@ -165,36 +176,129 @@
 				NULL, 
 				NULL, 
 				self, 
-				NULL,
-				on_done);
+				get_dialogs_cb);
+
+		// on done
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.refreshControl endRefreshing];
+			[self.spinner stopAnimating];
+			[self filterData];
+		});
+
 	}];
 }
 
 #pragma mark <LibTG functions> 
 static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 {
+	if (!dialog)
+		return 0;
+
 	DialogsViewController *self = d;
-	TGDialog *item = [[TGDialog alloc]initWithDialog:dialog];
-	char *photo = peer_photo_file_from_database(
-			self.appDelegate.tg, 
-			item.peerId, item.photoId);
-	if (photo){
-		NSData *data = [NSData dataFromBase64String:
-			[NSString stringWithUTF8String:photo]];
-		if (data)
-			item.photo = [UIImage imageWithData:data];
+	//[self.appDelegate showMessage:@"ADD DIALOG!"];
+	TGDialog *current = NULL;
+	for (TGDialog *item in self.loadedData){
+		if (item.peerId == dialog->peer_id){
+			current = item;
+			break;
+		}
 	}
-	[self.cache addObject:item];
+	if (!current){
+		current = 
+			[[TGDialog alloc]initWithDialog:dialog tg:self.appDelegate.tg];
+		[self.loadedData addObject:current];
+	}
+	else {
+		current.accessHash = dialog->access_hash;
+		current.photoId = dialog->photo_id;
+		current.date = 
+			[NSDate dateWithTimeIntervalSince1970:dialog->top_message_date];
+		if (dialog->top_message_text)
+			current.top_message = 
+				[NSString stringWithUTF8String:dialog->top_message_text];
+		else 
+			current.top_message = @"";
+		
+		if (dialog->name)
+			current.title =
+				[NSString stringWithUTF8String:dialog->name];
+	}
+
+	//char *photo = peer_photo_file_from_database(
+			//self.appDelegate.tg, 
+			//current.peerId, current.photoId);
+	//if (photo){
+		//NSData *data = [NSData dataFromBase64String:
+			//[NSString stringWithUTF8String:photo]];
+		//if (data)
+			//current.photo = [UIImage imageWithData:data];
+	//}
+
+
+	//dispatch_sync(dispatch_get_main_queue(), ^{
+		// update tableview
+		//[self filterData];
+	//});
+	
+	//tg_peer_t peer = {
+			//dialog->peer_type,
+			//dialog->peer_id,
+			//dialog->access_hash
+	//};
+
+	//NSDictionary *data = @{@"self":self, @"dialog":current};
+
+	//tg_get_peer_photo_file(
+					//self.appDelegate.tg, 
+					//&peer, 
+					//false, 
+					//dialog->photo_id, 
+					//data, 
+					//peer_photo_callback);
+
 	return 0;
 }
 
-static void on_done(void *d){
-	DialogsViewController *self = d;
-	dispatch_sync(dispatch_get_main_queue(), ^{
-		[self.refreshControl endRefreshing];
-		[self.spinner stopAnimating];
-		[self getDialogsCached:NO];
-	});
+//static int peer_photo_callback(void *d, const char *photo)
+//{
+	//NSDictionary *data = d;
+	//ChatViewController *self = [data valueForKey:@"self"];
+	//TGDialog *dialog = [data valueForKey:@"dialog"];
+	//if (photo){
+		////dispatch_sync(dispatch_get_main_queue(), ^{
+			////[self.appDelegate showMessage:@"Photo OK!"];
+		////});
+		//NSData *img = [NSData dataFromBase64String:
+			//[NSString stringWithUTF8String:photo]];
+		//if (img){
+			//dispatch_sync(dispatch_get_main_queue(), ^{
+				//dialog.photo = [UIImage 
+					//imageWithImage:[UIImage imageWithData:img] 
+					//scaledToSize:CGSizeMake(40, 40)]; 
+			//});
+		//}
+	//}
+
+	//return 0;
+//}
+
+
+static int get_dialogs_cached_cb(void *d, const tg_dialog_t *dialog)
+{
+	return 0;
+	//DialogsViewController *self = d;
+	//TGDialog *item = [[TGDialog alloc]initWithDialog:dialog];
+	//char *photo = peer_photo_file_from_database(
+			//self.appDelegate.tg, 
+			//item.peerId, item.photoId);
+	//if (photo){
+		//NSData *data = [NSData dataFromBase64String:
+			//[NSString stringWithUTF8String:photo]];
+		//if (data)
+			//item.photo = [UIImage imageWithData:data];
+	//}
+	//[self.loadedData addObject:item];
+	//return 0;
 }
 
 #pragma mark <UITableView DataSource>
@@ -276,10 +380,24 @@ static void on_done(void *d){
 		// append data to array
 		TGDialog *dialog = 
 			[self.loadedData lastObject];
-		if (dialog)
+		if (dialog && dialog.date)
 			[self getDialogsFrom:dialog.date];
+		else {
+			if (self.loadedData.count > 1){
+				dialog = [self.loadedData objectAtIndex:self.loadedData.count - 2];
+				if (dialog)
+					[self getDialogsFrom:dialog.date];
+			}
+		}
 	} else if (scrollView.contentOffset.y == 0){
 		[self getDialogsFrom:[NSDate date]];
+	} else {
+		NSIndexPath *indexPath = 
+			[[self.tableView indexPathsForVisibleRows]objectAtIndex:0];
+		TGDialog *dialog = 
+			[self.data objectAtIndex:indexPath.item];
+		if (dialog)
+			[self getDialogsFrom:dialog.date];
 	} 	
 }
 

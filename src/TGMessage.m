@@ -20,6 +20,8 @@
 		if (m->photo_file_reference)
 			self.photoFileReference = 
 				[NSString stringWithUTF8String:m->photo_file_reference];
+		else
+			self.photoFileReference = [NSString string];
 		self.photoDate = 
 			[NSDate dateWithTimeIntervalSince1970:m->photo_date];
 		if (m->message_){

@@ -9,6 +9,7 @@
  UISearchBarDelegate, UIActionSheetDelegate,
  UIScrollViewDelegate, AuthorizationDelegate>
 @property (strong) AppDelegate *appDelegate;
+@property (strong) NSTimer *timer;
 @property (strong) TGDialog *selected;
 @property (strong) NSString  *token;
 @property (strong) NSArray *data;
@@ -18,8 +19,6 @@
 @property (strong) NSOperationQueue *syncData;
 @property (strong) UIActivityIndicatorView *spinner;
 @property (strong) UIRefreshControl *refreshControl;
-@property long msg_hash;
-@property int folder_id;
 @property NSInteger currentIndex;
 @property Boolean updatePhotos;
 @end

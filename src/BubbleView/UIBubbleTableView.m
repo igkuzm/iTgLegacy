@@ -1,4 +1,4 @@
-//
+
 //  UIBubbleTableView.m
 //
 //  Created by Alex Barinov
@@ -9,13 +9,12 @@
 //
 
 #import "UIBubbleTableView.h"
+#include "Foundation/Foundation.h"
 #import "NSBubbleData.h"
 #import "UIBubbleHeaderTableViewCell.h"
 #import "UIBubbleTypingTableViewCell.h"
 
 @interface UIBubbleTableView ()
-
-@property (nonatomic, retain) NSMutableArray *bubbleSection;
 
 @end
 
@@ -223,20 +222,20 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 
 - (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    // Now typing
+  // Now typing
 	if (indexPath.section >= [self.bubbleSection count])
-    {
-        return MAX([UIBubbleTypingTableViewCell height], self.showAvatars ? 52 : 0);
-    }
-    
-    // Header
-    if (indexPath.row == 0)
-    {
-        return [UIBubbleHeaderTableViewCell height];
-    }
-    
-    NSBubbleData *data = [[self.bubbleSection objectAtIndex:indexPath.section] objectAtIndex:indexPath.row - 1];
-    return MAX(data.insets.top + data.view.frame.size.height + data.insets.bottom, self.showAvatars ? 52 : 0);
+	{
+			return MAX([UIBubbleTypingTableViewCell height], self.showAvatars ? 52 : 0);
+	}
+	
+	// Header
+	if (indexPath.row == 0)
+	{
+			return [UIBubbleHeaderTableViewCell height];
+	}
+	
+	NSBubbleData *data = [[self.bubbleSection objectAtIndex:indexPath.section] objectAtIndex:indexPath.row - 1];
+	return MAX(data.insets.top + data.view.frame.size.height + data.insets.bottom, self.showAvatars ? 52 : 0);
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -301,6 +300,68 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 
 		if (self.bubbleDelegate)
 			[self.bubbleDelegate bubbleTableView:self didScroll:scrollView];
+}
+
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+	float bottomEdge = 
+		scrollView.contentOffset.y + scrollView.frame.size.height;
+	if (bottomEdge >= scrollView.contentSize.height) {
+		// BOTTOM
+		NSInteger lastSectionIdx = [self numberOfSections] - 1;
+		NSArray *section = 
+			[self.bubbleSection objectAtIndex:lastSectionIdx];
+		NSBubbleData *data = 
+			[section objectAtIndex:section.count - 1];
+		
+		if (data)
+			if (self.bubbleDelegate)
+				[self.bubbleDelegate 
+					bubbleTableView:self didEndDecelerationgToBottom:YES];
+
+		return;
+	} else if (scrollView.contentOffset.y == 0){
+			if (self.bubbleDelegate)
+				[self.bubbleDelegate 
+					bubbleTableView:self didEndDecelerationgToTop:YES];
+
+		return;
+	}
+	
+	NSIndexPath *indexPath = 
+			[[self indexPathsForVisibleRows]objectAtIndex:0];
+
+	// Now typing
+	if (indexPath.section >= [self.bubbleSection count])
+	{
+			return;
+	}
+	
+	// Header
+	if (indexPath.row == 0)
+	{
+		NSBubbleData *data = 
+		[[self.bubbleSection objectAtIndex:indexPath.section] 
+												 objectAtIndex:indexPath.row];
+
+		if (data)
+			if (self.bubbleDelegate)
+				[self.bubbleDelegate 
+					bubbleTableView:self didEndDecelerationgTo:data];
+
+		return;
+	}
+	
+	NSBubbleData *data = 
+		[[self.bubbleSection objectAtIndex:indexPath.section] 
+												 objectAtIndex:indexPath.row - 1];
+
+	if (data)
+		if (self.bubbleDelegate)
+			[self.bubbleDelegate 
+				bubbleTableView:self didEndDecelerationgTo:data];
+
+	return;
 }
 
 #pragma mark - Public interface

@@ -6,7 +6,8 @@
 
 @interface ChatViewController : UIViewController
 <UIBubbleTableViewDataSource, UIBubbleTableViewDelegate,
-	UIImagePickerControllerDelegate, UITextFieldDelegate>
+	UIImagePickerControllerDelegate, UITextFieldDelegate,
+	UIActionSheetDelegate, UINavigationControllerDelegate>
 {
 }
 

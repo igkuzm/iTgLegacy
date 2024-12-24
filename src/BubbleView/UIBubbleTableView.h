@@ -23,6 +23,8 @@ typedef enum _NSBubbleTypingType
 
 @interface UIBubbleTableView : UITableView <UITableViewDelegate, UITableViewDataSource>
 
+@property (nonatomic, retain) NSMutableArray *bubbleSection;
+
 @property (nonatomic, assign) id<UIBubbleTableViewDataSource> bubbleDataSource;
 @property (nonatomic) NSTimeInterval snapInterval;
 @property (nonatomic) NSBubbleTypingType typingBubble;
