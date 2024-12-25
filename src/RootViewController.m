@@ -32,7 +32,7 @@
 		[[UINavigationController alloc]initWithRootViewController:chatsvc];
 	UITabBarItem *chatstbi = [[UITabBarItem alloc]
 			initWithTitle:@"Messages" 
-			image:[UIImage imageNamed:@"tab-ims"] 
+			image:[UIImage imageNamed:@"TabIconMessages.png"] 
 			tag:1];
 	[chatsnc setTabBarItem:chatstbi];
 
@@ -43,7 +43,7 @@
 		[[UINavigationController alloc]initWithRootViewController:configvc];
 	UITabBarItem *configtbi = [[UITabBarItem alloc]
 			initWithTitle:@"Settings" 
-			image:[UIImage imageNamed:@"tab-settings"] 
+			image:[UIImage imageNamed:@"TabIconSettings.png"] 
 			tag:2];
 	[confignc setTabBarItem:configtbi];
 

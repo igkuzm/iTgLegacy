@@ -13,6 +13,7 @@
 #include "../libtg/libtg.h"
 
 @protocol AuthorizationDelegate <NSObject>
+-(void)tgLibLoaded;
 -(void)authorizedAs:(tl_user_t *)user;
 @end
 
@@ -34,6 +35,9 @@
 @property (strong) Reachability *reach;
 @property (strong) id<ReachabilityDelegate> reachabilityDelegate;
 @property (strong) NSString *imagesCache;
+@property (strong) NSString *filesCache;
+@property (strong) NSString *peerPhotoCache;
+@property (strong) NSString *smallPhotoCache;
 
 -(void)showMessage:(NSString *)msg;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;

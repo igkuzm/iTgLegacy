@@ -6,6 +6,7 @@ iTgLegacy_SOURCES = \
 		RootViewController.m \
 		DialogViewCell.m \
 		DialogsViewController.m \
+		ChatViewCell.m \
 		ChatViewControllerOld.m \
 		ConfigViewController.m \
 		TextEditViewController.m \
@@ -52,6 +53,7 @@ _plist:
 
 _images:
 	cp -f ../images/*.png iTgLegacy.app/.
+	cp -f ../images/*.jpg iTgLegacy.app/.
 	cp -f ../sounds/*.m4a iTgLegacy.app/.
 	cp -f BubbleView/images/*.png iTgLegacy.app/.
 	cp -f LaunchScreen.nib iTgLegacy.app/.

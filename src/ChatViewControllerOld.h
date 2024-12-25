@@ -11,11 +11,14 @@
 {
 }
 
-@property () Boolean first;
-
 @property (strong) AppDelegate *appDelegate;
 
 @property (strong) UIBubbleTableView *bubbleTableView;
+
+@property (strong) UIProgressView *progressView;
+@property (strong) UILabel *progressLabel;
+@property int progressTotal;
+@property int progressCurrent;
 
 @property (strong) UIImageView *icon;
 @property (strong) NSTimer *timer;
@@ -23,13 +26,22 @@
 @property (strong, nonatomic) TGDialog *dialog;
 @property (strong, nonatomic) NSString *currentImage;
 @property (nonatomic, strong) NSMutableArray *bubbleDataArray;
-@property (nonatomic, strong) NSMutableArray *tmpArray;
-@property (nonatomic, strong) NSMutableArray *downloadPhotoArray;
 @property (strong) UIImagePickerController *imagePicker;
 @property (strong) UIRefreshControl *refreshControl;
 @property (strong) UIActivityIndicatorView *spinner;
 @property (strong) UIActivityIndicatorView *peerPhotoSpinner;
 @property (strong) NSOperationQueue *syncData;
+@property (strong) NSOperationQueue *download;
+
+
+// toolbar
+@property (strong) UIBarButtonItem *progress;
+@property (strong) UIBarButtonItem *send;
+@property (strong) UIBarButtonItem *add;
+@property (strong) UIBarButtonItem *textFieldItem;
+@property (strong) UIBarButtonItem *flexibleSpace;
+@property (strong) UIBarButtonItem *cancel;
+@property (strong) UIBarButtonItem *label;
 
 //@property (weak, nonatomic) UITextView *inputField;
 @property (strong, nonatomic) UIImageView *inputFieldImageView;

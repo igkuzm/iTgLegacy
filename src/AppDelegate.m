@@ -44,11 +44,30 @@
 	NSLog(@"start...");
 
 	// create cache
-	self.imagesCache = 
-				[[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) 
-						objectAtIndex:0] stringByAppendingPathComponent:@"images"];
+	NSString *cache = [NSSearchPathForDirectoriesInDomains(
+			NSCachesDirectory, 
+			NSUserDomainMask,
+		 	YES) objectAtIndex:0]; 
+	
+	self.smallPhotoCache = [cache 
+			stringByAppendingPathComponent:@"s"];
+	[NSFileManager.defaultManager 
+		createDirectoryAtPath:self.smallPhotoCache attributes:nil];
+		
+	self.peerPhotoCache = [cache 
+			stringByAppendingPathComponent:@"peer"];
+	[NSFileManager.defaultManager 
+		createDirectoryAtPath:self.peerPhotoCache attributes:nil];
+	
+	self.imagesCache = [cache 
+			stringByAppendingPathComponent:@"images"];
 	[NSFileManager.defaultManager 
 		createDirectoryAtPath:self.imagesCache attributes:nil];
+	
+	self.filesCache = [cache 
+			stringByAppendingPathComponent:@"files"];
+	[NSFileManager.defaultManager 
+		createDirectoryAtPath:self.filesCache attributes:nil];
 	
   //[[NSNotificationCenter defaultCenter] addObserver:@"" selector:@selector(callMyWebService) name:nil object:nil];
 
@@ -231,6 +250,8 @@
 			[self showMessage:@"can't init LibTg"];
 		} else {
 				NSLog(@"LibTg inited");
+				if (self.authorizationDelegate)
+					[self.authorizationDelegate tgLibLoaded];
 		}
 		tg_set_on_error(self.tg, self, on_err);
 		//tg_set_on_log(self.tg, self, on_log);

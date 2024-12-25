@@ -1,5 +1,6 @@
 #import "ChatViewController.h"
 #include "TGMessage.h"
+#include "ChatViewCell.h"
 #include "UIKit/UIKit.h"
 #include "Foundation/Foundation.h"
 #include "CoreGraphics/CoreGraphics.h"
@@ -109,7 +110,7 @@
 	[self.spinner startAnimating];
 	[self.data removeAllObjects];
 	[self getMessagesCached];
-	[self getMessagesFrom:0];
+	//[self getMessagesFrom:0];
 }
 
 #pragma mark <UITableView DataSource>
@@ -117,19 +118,14 @@
 	
 	TGMessage *message = [self.data objectAtIndex:indexPath.item];
 	
-	UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"cell"];
+	ChatViewCell *cell = 
+		[self.tableView dequeueReusableCellWithIdentifier:@"cell"];
 	if (cell == nil){
-		cell = [[UITableViewCell alloc]
-		initWithStyle: UITableViewCellStyleSubtitle 
-		reuseIdentifier: @"cell"];
+		cell = [[ChatViewCell alloc] init];
 	}
+
+	[cell setMessage:message];
 	
-	// text
-	[cell.detailTextLabel setText:message.message];	
-
-	// image
-	[cell.imageView setImage:message.photo];
-
 	// flip cell
 	[cell setTransform:
 		CGAffineTransformScale(cell.transform, 1, -1)];
@@ -197,22 +193,22 @@ static int messages_callback(void *d, const tg_message_t *m){
 		TGMessage *msg = [[TGMessage alloc]initWithMessage:m];
 
 		//bool me = (m->from_id_ == self.appDelegate.authorizedUser->id_);
-		if (m->photo_id){
-			// get photo
-			buf_t reference = buf_from_base64(m->photo_file_reference);
-			char *photo = tg_get_photo_file(
-						self.appDelegate.tg, 
-						m->photo_id, 
-						m->photo_access_hash, 
-						m->photo_file_reference, 
-						"s");
-			if (photo){
-				// add photo to message
-				NSData *data = [NSData dataFromBase64String:
-						[NSString stringWithUTF8String:photo]];
-				msg.photo = [UIImage imageWithData:data];
-			}
-		}
+		//if (m->photo_id){
+			//// get photo
+			//buf_t reference = buf_from_base64(m->photo_file_reference);
+			//char *photo = tg_get_photo_file(
+						//self.appDelegate.tg, 
+						//m->photo_id, 
+						//m->photo_access_hash, 
+						//m->photo_file_reference, 
+						//"s");
+			//if (photo){
+				//// add photo to message
+				//NSData *data = [NSData dataFromBase64String:
+						//[NSString stringWithUTF8String:photo]];
+				//msg.photo = [UIImage imageWithData:data];
+			//}
+		//}
 		[self.cache addObject:msg];
 	} else { //wrong peerId
 	
@@ -246,56 +242,56 @@ static void on_done(void *d){
 			[self.spinner stopAnimating];
 		});
 		// get photo
-		tg_peer_t peer = {
-			self.dialog.peerType,
-			self.dialog.peerId,
-			self.dialog.accessHash
-		};
-		char *photo = 
-			tg_get_peer_photo_file(
-					self.appDelegate.tg, 
-					&peer, 
-					false, 
-					self.dialog.photoId);
+		//tg_peer_t peer = {
+			//self.dialog.peerType,
+			//self.dialog.peerId,
+			//self.dialog.accessHash
+		//};
+		//char *photo = 
+			//tg_get_peer_photo_file(
+					//self.appDelegate.tg, 
+					//&peer, 
+					//false, 
+					//self.dialog.photoId);
 		
-		dispatch_sync(dispatch_get_main_queue(), ^{
-				if (photo){
-					[self.appDelegate showMessage:@"Photo OK!"];
-				} else {
-					[self.appDelegate showMessage:@"Photo ERR"];
-				}
-		});
+		//dispatch_sync(dispatch_get_main_queue(), ^{
+				//if (photo){
+					//[self.appDelegate showMessage:@"Photo OK!"];
+				//} else {
+					//[self.appDelegate showMessage:@"Photo ERR"];
+				//}
+		//});
 	}];
 }
 
 -(void)getMessagesFrom:(int)offset{
-	if (!self.appDelegate.reach.isReachable)
-	{
-		[self.refreshControl endRefreshing];
-		[self.spinner stopAnimating];
-		[self.appDelegate showMessage:@"no network"];
-		return;
-	}
+	//if (!self.appDelegate.reach.isReachable)
+	//{
+		//[self.refreshControl endRefreshing];
+		//[self.spinner stopAnimating];
+		//[self.appDelegate showMessage:@"no network"];
+		//return;
+	//}
 	
-	[self.cache removeAllObjects];
-	[self.refreshControl startRefreshing];
+	//[self.cache removeAllObjects];
+	//[self.refreshControl startRefreshing];
 
-	[self.syncData addOperationWithBlock:^{
-		tg_peer_t peer = {
-			self.dialog.peerType,
-			self.dialog.peerId,
-			self.dialog.accessHash
-		};
+	//[self.syncData addOperationWithBlock:^{
+		//tg_peer_t peer = {
+			//self.dialog.peerType,
+			//self.dialog.peerId,
+			//self.dialog.accessHash
+		//};
 
-		int limit = 
-			peer.type == TG_PEER_TYPE_CHANNEL?1:5;
-		tg_sync_messages_to_database(
-				self.appDelegate.tg, 
-				peer,
-			  offset,	
-				limit,
-				self, on_done);
-	}];
+		//int limit = 
+			//peer.type == TG_PEER_TYPE_CHANNEL?1:5;
+		//tg_sync_messages_to_database(
+				//self.appDelegate.tg, 
+				//peer,
+				//offset,	
+				//limit,
+				//self, on_done);
+	//}];
 }
 
 @end

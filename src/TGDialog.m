@@ -1,4 +1,7 @@
 #import "TGDialog.h"
+#include "Foundation/Foundation.h"
+#include "UIKit/UIKit.h"
+#include "AppDelegate.h"
 #include <stdlib.h>
 #import "Base64/Base64.h"
 #include "../libtg/tg/peer.h"
@@ -42,37 +45,15 @@
 		self.photoId = d->photo_id;
 		
 		self.photo = NULL;
-		char *photo = peer_photo_file_from_database(
-			tg, 
-			d->peer_id, d->photo_id);
-		if (photo){
-			NSData *data = [NSData dataFromBase64String:
-				[NSString stringWithUTF8String:photo]];
-			if (data)
-				self.photo = [UIImage imageWithData:data];
-			free(photo);
-		} else {
-			// download photo
-			[self.syncData addOperationWithBlock:^{
-				tg_peer_t peer = {
-					d->peer_type,
-					d->peer_id,
-					d->access_hash
-				};
-				char *photo = tg_get_peer_photo_file(
-						tg, 
-						&peer, 
-						false, 
-						d->photo_id); 
-				if (photo){
-					NSData *img = [NSData dataFromBase64String:
-						[NSString stringWithUTF8String:photo]];
-					if (img)
-						self.photo = [UIImage imageWithData:img]; 
-					free(photo);
-				}
-			}];
-		}
+			
+		AppDelegate *appDelegate = 
+			UIApplication.sharedApplication.delegate;
+		self.photoPath = 
+			[NSString stringWithFormat:@"%@/%lld.%lld", 
+				appDelegate.peerPhotoCache, self.peerId, self.photoId]; 
+		if ([NSFileManager.defaultManager fileExistsAtPath:self.photoPath])
+			self.photo = [UIImage 
+				imageWithData:[NSData dataWithContentsOfFile:self.photoPath]];
 	}
 	return self;
 }

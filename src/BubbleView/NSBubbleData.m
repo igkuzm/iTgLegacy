@@ -9,6 +9,7 @@
 //
 
 #import "NSBubbleData.h"
+#include "CoreGraphics/CoreGraphics.h"
 #include "UIKit/UIKit.h"
 #import <QuartzCore/QuartzCore.h>
 
@@ -40,8 +41,8 @@
 
 #pragma mark - Text bubble
 
-const UIEdgeInsets textInsetsMine = {5, 10, 11, 17};
-const UIEdgeInsets textInsetsSomeone = {5, 15, 11, 10};
+const UIEdgeInsets textInsetsMine = {1, 10, 11, 17};
+const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 
 + (id)dataWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type
 {
@@ -54,29 +55,39 @@ const UIEdgeInsets textInsetsSomeone = {5, 15, 11, 10};
 
 - (id)initWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type
 {
-    UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
-    CGSize size = [(text ? text : @"") sizeWithFont:font constrainedToSize:CGSizeMake(220, 9999) lineBreakMode:NSLineBreakByWordWrapping];
+	if (!self.width)
+		self.width = 220;
     
-    //UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, size.width, size.height)];
-    UITextView *label = [[UITextView alloc] initWithFrame:CGRectMake(0, 0, size.width + 15, size.height + 10)];
-		label.editable = NO;
-		label.dataDetectorTypes = UIDataDetectorTypeAll;
-		label.scrollEnabled = NO;
+	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
+  CGSize size = [(text ? text : @"") 
+		sizeWithFont:font
+    constrainedToSize:CGSizeMake(self.width, 9999) 
+		lineBreakMode:NSLineBreakByCharWrapping];
+    
+    self.textView = [[UITextView alloc] 
+			initWithFrame:CGRectMake(
+					0, 
+					0, 
+					size.width + 10, 
+					size.height + 15)];
+
+		self.textView.editable = NO;
+		self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
+		self.textView.scrollEnabled = NO;
     //label.numberOfLines = 0;
     //label.lineBreakMode = NSLineBreakByWordWrapping;
-    label.text = (text ? text : @"");
-    //label.font = font;
-    label.font = [UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
+    self.textView.text = (text ? text : @"");
+		//label.font = font;
+		self.textView.font = [UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
 		//label.textContainer.lineBreakMode = NSLineBreakByWordWrapping;
-    label.backgroundColor = [UIColor clearColor];
+    self.textView.backgroundColor = [UIColor clearColor];
 
-    
 //#if !__has_feature(objc_arc)
     //[label autorelease];
 //#endif
     
     UIEdgeInsets insets = (type == BubbleTypeMine ? textInsetsMine : textInsetsSomeone);
-    return [self initWithView:label date:date type:type insets:insets];
+    return [self initWithView:self.textView date:date type:type insets:insets];
 }
 
 #pragma mark - Image bubble
@@ -84,37 +95,112 @@ const UIEdgeInsets textInsetsSomeone = {5, 15, 11, 10};
 const UIEdgeInsets imageInsetsMine = {11, 13, 16, 22};
 const UIEdgeInsets imageInsetsSomeone = {11, 18, 16, 14};
 
-+ (id)dataWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type
++ (id)dataWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type text:(NSString *)text
 {
 //#if !__has_feature(objc_arc)
     //return [[[NSBubbleData alloc] initWithImage:image date:date type:type] autorelease];
 //#else
-		return [[NSBubbleData alloc] initWithImage:image date:date type:type];
+	return [[NSBubbleData alloc] initWithImage:image date:date type:type text:text];
 //#endif    
 }
 
-- (id)initWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type
+- (id)initWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type text:(NSString *)text
 {
-    CGSize size = image.size;
-    if (size.width > 220)
-    {
-        size.height /= (size.width / 220);
-        size.width = 220;
-    }
+	if (!self.width)
+		self.width = 220;
     
-    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, size.width, size.height)];
-    imageView.image = image;
-    imageView.layer.cornerRadius = 5.0;
-    imageView.layer.masksToBounds = YES;
-		self.isImage = YES;
+	CGSize size = image.size;
+	if (size.width > self.width)
+	{
+			size.height /= (size.width / self.width);
+			size.width = self.width;
+	}
+	
+	self.imageView = [[UIImageView alloc] 
+		initWithFrame:CGRectMake(
+				0, 0,
+			 	size.width, size.height)];
+	self.imageView.image = image;
+	self.imageView.layer.cornerRadius = 5.0;
+	self.imageView.layer.masksToBounds = YES;
+	self.isImage = YES;
 
-    
+	self.videoPlayButton = [[UIImageView alloc]
+		initWithFrame:CGRectMake(
+				size.width/2 - 20,
+			 	size.height/2 - 20, 
+				40, 40)];
+	self.videoPlayButton.image = [UIImage imageNamed:@"Video-play-button"];
+	self.videoPlayButton.hidden = YES;
+	[self.imageView addSubview:self.videoPlayButton];
+	
+	self.spinner = 
+				[[UIActivityIndicatorView alloc] 
+				initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+	self.spinner.center = 
+		CGPointMake(
+				self.imageView.bounds.size.width/2, 
+				self.imageView.bounds.size.height/2);
+	[self.imageView addSubview:self.spinner];
+
+	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
+	CGSize textSize = [(text ? text : @"") 
+		sizeWithFont:font 
+		constrainedToSize:CGSizeMake(self.width, 9999) 
+		lineBreakMode:NSLineBreakByWordWrapping];
+
+	self.textView = [[UITextView alloc] 
+		initWithFrame:CGRectMake(
+				0, 
+				size.height, 
+				textSize.width + 10, 
+				textSize.height + 15)];
+	self.textView.editable = NO;
+	self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
+	self.textView.scrollEnabled = NO;
+	self.textView.text = (text ? text : @"");
+	self.textView.font = 
+		[UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
+	self.textView.backgroundColor = [UIColor clearColor];
+
+	CGFloat height = size.height;
+	if (text)
+		height += textSize.height;
+
+	UIView *view = [[UIView alloc]
+		initWithFrame:CGRectMake(
+				0, 
+				0, 
+				self.width, 
+				height)];
+	[view addSubview:self.imageView];
+	if (text)
+		[view addSubview:self.textView];
+
+	self.titleLabel = [[UILabel alloc] 
+		initWithFrame:CGRectMake(
+				size.width + 2,
+			 	0, 
+				self.width - size.width - 4, 20)];
+  self.titleLabel.backgroundColor = [UIColor clearColor];
+	self.titleLabel.font = [UIFont systemFontOfSize:10];
+	[view addSubview:self.titleLabel];
+
+	self.sizeLabel = [[UILabel alloc] 
+		initWithFrame:CGRectMake(
+				size.width + 2,
+			 	22, 
+				self.width - size.width - 4, 20)];
+  self.sizeLabel.backgroundColor = [UIColor clearColor];
+	self.sizeLabel.font = [UIFont systemFontOfSize:8];
+	[view addSubview:self.sizeLabel];
+
 //#if !__has_feature(objc_arc)
     //[imageView autorelease];
 //#endif
     
     UIEdgeInsets insets = (type == BubbleTypeMine ? imageInsetsMine : imageInsetsSomeone);
-    return [self initWithView:imageView date:date type:type insets:insets];       
+    return [self initWithView:view date:date type:type insets:insets];       
 }
 
 #pragma mark - Custom view bubble
@@ -142,6 +228,8 @@ const UIEdgeInsets imageInsetsSomeone = {11, 18, 16, 14};
 #endif
         _type = type;
         _insets = insets;
+				
+				
     }
     return self;
 }

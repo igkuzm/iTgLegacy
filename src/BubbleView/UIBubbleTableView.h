@@ -8,6 +8,7 @@
 //  To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/
 //
 
+#include "UIKit/UIKit.h"
 #import <UIKit/UIKit.h>
 
 #import "UIBubbleTableViewDataSource.h"
@@ -31,6 +32,7 @@ typedef enum _NSBubbleTypingType
 @property (nonatomic) BOOL showAvatars;
 @property (nonatomic) BOOL watchingInRealTime;
 @property (nonatomic, assign) id<UIBubbleTableViewDelegate> bubbleDelegate;
+@property (strong, nonatomic) UIImageView *backgroundImageView;
 
 - (void) scrollBubbleViewToBottomAnimated:(BOOL)animated;
 - (BOOL) scrollToBottomWithAnimation:(BOOL)animatedBool;

@@ -1,3 +1,4 @@
+#include "Foundation/Foundation.h"
 #import <UIKit/UIKit.h>
 #include <stdint.h>
 #include "../libtg/tg/dialogs.h"
@@ -14,6 +15,7 @@
 @property uint64_t accessHash;
 @property uint64_t photoId;
 @property (strong) UIImage *photo;
+@property (strong) NSString *photoPath;
 @property int unread_count;
 @property (strong) UIImageView *imageView;
 @property (strong) NSOperationQueue *syncData;

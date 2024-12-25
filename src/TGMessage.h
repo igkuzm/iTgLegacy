@@ -6,6 +6,7 @@
 @interface TGMessage : NSObject
 {
 }
+@property Boolean mine;
 @property Boolean silent;
 @property Boolean pinned;
 @property Boolean isVoice;
@@ -15,6 +16,12 @@
 @property uint64_t photoId;
 @property uint64_t photoAccessHash;
 @property (strong) NSString *photoFileReference;
+@property (strong) NSString *photoPath;
+@property uint64_t docId;
+@property uint64_t docSize;
+@property uint64_t docAccessHash;
+@property (strong) NSString *docFileReference;
+@property (strong) NSString *docFileName;
 @property tg_peer_t peer;
 @property tg_peer_t from;
 @property (strong) NSDate *date;

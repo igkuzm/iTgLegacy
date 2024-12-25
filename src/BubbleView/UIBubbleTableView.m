@@ -9,6 +9,7 @@
 //
 
 #import "UIBubbleTableView.h"
+#include "UIKit/UIKit.h"
 #include "Foundation/Foundation.h"
 #import "NSBubbleData.h"
 #import "UIBubbleHeaderTableViewCell.h"
@@ -30,8 +31,7 @@
 
 - (void)initializator
 {
-    // UITableView properties
-    
+    // UITableView properties	
 		self.backgroundColor = [UIColor clearColor];
 		self.separatorStyle = UITableViewCellSeparatorStyleNone;
 		assert(self.style == UITableViewStylePlain);
@@ -43,6 +43,10 @@
 		
 		self.snapInterval = 120;
 		self.typingBubble = NSBubbleTypingTypeNobody;
+
+		self.backgroundImageView = [[UIImageView alloc]
+			initWithFrame:self.bounds];
+		[self addSubview:self.backgroundImageView];
 
 		// tap gesture
 		// on tap

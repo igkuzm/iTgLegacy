@@ -104,7 +104,10 @@
 
     [self.customView removeFromSuperview];
     self.customView = self.data.view;
-    self.customView.frame = CGRectMake(x + self.data.insets.left, y + self.data.insets.top, width, height);
+    self.customView.frame = CGRectMake(
+				x + self.data.insets.left, 
+				y + self.data.insets.top, 
+				width, height);
     [self.contentView addSubview:self.customView];
     
     
@@ -117,7 +120,11 @@
         self.bubbleImage.image = [[UIImage imageNamed:@"bubbleMine.png"] stretchableImageWithLeftCapWidth:15 topCapHeight:14];
     }
 
-    self.bubbleImage.frame = CGRectMake(x, y, width + self.data.insets.left + self.data.insets.right, height + self.data.insets.top + self.data.insets.bottom);
+    self.bubbleImage.frame = 
+			CGRectMake(
+					x, y, 
+					width + self.data.insets.left + self.data.insets.right, 
+					height + self.data.insets.top + self.data.insets.bottom);
     
 }
 
