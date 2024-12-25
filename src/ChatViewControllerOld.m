@@ -287,7 +287,8 @@
 	}
 }
 
--(void)getDocumentForMessage:(NSBubbleData *)d{
+-(void)getDocumentForMessageChached:(NSBubbleData *)d
+											 download:(Boolean)download{
 	// add image placeholder to BubbleData
 	switch (d.message.mediaType) {
 		case id_messageMediaContact:
@@ -346,7 +347,35 @@
 				d.message.photo = 
 					[UIImage imageNamed:@"filetype_icon_unknown@2x.png"];
 			break;
+	} // end switch (d.message.mediaType)
+
+	if (!download)
+		return;
+	
+	if (!self.appDelegate.tg ||
+			!self.appDelegate.reach.isReachable ||
+			!self.appDelegate.authorizedUser)
+		return;
+	
+	// try to get image from database
+	if (d.message.docId && !d.message.photoData){
+		char *photo  = 
+			tg_get_photo_file(
+					self.appDelegate.tg, 
+					d.message.photoId, 
+					d.message.photoAccessHash, 
+					d.message.photoFileReference.UTF8String, 
+					"s");
+		if (photo){
+			// add photo to BubbleData
+			d.message.photoData = [NSData dataFromBase64String:
+					[NSString stringWithUTF8String:photo]];
+			d.message.photo = [UIImage imageWithData:d.message.photoData];
+			[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
+			free(photo);
+		}
 	}
+
 }
 
 - (void)appendDataFrom:(int)offset date:(NSDate *)date
