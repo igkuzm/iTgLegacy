@@ -360,6 +360,10 @@
 	// try to get image from database
 	if (d.message.docId && !d.message.photoData){
 		char *photo  = 
+			tg_get_document_thumb(
+					self.appDelegate.tg, 
+					d.message.docId, 
+					uint64_t size, uint64_t access_hash, const char *file_reference, const char *thumb_size);
 			tg_get_photo_file(
 					self.appDelegate.tg, 
 					d.message.photoId, 
