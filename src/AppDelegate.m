@@ -18,20 +18,10 @@
 
 @implementation AppDelegate
 
-//- (void)resisterNotifications {
-	//// Request permission for push notifications
-	//NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
-	//[center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge)
-												//completionHandler:^(BOOL granted, NSError * _Nullable error) {
-			//if (granted) {
-					//NSLog(@"Permission granted for push notifications");
-			//} else {
-					//NSLog(@"Permission denied for push notifications");
-			//}
-	//}];
-//}
-
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+
+	// lock crush
+	UIApplication.sharedApplication.idleTimerDisabled = YES;
 
 	// logging
 	NSString *log = [[NSSearchPathForDirectoriesInDomains(
@@ -39,9 +29,11 @@
 						objectAtIndex:0] 
 			stringByAppendingPathComponent:@"iTgLegacy.log"];
 	[[NSFileManager defaultManager] removeFileAtPath:log handler:nil];
-	freopen([log UTF8String], "a+", stderr);
+	self.log = freopen([log UTF8String], "a+", stderr);
 
 	NSLog(@"start...");
+
+	self.syncData = [[NSOperationQueue alloc]init];
 
 	// create cache
 	NSString *cache = [NSSearchPathForDirectoriesInDomains(
@@ -69,13 +61,17 @@
 	[NSFileManager.defaultManager 
 		createDirectoryAtPath:self.filesCache attributes:nil];
 	
+	self.thumbDocCache = [cache 
+			stringByAppendingPathComponent:@"docThumbs"];
+	[NSFileManager.defaultManager 
+		createDirectoryAtPath:self.thumbDocCache attributes:nil];
+	
   //[[NSNotificationCenter defaultCenter] addObserver:@"" selector:@selector(callMyWebService) name:nil object:nil];
 
 	// Override point for customization after application launch.
-	[[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-	[[UIApplication sharedApplication] registerForRemoteNotificationTypes:
-		(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeSound|UIRemoteNotificationTypeAlert)];
-	//self.player = [[PlayerController alloc]init];
+	//[[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+	//[[UIApplication sharedApplication] registerForRemoteNotificationTypes:
+		//(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeSound|UIRemoteNotificationTypeAlert)];
 	
 	// start reachability
 	self.reach = [Reachability reachabilityWithHostname:@"www.google.ru"];
@@ -165,12 +161,6 @@
 	//}
 }
 
--(void)playButtonPushed:(id)sender{
-	//PlayerViewController *vc = [[PlayerViewController alloc]init];
-	//UINavigationController *nc = [[UINavigationController alloc]initWithRootViewController:vc];
-	//[self.window.rootViewController presentViewController:nc animated:TRUE completion:nil];
-}
-
 -(void)showMessage:(NSString *)msg {
 	UIAlertView *alert = 
 			[[UIAlertView alloc]initWithTitle:@"" 
@@ -184,6 +174,7 @@
 
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone{
 	self.askInput_onDone = onDone;
+	self.allertType = ALLERT_TYPE_ASK_INPUT;
 	UIAlertView *alert = 
 			[[UIAlertView alloc]initWithTitle:@"" 
 			message:msg 
@@ -195,12 +186,43 @@
 	[alert show];
 }
 
--(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{	
-	UITextField *textField = [alertView textFieldAtIndex:0];
-	//if (buttonIndex == 1){
-	//}
-	if (self.askInput_onDone)
-		self.askInput_onDone(textField.text);
+-(void)askYesNo:(NSString *)msg onYes:(void (^)())onYes{
+	self.allertType = ALLERT_TYPE_YES_NO;
+	self.askYesNo_onYes = onYes;
+	UIAlertView *alert = 
+			[[UIAlertView alloc]initWithTitle:@"" 
+			message:msg 
+			delegate:self 
+			cancelButtonTitle:@"cancel" 
+			otherButtonTitles:@"OK", nil];
+
+	[alert show];
+}
+
+-(void)alertView:(UIAlertView *)alertView 
+	clickedButtonAtIndex:(NSInteger)buttonIndex
+{	
+	switch (self.allertType) {
+		case ALLERT_TYPE_ASK_INPUT:
+			{
+				UITextField *textField = [alertView textFieldAtIndex:0];
+				if (self.askInput_onDone)
+					self.askInput_onDone(textField.text);
+			}
+			break;
+		case ALLERT_TYPE_YES_NO:
+			{
+				if (buttonIndex == 1){
+					if (self.askYesNo_onYes)
+						self.askYesNo_onYes();
+				}
+			}
+			break;
+	
+		default:
+			break;
+	}
+	
 }
 
 #pragma mark <NOTIFICATIONS FUNCTIONS>
@@ -276,6 +298,12 @@ static void on_log(void *d, const char *msg)
 
 -(void)afteLoginUser:(tl_user_t *)user {
 	self.authorizedUser = user;
+	NSNumber *userId = [NSNumber numberWithLongLong:user->id_];
+	[NSUserDefaults.standardUserDefaults 
+		setValue:userId forKey:@"userId"];
+	//[NSUserDefaults.standardUserDefaults 
+		//setValue:[NSString stringWithUTF8String:(char*)user->username_.data] 
+			//forKey:@"userName"];
 	//[self showMessage:@"authorized!"];
 	if (self.authorizationDelegate)
 		[self.authorizationDelegate authorizedAs:user];
@@ -333,12 +361,8 @@ static void on_log(void *d, const char *msg)
 	if (!self.tg)
 		return;
 
-	dispatch_queue_t backgroundQueue = 
-		dispatch_get_global_queue(
-				DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-
 	// do in background
-	dispatch_async(backgroundQueue, ^{
+	[self.syncData addOperationWithBlock:^{
 		// check authorized 
 		tl_user_t *user = tg_is_authorized(self.tg);
 		
@@ -360,7 +384,13 @@ static void on_log(void *d, const char *msg)
 								}];
 			}
 		});
-	});
+	}];
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+	if (self.appActivityDelegate)
+		[self.appActivityDelegate willResignActive];
+	[self.syncData cancelAllOperations];
 }
 @end
 

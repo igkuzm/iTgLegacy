@@ -53,8 +53,10 @@
 		AppDelegate *appDelegate = 
 			UIApplication.sharedApplication.delegate;
 
+		NSNumber *userId = [NSUserDefaults.standardUserDefaults 
+			valueForKey:@"userId"];
 		self.mine = 
-			(appDelegate.authorizedUser->id_ == m->peer_id_);
+			(userId && [userId longLongValue] == m->from_id_);
 
 		self.photoPath = 
 			[NSString stringWithFormat:@"%@/%lld", 
@@ -65,6 +67,33 @@
 			self.photo = [UIImage imageWithData:self.photoData];
 		}
 
+		//self.docThumbPath = 
+			//[NSString stringWithFormat:@"%@/%lld", 
+				//appDelegate.thumbDocCache, self.docId]; 
+		//if ([NSFileManager.defaultManager fileExistsAtPath:self.docThumbPath])
+		//{
+			//self.photoData = [NSData dataWithContentsOfFile:self.docThumbPath];
+			//self.photo = [UIImage imageWithData:self.photoData];
+		//}
+
+		if ([self.mimeType isEqualToString:@"video/mov"] ||
+		    [self.mimeType isEqualToString:@"video/mp4"] ||
+				[self.docFileName.pathExtension.lowercaseString 
+					isEqualToString:@"mov"] ||
+				[self.docFileName.pathExtension.lowercaseString 
+					isEqualToString:@"mp4"]
+				)
+		{
+			self.isVideo = YES;
+		}
+
+		if ([self.mimeType isEqualToString:@"audio/ogg"] ||
+				[self.docFileName.pathExtension.lowercaseString 
+					isEqualToString:@"ogg"]
+				)
+		{
+			self.isVoice = YES;
+		}
 	}
 	return self;
 }

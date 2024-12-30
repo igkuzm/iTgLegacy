@@ -20,6 +20,7 @@
 @property uint64_t docId;
 @property uint64_t docSize;
 @property uint64_t docAccessHash;
+@property (strong) NSString *docThumbPath;
 @property (strong) NSString *docFileReference;
 @property (strong) NSString *docFileName;
 @property tg_peer_t peer;

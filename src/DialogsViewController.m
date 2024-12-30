@@ -23,6 +23,7 @@
 	self.title = @"Чаты";
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	self.appDelegate.authorizationDelegate = self;
+	self.appDelegate.appActivityDelegate = self;
 	self.syncData = [[NSOperationQueue alloc]init];
 	self.syncData.maxConcurrentOperationCount = 1;
 	self.loadedData = [NSMutableArray array];
@@ -86,6 +87,7 @@
 	if (self.timer)
 		[self.timer fire];
 	[self.syncData cancelAllOperations];
+	[super viewWillDisappear:animated];
 }
 
 -(void)editing:(BOOL)editing{
@@ -103,25 +105,34 @@
 
 #pragma mark <Data functions>
 -(void)filterData{
-	[self.loadedData sortedArrayUsingComparator:
+	NSArray *array = [self.loadedData sortedArrayUsingComparator:
 		^NSComparisonResult(id obj1, id obj2)
 	{
 		TGDialog *d1 = (TGDialog *)obj1;
 		TGDialog *d2 = (TGDialog *)obj2;
+		
+		if (d1.pinned && !d2.pinned)
+			return NSOrderedAscending;
+		
+		if (d2.pinned && !d1.pinned)
+			return NSOrderedDescending;
 						 
-		return [d1.date compare:d2.date];            
+		return [d2.date compare:d1.date]; // last date is on top           
 	}];
 
 	if (self.searchBar.text && self.searchBar.text.length > 0)
-		self.data = [self.loadedData filteredArrayUsingPredicate:
+		self.data = [array filteredArrayUsingPredicate:
 				[NSPredicate predicateWithFormat:@"self.title contains[c] %@", self.searchBar.text]];
 	else
-		self.data = self.loadedData;
+		self.data = array;
 
 	[self.tableView reloadData];
 }
 
 -(void)reloadData{
+	[self.syncData cancelAllOperations];
+	[self.spinner stopAnimating];
+
 	if (!self.appDelegate.tg)
 		return;
 	
@@ -187,6 +198,8 @@
 }
 
 -(void)getDialogsFrom:(NSDate *)date{
+	[self.syncData cancelAllOperations];
+	
 	if (!self.appDelegate.tg ||
 			!self.appDelegate.reach.isReachable ||
 			!self.appDelegate.authorizedUser)
@@ -222,6 +235,10 @@
 static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 {
 	if (!dialog)
+		return 0;
+
+	// drop hidden dialogs
+	if (dialog->folder_id == 1)
 		return 0;
 
 	DialogsViewController *self = d;
@@ -446,5 +463,13 @@ static int get_dialogs_cached_cb(void *d, const tg_dialog_t *dialog)
 		//[self filterData];
 	//}
 //}
+#pragma mark <AppActivity Delegate>
+-(void)willResignActive {
+	[self.spinner stopAnimating];
+	[self.refreshControl endRefreshing];
+	if (self.timer)
+		[self.timer fire];
+	[self.syncData cancelAllOperations];
+}
 @end
 // vim:ft=objc

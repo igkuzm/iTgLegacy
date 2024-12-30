@@ -19,6 +19,8 @@
 @property int unread_count;
 @property (strong) UIImageView *imageView;
 @property (strong) NSOperationQueue *syncData;
+@property Boolean pinned;
+@property Boolean hidden;
 
 -(id)initWithDialog:(const tg_dialog_t *)dialog tg:(tg_t *)tg;
 

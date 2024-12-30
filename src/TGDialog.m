@@ -41,6 +41,10 @@
 			[NSDate dateWithTimeIntervalSince1970:d->top_message_date]; 
 		self.unread_count = d->unread_count;
 		self.imageView = NULL;
+
+
+		self.pinned = d->pinned;
+		self.hidden = (d->folder_id == 1);
 		
 		self.photoId = d->photo_id;
 		

@@ -110,13 +110,13 @@
 		<string>MyriadPro-Regular.otf</string>
 		<string>MyriadPro-Bold.otf</string>
 	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-    <string>audio</string>
-    <string>location</string>
-    <string>voip</string>
-	</array>
+	<!--<key>UIBackgroundModes</key>-->
+	<!--<array>-->
+		<!--<string>remote-notification</string>-->
+    <!--<string>audio</string>-->
+    <!--<string>location</string>-->
+    <!--<string>voip</string>-->
+	<!--</array>-->
 	<key>UIFileSharingEnabled</key>
 	<false/>
 	<key>UILaunchImages~ipad</key>

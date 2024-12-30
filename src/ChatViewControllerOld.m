@@ -1,4 +1,14 @@
 #import "ChatViewControllerOld.h"
+#include "opus/include/opus/opus_defines.h"
+#include "CoreAudio/CoreAudioTypes.h"
+#include "AudioToolbox/AudioToolbox.h"
+#include "AudioToolbox/AudioServices.h"
+#include "AudioToolbox/AudioFile.h"
+#import "AVFoundation/AVFoundation.h"
+#import "AVFoundation/AVAudioSession.h"
+#import "CoreMedia/CoreMedia.h"
+#include <stdio.h>
+#include "MediaPlayer/MediaPlayer.h"
 #include "TGMessage.h"
 #include "FilePickerController.h"
 #include <stdlib.h>
@@ -13,6 +23,11 @@
 #include "../libtg/tg/messages.h"
 #include "../libtg/tg/files.h"
 #include "UIImage+Utils/UIImage+Utils.h"
+#include "opus/include/opus/opus.h"
+#include "opusenc/opusenc.h"
+#include "opusfile/opusfile.h"
+#include "../libtg/tools/cafextract.h"
+#include "../libtg/tools/pcm_to_opusogg.h"
 
 @interface  ChatViewController()
 {
@@ -26,11 +41,25 @@
 	[super viewDidLoad];
 	
 	self.appDelegate = UIApplication.sharedApplication.delegate;
+	self.appDelegate.authorizationDelegate = self;
+	self.appDelegate.appActivityDelegate = self;
 	
 	self.syncData = [[NSOperationQueue alloc]init];
 	self.syncData.maxConcurrentOperationCount = 1;
 	self.download = [[NSOperationQueue alloc]init];
 	self.download.maxConcurrentOperationCount = 1;
+
+	//self.moviePlayerController = 
+		//[[MPMoviePlayerViewController alloc]init];
+	
+	// system sound
+	NSString *recordStartPath = 
+		[NSString stringWithFormat:@"%@/102.m4a", NSBundle.mainBundle];
+	SystemSoundID recordStart;
+	AudioServicesCreateSystemSoundID(
+			(__bridge CFURLRef)[NSURL fileURLWithPath:recordStartPath],
+		 	&recordStart);
+	self.recordStart = recordStart;
 
 	// set background
 	self.view.backgroundColor = 
@@ -68,7 +97,7 @@
 	self.textField = [[UITextField alloc]
 		initWithFrame:CGRectMake(
 				0,0,
-				self.navigationController.toolbar.frame.size.width - 95, 
+				self.navigationController.toolbar.frame.size.width - 125, 
 				30)];
 	self.textField.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 	[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
@@ -84,10 +113,22 @@
 		initWithImage:[UIImage imageNamed:@"Send"]	
 		style:UIBarButtonItemStyleDone 
 		target:self action:@selector(onSend:)];
+
+	UISwitch *record = [[UISwitch alloc] initWithFrame:
+		CGRectMake(0, 0, 30, 30)];
+	[record setOffImage:[UIImage imageNamed:@"record"]];
+	[record addTarget:self 
+						 action:@selector(recordSwitch:) 
+	 forControlEvents:UIControlEventValueChanged];
+
+	self.record = [[UIBarButtonItem alloc]
+		initWithCustomView:record];
 	
 	self.add = [[UIBarButtonItem alloc]
 		initWithBarButtonSystemItem:UIBarButtonSystemItemAdd 
-		target:self action:@selector(onAdd:)];
+		//initWithImage:[UIImage imageNamed:@"attach"] 
+						//style:UIBarButtonItemStyleBordered
+						target:self action:@selector(onAdd:)];
 	
 	self.cancel = [[UIBarButtonItem alloc]
 		initWithBarButtonSystemItem:UIBarButtonSystemItemCancel 
@@ -107,7 +148,7 @@
 	self.progressView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 	self.progress = [[UIBarButtonItem alloc]
 		initWithCustomView:self.progressView];
-	
+
 	[self.navigationController setToolbarHidden:NO];
 	[self toolbarAsEntry];
 
@@ -155,7 +196,7 @@
 - (void)viewWillDisappear:(BOOL)animated {
 	[self.textField endEditing:YES];
 	[self.textField resignFirstResponder];
-	[self.spinner startAnimating];
+	[self.spinner stopAnimating];
 	[self.syncData cancelAllOperations];
 	[self.download cancelAllOperations];
 	// stop timer
@@ -166,6 +207,18 @@
 }
 
 -(void)toolbarAsEntry{
+	[self 
+		setToolbarItems:@[self.flexibleSpace, 
+		                  self.add, 
+											self.flexibleSpace, 
+											self.textFieldItem, 
+											self.flexibleSpace, 
+											self.record, 
+											self.flexibleSpace]
+		animated:true];
+}
+
+-(void)toolbarAsEntryTyping{
 	[self 
 		setToolbarItems:@[self.flexibleSpace, 
 		                  self.add, 
@@ -195,7 +248,7 @@
 			self.appDelegate.reach.isReachable)
 	{
 		[self.syncData addOperationWithBlock:^{
-			[self appendDataFrom:0 date:[NSDate date]];
+			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
 		}];
 	}
 }
@@ -215,7 +268,7 @@
 			tg_message_send(
 					self.appDelegate.tg, 
 					peer, text.UTF8String);
-			[self appendDataFrom:0 date:[NSDate date]];
+			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 		}];
 	}
 
@@ -249,7 +302,7 @@
 
 -(void)refresh:(id)sender{
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:0 date:[NSDate date]];
+		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
 	}];
 }
 
@@ -299,36 +352,96 @@
 			break;
 		case id_messageMediaDocument:
 			{
-				if (d.message.isVoice)
+				if (d.message.isVoice){
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_audio@2x.png"];
+				}
+				else if ([d.message.mimeType isEqualToString:@"video/mov"] ||
+					  [d.message.docFileName.pathExtension.lowercaseString 
+							isEqualToString:@"mov"])
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_mov@2x.png"];
+					d.message.isVideo = YES;
+				}
 				
+				else if ([d.message.mimeType isEqualToString:@"video/mp4"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"mp4"])
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_mp4@2x.png"];
+					d.message.isVideo = YES;
+				}
+				
+				else if ([d.message.mimeType isEqualToString:@"audio/ogg"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"ogg"])
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_audio@2x.png"];
+					d.message.isVoice = YES;
+				}
+				
+				else if ([d.message.mimeType isEqualToString:@"audio/mp3"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"mp3"])
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_mp3@2x.png"];
+				}
+				else if ([d.message.mimeType 
+									isEqualToString:@"application/x-pdf"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"pdf"])
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_pdf@2x.png"];
+				}
+				else if ([d.message.mimeType 
+									isEqualToString:@"application/msword"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"doc"] ||
+								 [d.message.mimeType 
+									isEqualToString:@"application/vnd.openxmlformats-officedocument.wordprocessingml.document"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"docx"])
+
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_doc@2x.png"];
+				}
+				else if ([d.message.mimeType 
+									isEqualToString:@"application/vnd.ms-excel"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"xls"] ||
+								 [d.message.mimeType 
+									isEqualToString:@"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"xlsx"])
+
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_xls@2x.png"];
+				}
+				else if ([d.message.mimeType 
+									isEqualToString:@"application/vnd.ms-popwerpoint"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"ppt"] ||
+								 [d.message.mimeType 
+									isEqualToString:@"application/vnd.openxmlformats-officedocument.presentationtml.presentation"] ||
+						     [d.message.docFileName.pathExtension.lowercaseString 
+									isEqualToString:@"pptx"])
+
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_ppt@2x.png"];
+				}
+
 				else if (d.message.isVideo)
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_video@2x.png"];
 				
-				// todo handle MIME TYPES
-				// d.message.mimeType
-				else if ([d.message.mimeType isEqualToString:@"video/mov"] ||
-						     [[d.message.docFileName pathExtension] isEqualToString:@"mov"] ||
-						     [[d.message.docFileName pathExtension] isEqualToString:@"MOV"])
-					d.message.photo = 
-						[UIImage imageNamed:@"filetype_icon_mov@2x.png"];
-				
-				else if ([d.message.mimeType isEqualToString:@"video/mp4"] ||
-						     [[d.message.docFileName pathExtension] isEqualToString:@"mp4"] ||
-						     [[d.message.docFileName pathExtension] isEqualToString:@"MP4"])
-					d.message.photo = 
-						[UIImage imageNamed:@"filetype_icon_mp4@2x.png"];
-				
-				else if ([d.message.mimeType isEqualToString:@"audio/ogg"])
-					d.message.photo = 
-						[UIImage imageNamed:@"filetype_icon_audio@2x.png"];
-				
-				else if ([d.message.mimeType isEqualToString:@"audio/mp3"])
-					d.message.photo = 
-						[UIImage imageNamed:@"filetype_icon_mp3@2x.png"];
-
 				else
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_unknown@2x.png"];
@@ -348,42 +461,12 @@
 					[UIImage imageNamed:@"filetype_icon_unknown@2x.png"];
 			break;
 	} // end switch (d.message.mediaType)
-
-	if (!download)
-		return;
-	
-	if (!self.appDelegate.tg ||
-			!self.appDelegate.reach.isReachable ||
-			!self.appDelegate.authorizedUser)
-		return;
-	
-	// try to get image from database
-	if (d.message.docId && !d.message.photoData){
-		char *photo  = 
-			tg_get_document_thumb(
-					self.appDelegate.tg, 
-					d.message.docId, 
-					uint64_t size, uint64_t access_hash, const char *file_reference, const char *thumb_size);
-			tg_get_photo_file(
-					self.appDelegate.tg, 
-					d.message.photoId, 
-					d.message.photoAccessHash, 
-					d.message.photoFileReference.UTF8String, 
-					"s");
-		if (photo){
-			// add photo to BubbleData
-			d.message.photoData = [NSData dataFromBase64String:
-					[NSString stringWithUTF8String:photo]];
-			d.message.photo = [UIImage imageWithData:d.message.photoData];
-			[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
-			free(photo);
-		}
-	}
-
 }
 
-- (void)appendDataFrom:(int)offset date:(NSDate *)date
+- (void)appendDataFrom:(int)offset date:(NSDate *)date 
+		scrollToBottom:(Boolean)scrollToBottom
 {
+	[self.syncData cancelAllOperations];
 	//sleep(1); //for FLOOD_WAIT
 	
 	if (!self.dialog){
@@ -436,6 +519,8 @@
 				[self.refreshControl endRefreshing];
 				[self.spinner stopAnimating];
 				[self.bubbleTableView reloadData];
+				if (scrollToBottom)
+					[self.bubbleTableView scrollBubbleViewToBottomAnimated:YES];
 	});
 
 	/*
@@ -453,21 +538,27 @@
 				self.dialog.peerId,
 				self.dialog.accessHash
 			};
-			tg_messages_set_read(
-					self.appDelegate.tg, 
-					peer, 
-					bd.message.id);
-		}
-	}];
-	*/
+			*/
+			//tg_messages_set_read(
+					//self.appDelegate.tg, 
+					//peer, 
+					//self.dialog.topMessageId);
+		//}
+	//}];
+	//
 }
 
 - (void)reloadData {
+	if (!self.appDelegate.tg)
+		return;
+
+	[self.syncData cancelAllOperations];
+
 	// animate spinner
 	if (!self.refreshControl.refreshing)
 		[self.spinner startAnimating];
 
-	[self.bubbleDataArray removeAllObjects];
+	//[self.bubbleDataArray removeAllObjects];
 
 	tg_peer_t peer = {
 			self.dialog.peerType,
@@ -492,7 +583,7 @@
 		});
 
 		// update data
-		[self appendDataFrom:0 date:[NSDate date]];
+		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
 		
 	}];
 }
@@ -504,99 +595,120 @@ static int messages_callback(void *d, const tg_message_t *m){
 	ChatViewController *self = [dict objectForKey:@"self"];
 	NSNumber *update = [dict objectForKey:@"update"];
 
-	if (m->peer_id_ == self.dialog.peerId){
 
-		NSBubbleData *item = NULL; 
-		for (NSBubbleData *d in self.bubbleDataArray){
-			if (d.message.id == m->id_){
-				item = d;
-				break;
-			}
+	NSBubbleData *item = NULL; 
+	for (NSBubbleData *d in self.bubbleDataArray){
+		if (d.message.id == m->id_){
+			item = d;
+			break;
 		}
+	}
 
-		if (item){
-			// update TGMessage
-			dispatch_sync(dispatch_get_main_queue(), ^{
-				
-				// init TGMessage
-				item.message = [[TGMessage alloc]initWithMessage:m];
-				
-				if (m->photo_id){
-					[self getPhotoForMessageCached:item 
-						download:[update boolValue]];
-				} else if (m->doc_id){
-					[self getDocumentForMessage:item];
-				}
-			});
-		} else {
-			item = [NSBubbleData alloc]; 
-			if (self.dialog.peerType == TG_PEER_TYPE_CHANNEL)
-				item.width = 280;
-
-			NSBubbleType type = 
-						(m->from_id_ == self.appDelegate.authorizedUser->id_)?
-						BubbleTypeMine:BubbleTypeSomeoneElse;
-		
+	if (item){
+		// update TGMessage
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			
 			// init TGMessage
 			item.message = [[TGMessage alloc]initWithMessage:m];
 			
-			dispatch_sync(dispatch_get_main_queue(), ^{
-				if (m->photo_id){
-					[self getPhotoForMessageCached:item 
-						download:[update boolValue]];
-				} else if (m->doc_id){
-					[self getDocumentForMessage:item];
-				}
-					
-				if (item.message.photo){
-					NSString *text = nil;
-					if (item.message.message)
-						text = item.message.message;
-					
-					[item initWithImage:item.message.photo 
-							date:item.message.date 
-							type:type text:text];
-					
-					if (m->doc_id && item.message.docFileName)
-						item.titleLabel.text = item.message.docFileName;
-					
-					if (m->doc_id){
-						float size = m->doc_size;
-						if (m->doc_size/1048576 > 0) 
-							item.sizeLabel.text = 
-								[NSString stringWithFormat:@"%.2f Mb", 
-									size/1048576];
-						else if (m->doc_size/1024 > 0) 
-							item.sizeLabel.text = 
-								[NSString stringWithFormat:@"%.2f Kb", 
-									size/1024];
-						else
-							item.sizeLabel.text = 
-								[NSString stringWithFormat:@"%lld", 
-									m->doc_size];
-					}
+			if (m->photo_id){
+				[self getPhotoForMessageCached:item 
+					download:[update boolValue]];
+			} else if (m->doc_id){
+				[self getDocumentForMessageChached:item
+					download:[update boolValue]];
+			}
 
-				} else {
-					[item initWithText:item.message.message
-							date:item.message.date 
-							type:type];
+			// play video button
+			//if (m->doc_id && item.message.photoData){
+				//item.videoPlayButton.hidden = NO;
+			//}
+			//else
+				//item.videoPlayButton.hidden = YES;
+
+		});
+	} else {
+		item = [NSBubbleData alloc]; 
+		if (self.dialog.peerType == TG_PEER_TYPE_CHANNEL)
+			item.width = 280;
+
+		// init TGMessage
+		item.message = [[TGMessage alloc]initWithMessage:m];
+		
+		NSBubbleType type = 
+			item.message.mine?BubbleTypeMine:BubbleTypeSomeoneElse; 
+		
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			if (m->photo_id){
+				[self getPhotoForMessageCached:item 
+					download:[update boolValue]];
+			} else if (m->doc_id){
+				[self getDocumentForMessageChached:item
+					download:[update boolValue]];
+			}
+				
+			
+			if (item.message.photo){
+				NSString *text = nil;
+				if (item.message.message)
+					text = item.message.message;
+				
+				[item initWithImage:item.message.photo 
+						date:item.message.date 
+						type:type text:text];
+				
+				if (m->doc_id && item.message.docFileName)
+					item.titleLabel.text = item.message.docFileName;
+				
+				if (m->doc_id){
+					float size = m->doc_size;
+					if (m->doc_size/1048576 > 0) 
+						item.sizeLabel.text = 
+							[NSString stringWithFormat:@"%.2f Mb", 
+								size/1048576];
+					else if (m->doc_size/1024 > 0) 
+						item.sizeLabel.text = 
+							[NSString stringWithFormat:@"%.2f Kb", 
+								size/1024];
+					else
+						item.sizeLabel.text = 
+							[NSString stringWithFormat:@"%lld", 
+								m->doc_size];
 				}
 
-				// add to array
-				[self.bubbleDataArray addObject:item];
-			});
-		} // end if (item)
-	}
+			// play video button
+			//if (m->doc_id && item.message.photoData){
+				//item.videoPlayButton.hidden = NO;
+			//}
+			//else
+				//item.videoPlayButton.hidden = YES;
+
+			} else {
+				[item initWithText:item.message.message
+						date:item.message.date 
+						type:type];
+			}
+
+			// add to array
+			[self.bubbleDataArray addObject:item];
+		});
+	} // end if (item)
 
 	return 0;
 }
 
+#pragma mark <Files Handler>
 int get_document_cb(void *d, const tg_file_t *f){
 	NSDictionary *dict = d;
 	ChatViewController *self = [dict objectForKey:@"self"];
 	NSMutableData *data = [dict objectForKey:@"d"];
+
+	// write data
 	[data appendBytes:f->bytes_.data length:f->bytes_.size];
+	
+	// update progress view
 	self.progressCurrent += f->bytes_.size;
+			
 	return 0;
 }
 
@@ -613,7 +725,128 @@ int get_document_progress(void *d, int size, int total){
 	return 0;
 }
 
-#pragma mark <UIBubbleTableViewDelegate>
+-(void)openUrl:(NSURL *)url data:(NSBubbleData *)bubbleData{
+	
+	//if (data.message.isVideo || data.message.isVoice){
+		NSString *raw =  nil;
+		
+		// handle with OGG
+		if (bubbleData.message.isVoice){
+			OggOpusFile *file;
+			int error = OPUS_OK;		
+			
+			// check opus file
+			file = op_test_file(url.path.UTF8String, &error);	
+			if (file != NULL){
+				 error = op_test_open(file);
+				 op_free(file);
+				 if (error != OPUS_OK){
+						[self.appDelegate showMessage:@"not OPUS OGG file"];
+						return;
+				 }
+			} else {
+				[self.appDelegate showMessage:@"can't open file"];
+				return;
+			}
+
+			// read file to NSData
+			NSMutableData *data = [NSMutableData data];
+			file = op_open_file(url.path.UTF8String, &error);	
+			NSAssert(file, @"op_open_file");
+			int c = op_channel_count(file, -1);
+
+			opus_int16 pcm[(160*48*c)/2];
+			int size = sizeof(pcm)/sizeof(*pcm);
+			while (op_read_stereo(file, pcm, size) > 0) 
+			{
+				[data appendBytes:pcm length:size];
+			}
+
+			// convert data to wav
+			int readcount=0;
+			short NumChannels = 2;
+			short BitsPerSample = 16;
+			int SamplingRate = 48000;
+			short numOfSamples = 160;
+
+			int ByteRate = NumChannels*BitsPerSample*SamplingRate/8;
+			short BlockAlign = NumChannels*BitsPerSample/8;
+			//int DataSize = NumChannels*numOfSamples *  BitsPerSample/8;
+			int DataSize = data.length;
+			int chunkSize = 16;
+			int totalSize = 36 + DataSize;
+			short audioFormat = 1;
+
+			NSString *tmpFile = 
+				[NSTemporaryDirectory() stringByAppendingPathComponent:@"tmp.wav"];
+			[NSFileManager.defaultManager removeItemAtPath:tmpFile error:nil];
+
+			FILE *fout;
+			if((fout = fopen(tmpFile.UTF8String, "w")) == NULL)
+			{
+				[self.appDelegate showMessage:@"Error opening out file "];
+				return;
+			}
+
+			//totOutSample = 0;
+			fwrite("RIFF", sizeof(char), 4,fout);
+			fwrite(&totalSize, sizeof(int), 1, fout);
+			fwrite("WAVE", sizeof(char), 4, fout);
+			fwrite("fmt ", sizeof(char), 4, fout);
+			fwrite(&chunkSize, sizeof(int),1,fout);
+			fwrite(&audioFormat, sizeof(short), 1, fout);
+			fwrite(&NumChannels, sizeof(short),1,fout);
+			fwrite(&SamplingRate, sizeof(int), 1, fout);
+			fwrite(&ByteRate, sizeof(int), 1, fout);
+			fwrite(&BlockAlign, sizeof(short), 1, fout);
+			fwrite(&BitsPerSample, sizeof(short), 1, fout);
+			fwrite("data", sizeof(char), 4, fout);
+			fwrite(&DataSize, sizeof(int), 1, fout);
+
+			fwrite(data.bytes, data.length, 1, fout);	
+			fclose(fout);
+
+			url = [NSURL fileURLWithPath:tmpFile];
+
+			// convert wav file to readable format 
+			//url = [NSURL fileURLWithPath:[self.appDelegate.filesCache 
+				//stringByAppendingPathComponent:
+						//[NSString stringWithFormat:@"%lld.m4a", 
+				//bubbleData.message.docId]]];
+			//AVAsset *asset = 
+				//[AVAsset assetWithURL:[NSURL fileURLWithPath:tmpFile]];
+			//AVAssetExportSession *exportSession =
+				//[[AVAssetExportSession alloc]initWithAsset:asset 
+																				//presetName:AVAssetExportPresetAppleM4A];
+			//exportSession.outputFileType = AVFileTypeAppleM4A;
+			//exportSession.outputURL = url; 
+			//[exportSession exportAsynchronouslyWithCompletionHandler:^{
+				//if (exportSession.status == AVAssetExportSessionStatusCompleted)
+				//{
+					MPMoviePlayerViewController *mpc = 
+						[[MPMoviePlayerViewController alloc]initWithContentURL:url];
+					[self presentMoviePlayerViewControllerAnimated:mpc];
+					[mpc.moviePlayer prepareToPlay];
+					[mpc.moviePlayer play];
+				//}
+				//else if (exportSession.status == AVAssetExportSessionStatusCancelled)
+				//{
+					//[self.appDelegate showMessage:@"file export canceled"];
+				//}
+				//else 
+				//{
+					//[self.appDelegate showMessage:@"can't export file to m4a"];
+				//}
+			//}];
+
+			return;
+		}
+			
+		QuickLookController *qlc = [[QuickLookController alloc]
+			initQLPreviewControllerWithData:@[url]];	
+		[self presentViewController:qlc animated:TRUE completion:nil];
+}
+
 -(void)getDoc:(NSBubbleData *)data{
 	TGMessage *m = data.message;
 	
@@ -630,62 +863,71 @@ int get_document_progress(void *d, int size, int total){
 		m.docId, m.docFileName]];
 	}
 	
-	NSURL *url = [NSURL fileURLWithPath:filepath]; 
-		if ([NSFileManager.defaultManager fileExistsAtPath:filepath]){
-				QuickLookController *qlc = [[QuickLookController alloc]
-					initQLPreviewControllerWithData:@[url]];	
-				[self presentViewController:qlc animated:TRUE completion:nil];
-		} else {
-			// download file
-			//if (data.spinner)
-				//[data.spinner startAnimating]; 
+	NSURL *url = [NSURL fileURLWithPath:filepath];
+	
+	unsigned long long fileSize = 
+				[[[NSFileManager defaultManager] 
+					attributesOfItemAtPath:filepath error:nil] fileSize];
 
-			[self toolbarAsProgress];
-			[self.progressView setProgress:0.0];
-			[self.progressLabel 
-				setText:[NSString stringWithFormat:@"%d /\n%lld",
-				0, m.docSize]];
+	[data.spinner startAnimating];
+			
+	if ([NSFileManager.defaultManager fileExistsAtPath:filepath] 
+			//&&
+			//fileSize >= data.message.docSize
+			// check hashes
+			)
+	{
+		[self openUrl:url data:data];
+	} else {
+		// check connection
+		if (!self.appDelegate.tg ||
+				!self.appDelegate.authorizedUser ||
+				!self.appDelegate.reach.isReachable)
+			return;
 
-			[self.download addOperationWithBlock:^{
-				NSMutableData *d = [NSMutableData data];
-				NSDictionary *dict = @{@"self":self, @"d":d};
-				self.progressTotal = m.docSize;
-				self.progressCurrent = 0;
-				tg_get_document(
-						self.appDelegate.tg, 
-						m.docId,
-						m.docSize, 
-						m.docAccessHash, 
-						[m.docFileReference UTF8String], 
-						"", 
-						dict, 
-						get_document_cb,
-						self,
-						get_document_progress);
+		// download file
+		[self toolbarAsProgress];
+		[self.progressView setProgress:0.0];
+		[self.progressLabel 
+			setText:[NSString stringWithFormat:@"%d /\n%lld",
+			0, m.docSize]];
+		
+		[self.download addOperationWithBlock:^{
+		
+			// remove file
+			[NSFileManager.defaultManager removeItemAtPath:filepath 
+																						 error:nil];
 
-				// on done
-				if (data.spinner){
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						[self toolbarAsEntry];
-						//[data.spinner stopAnimating]; 
-					});
-				}
-				if (d.length > 0){
-					[d writeToFile:filepath atomically:YES];
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						QuickLookController *qlc = [[QuickLookController alloc]
-							initQLPreviewControllerWithData:@[url]];	
-						[self presentViewController:qlc 
-															 animated:TRUE completion:nil];
-					});
-				} else { // no data
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						[self.appDelegate 
-							showMessage:@"can't download file"];
-					});
-				}
-			}];
+			[NSFileManager.defaultManager createFileAtPath:filepath 
+								                            contents:nil 
+							                            attributes:nil];
+
+			// open stream
+			NSMutableData *d = [NSMutableData data];
+			NSDictionary *dict = @{@"self":self, @"d":d};
+
+			self.progressTotal = m.docSize;
+			self.progressCurrent = 0;
+			tg_get_document(
+					self.appDelegate.tg, 
+					m.docId,
+					m.docSize, 
+					m.docAccessHash, 
+					[m.docFileReference UTF8String], 
+					dict, 
+					get_document_cb,
+					self,
+					get_document_progress);
+			
+			// on done
+			[d writeToFile:filepath atomically:YES];
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[self toolbarAsEntry];
+				[self openUrl:url data:data];
+			});
+		}];
 	}
+	[data.spinner stopAnimating];
 }
 
 -(void)getPhoto:(NSBubbleData *)data{
@@ -699,6 +941,11 @@ int get_document_progress(void *d, int size, int total){
 					initQLPreviewControllerWithData:@[url]];	
 				[self presentViewController:qlc animated:TRUE completion:nil];
 		} else {
+			if (!self.appDelegate.tg ||
+					!self.appDelegate.authorizedUser ||
+					!self.appDelegate.reach.isReachable)
+				return;
+
 			// download photo
 			if (data.spinner)
 				[data.spinner startAnimating]; 
@@ -741,6 +988,7 @@ int get_document_progress(void *d, int size, int total){
 		}
 }
 
+#pragma mark <UIBubbleTableViewDelegate>
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectData:(NSBubbleData *)data 
 {
 	TGMessage *m = data.message;
@@ -771,7 +1019,7 @@ didScroll:(UIScrollView *)scrollView
 				didEndDecelerationgTo:(NSBubbleData *)data
 {
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:0 date:data.date];
+		[self appendDataFrom:0 date:data.date scrollToBottom:NO];
 	}];
 }
 
@@ -779,7 +1027,7 @@ didScroll:(UIScrollView *)scrollView
 				didEndDecelerationgToBottom:(Boolean)bottom
 {
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:0 date:[NSDate date]];
+		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
 	}];
 }
 
@@ -787,7 +1035,7 @@ didScroll:(UIScrollView *)scrollView
 				didEndDecelerationgToTop:(Boolean)top
 {
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:self.bubbleDataArray.count-1 date:[NSDate date]];
+		[self appendDataFrom:self.bubbleDataArray.count-1 date:[NSDate date] scrollToBottom:NO];
 	}];
 }
 
@@ -804,21 +1052,22 @@ didScroll:(UIScrollView *)scrollView
 
 #pragma mark <UITextField Delegate>
 - (void)textFieldDidBeginEditing:(UITextField *)textField {
+	[self toolbarAsEntryTyping];
 	if (self.appDelegate.tg &&
 			self.appDelegate.authorizedUser && 
 			self.appDelegate.reach.isReachable)
 	{
-		[self.syncData addOperationWithBlock:^{
-			tg_peer_t peer = {
-						self.dialog.peerType, 
-						self.dialog.peerId, 
-						self.dialog.accessHash
-			};
-			tg_messages_set_typing(
-					self.appDelegate.tg, 
-					peer, 
-					true);
-		}];
+		//[self.syncData addOperationWithBlock:^{
+			//tg_peer_t peer = {
+						//self.dialog.peerType, 
+						//self.dialog.peerId, 
+						//self.dialog.accessHash
+			//};
+			//tg_messages_set_typing(
+					//self.appDelegate.tg, 
+					//peer, 
+					//true);
+		//}];
 	}
 
 	self.bubbleTableView.typingBubble = NSBubbleTypingTypeMe;
@@ -826,21 +1075,22 @@ didScroll:(UIScrollView *)scrollView
 }
 
 - (void)textFieldDidEndEditing:(UITextField *)textField {
+	[self toolbarAsEntry];
 	if (self.appDelegate.tg &&
 			self.appDelegate.authorizedUser && 
 			self.appDelegate.reach.isReachable)
 	{
-		[self.syncData addOperationWithBlock:^{
-			tg_peer_t peer = {
-						self.dialog.peerType, 
-						self.dialog.peerId, 
-						self.dialog.accessHash
-			};
-			tg_messages_set_typing(
-					self.appDelegate.tg, 
-					peer, 
-					false);
-		}];
+		//[self.syncData addOperationWithBlock:^{
+			//tg_peer_t peer = {
+						//self.dialog.peerType, 
+						//self.dialog.peerId, 
+						//self.dialog.accessHash
+			//};
+			//tg_messages_set_typing(
+					//self.appDelegate.tg, 
+					//peer, 
+					//false);
+		//}];
 	}
 
 	self.bubbleTableView.typingBubble = NSBubbleTypingTypeNobody;
@@ -891,12 +1141,12 @@ didScroll:(UIScrollView *)scrollView
   
 	// hide picker
 	[self dismissViewControllerAnimated:YES completion:nil];
-  UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+  //UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
 
-    NSBubbleData *imgBubbleData = 
-			[NSBubbleData dataWithImage:image date:[NSDate date] type:BubbleTypeMine];
-  [self.bubbleDataArray addObject:imgBubbleData];
-	[self.bubbleTableView reloadData];
+    //NSBubbleData *imgBubbleData = 
+			//[NSBubbleData dataWithImage:image date:[NSDate date] type:BubbleTypeMine];
+  //[self.bubbleDataArray addObject:imgBubbleData];
+	//[self.bubbleTableView reloadData];
 }
 
 #pragma mark <Keyboard Functions>
@@ -928,5 +1178,180 @@ didScroll:(UIScrollView *)scrollView
 				self.navigationController.toolbar.frame = toolbarFrame;
     }];
 }
+
+#pragma mark <Audio Recording>
+-(void)startRecording:(id)sender{
+	
+	// Init audio with record capability
+	AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+	[audioSession setCategory:AVAudioSessionCategoryRecord error:nil];
+
+	self.recordSettings = [[NSMutableDictionary alloc] 
+		initWithCapacity:10];
+
+	[self.recordSettings setObject:
+				 [NSNumber numberWithInt: kAudioFormatLinearPCM] 
+													forKey: AVFormatIDKey];
+	[self.recordSettings setObject:
+			 [NSNumber numberWithFloat:48000.0] 
+													forKey: AVSampleRateKey];
+	[self.recordSettings setObject:
+		[NSNumber numberWithInt:1] 
+										 forKey:AVNumberOfChannelsKey];
+	[self.recordSettings setObject:
+		[NSNumber numberWithInt:16] 
+										 forKey:AVLinearPCMBitDepthKey];
+	[self.recordSettings setObject:
+	 [NSNumber numberWithBool:NO] 
+										 forKey:AVLinearPCMIsBigEndianKey];
+	[self.recordSettings setObject:
+	 [NSNumber numberWithBool:NO] 
+										 forKey:AVLinearPCMIsFloatKey];
+
+	NSString *tmpFile = 
+		[NSTemporaryDirectory() stringByAppendingPathComponent:@"tmp.caf"];
+	[NSFileManager.defaultManager removeItemAtPath:tmpFile error:nil];
+	
+	NSURL *url = [NSURL fileURLWithPath: tmpFile];
+
+	NSError *error = nil;
+	self.audioRecorder = [[ AVAudioRecorder alloc] 
+		initWithURL:url settings:self.recordSettings error:&error];
+
+	if ([self.audioRecorder prepareToRecord] == YES){
+		//start recording
+		[self.audioRecorder stop];
+		// vibration
+		AudioServicesPlaySystemSound(
+				kSystemSoundID_Vibrate);
+		AudioServicesPlaySystemSound(
+				self.recordStart);
+		// sound
+		[self.audioRecorder record];
+	}else {
+			int errorCode = CFSwapInt32HostToBig ([error code]);
+			NSLog(@"Error: %@ [%4.4s])" , 
+					[error localizedDescription], (char*)&errorCode);
+
+	}
+	NSLog(@"recording");
+}
+
+-(void)recordSwitch:(id)sender{
+	UISwitch *s = sender;
+	if (s.isOn)
+		[self startRecording:nil];
+	else
+		[self stopRecording:nil];
+}
+
+-(void)sendVoiceMessage {
+
+	NSString *cafFile = 
+		[NSTemporaryDirectory() stringByAppendingPathComponent:@"tmp.caf"];
+	NSString *oggFile = 
+		[NSTemporaryDirectory() stringByAppendingPathComponent:@"tmp.ogg"];
+	
+	// extract caf file
+	FILE *pcm = caf_extract(
+			cafFile.UTF8String, 
+			NULL);
+	if (pcm == NULL){
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.appDelegate showMessage:@"can't extract data from caf file"];
+		});
+		return;
+	}
+
+	// write opus ogg
+	int err = pcm_to_opusogg(
+			pcm, 
+			oggFile.UTF8String, 
+			"unknown",
+		 	"message", 
+			48000.0, 
+			1, 
+			960);
+	if (err){
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.appDelegate showMessage:[NSString 
+				stringWithFormat:@"can't encode opus, err: %d", err]];
+		});
+		return;
+	}
+
+	if (!self.appDelegate.tg ||
+			!self.appDelegate.reach.isReachable ||
+			!self.appDelegate.authorizedUser)
+	{
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.appDelegate showMessage:@"no network"];
+		});
+		return;
+	}
+
+	// send
+	tg_peer_t peer = {
+		self.dialog.peerType, 
+		self.dialog.peerId, 
+		self.dialog.accessHash
+	};	
+		
+	NSString *message = self.textField.text;
+	
+	[self.download addOperationWithBlock:^{
+		tg_document_t *vm = tg_voice_message(
+				self.appDelegate.tg, oggFile.UTF8String);
+		
+		int err = tg_document_send(
+				self.appDelegate.tg, 
+				&peer, 
+				vm,
+				message.UTF8String,
+				NULL, NULL);
+
+		return;
+		if (err){
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[self.appDelegate showMessage:@"error to send message"];
+			});
+		}
+		// on done
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+		});
+		free(vm);
+	}];
+}
+
+-(void)stopRecording:(id)sender{
+	//[self.appDelegate showMessage:@"STOP"];
+	NSLog(@"stopRecording");
+	[self.audioRecorder stop];
+	NSLog(@"stopped");
+	
+	[self.appDelegate askYesNo:@"Send voice message?" 
+		onYes:^{
+			[self sendVoiceMessage];
+		}];
+}
+
+#pragma mark <AppActivity Delegate>
+-(void)willResignActive {
+	[self.spinner stopAnimating];
+	if (self.timer)
+		[self.timer fire];
+	[self.syncData cancelAllOperations];
+	[self.download cancelAllOperations];
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+#pragma mark <Authorization Delegate>
+-(void)tgLibLoaded{
+}
+-(void)authorizedAs:(tl_user_t *)user{
+	[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
+}
+
 @end
 // vim:ft=objc

@@ -27,16 +27,33 @@ iTgLegacy_SOURCES = \
 		Base64/Base64.m \
 		UIImage+Utils/UIImage+Utils.m \
 		RequestFactory/CaRequestFactory.m \
+		opusfile/internal.c \
+		opusfile/opusfile.c \
+		opusfile/info.c \
+		opusfile/stream.c \
+		ogg/ogg/framing.c \
+		libopusenc/src/ogg_packer.c \
+		libopusenc/src/opus_header.c \
+		libopusenc/src/opusenc.c \
+		libopusenc/src/picture.c \
+		libopusenc/src/resample.c \
+		libopusenc/src/unicode_support.c \
+		../libtg/tools/cafextract.c \
+		../libtg/tools/pcm_to_opusogg.c \
+		../libtg/tools/opus_to_wav.c \
 		main.m
 
+iTgLegacy_OBJCFLAGS = \
+	-Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus
+
 iTgLegacy_CFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -fobjc-arc
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -fobjc-arc -Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus -Ilibopusenc/include -Ilibopusenc/src
 
 iTgLegacy_LDFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -fobjc-arc
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -fobjc-arc -Lopus/lib -lopus
 
 iTgLegacy_LDADD = \
-			-lssl -lcurl -L../libs -ltg -L../libtg/tg/.libs 
+			-lssl -lcurl -L../libs -ltg -L../libtg/tg/.libs -Lopus/lib -lopus
 
 bin_SCRIPTS = iTgLegacy.ipa
 CLEANiFILES = $(bin_SCRIPTS)

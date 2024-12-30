@@ -22,24 +22,40 @@
 -(void)isOffLine;
 @end
 
+@protocol AppActivityDelegate <NSObject>
+-(void)willResignActive;
+@end
+
+enum {
+	ALLERT_TYPE_ASK_INPUT,
+	ALLERT_TYPE_YES_NO,
+};
+
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) NSTimer *timer;
 @property (strong, nonatomic) UIWindow *window;
 @property (strong,nonatomic) NSURL *url;
+@property NSInteger allertType;
 @property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
+@property (strong, nonatomic) void (^askYesNo_onYes)();
+@property (strong) NSOperationQueue *syncData;
+@property FILE *log;
 @property tg_t *tg;
 @property tl_user_t *authorizedUser;
 @property long *user_id;
 @property (strong) id<AuthorizationDelegate> authorizationDelegate;
 @property (strong) Reachability *reach;
 @property (strong) id<ReachabilityDelegate> reachabilityDelegate;
+@property (strong) id<AppActivityDelegate> appActivityDelegate;
 @property (strong) NSString *imagesCache;
 @property (strong) NSString *filesCache;
 @property (strong) NSString *peerPhotoCache;
 @property (strong) NSString *smallPhotoCache;
+@property (strong) NSString *thumbDocCache;
 
 -(void)showMessage:(NSString *)msg;
+-(void)askYesNo:(NSString *)msg onYes:(void (^)())onYes;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;
 -(void)authorize;
 

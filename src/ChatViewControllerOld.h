@@ -1,4 +1,7 @@
+#include "AudioToolbox/AudioToolbox.h"
 #include "BubbleView/UIBubbleTableView.h"
+#import "MediaPlayer/MediaPlayer.h"
+#import "AVFoundation/AVAudioRecorder.h"
 #include "TGDialog.h"
 #include "UIKit/UIKit.h"
 #import <UIKit/UIKit.h>
@@ -7,13 +10,22 @@
 @interface ChatViewController : UIViewController
 <UIBubbleTableViewDataSource, UIBubbleTableViewDelegate,
 	UIImagePickerControllerDelegate, UITextFieldDelegate,
-	UIActionSheetDelegate, UINavigationControllerDelegate>
+	UIActionSheetDelegate, UINavigationControllerDelegate,
+	AppActivityDelegate, AuthorizationDelegate>
 {
 }
 
 @property (strong) AppDelegate *appDelegate;
 
 @property (strong) UIBubbleTableView *bubbleTableView;
+
+//@property (strong) MPMoviePlayerController *moviePlayerController;
+//@property (strong) MPMoviePlayerViewController *moviePlayerController;
+
+@property (strong) AVAudioRecorder *audioRecorder;
+@property (strong) NSMutableDictionary *recordSettings;
+
+@property SystemSoundID recordStart;
 
 @property (strong) UIProgressView *progressView;
 @property (strong) UILabel *progressLabel;
@@ -42,6 +54,7 @@
 @property (strong) UIBarButtonItem *flexibleSpace;
 @property (strong) UIBarButtonItem *cancel;
 @property (strong) UIBarButtonItem *label;
+@property (strong) UIBarButtonItem *record;
 
 //@property (weak, nonatomic) UITextView *inputField;
 @property (strong, nonatomic) UIImageView *inputFieldImageView;
