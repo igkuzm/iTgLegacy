@@ -113,14 +113,10 @@
 	[self.window setRootViewController:vc];
 	[self.window makeKeyAndVisible];	
 
-	return true;
-}
-
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-	// load tglib
 	[self loadTgLib];
-
 	[self authorize];
+	
+	return true;
 }
 
 - (void)remoteControlReceivedWithEvent:(UIEvent *)event {

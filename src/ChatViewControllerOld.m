@@ -357,6 +357,7 @@
 				if (d.message.isVoice){
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_audio@2x.png"];
+					d.videoPlayButton.hidden = NO;
 				}
 				else if ([d.message.mimeType isEqualToString:@"video/mov"] ||
 					  [d.message.docFileName.pathExtension.lowercaseString 
@@ -1333,10 +1334,7 @@ didScroll:(UIScrollView *)scrollView
 		}
 		
 		// on done
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
-		});
-		
+		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 	}];
 }
 
