@@ -337,6 +337,8 @@ static int get_dialogs_cached_cb(void *d, const tg_dialog_t *dialog)
 	}
 
 	[cell setDialog:dialog];
+	if (dialog.pinned)
+		cell.backgroundColor = [UIColor grayColor];
 	
 	return cell;
 }

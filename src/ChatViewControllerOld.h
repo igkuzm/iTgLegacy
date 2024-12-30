@@ -27,6 +27,8 @@
 
 @property SystemSoundID recordStart;
 
+@property Boolean textFieldIsEditable;
+
 @property (strong) UIProgressView *progressView;
 @property (strong) UILabel *progressLabel;
 @property int progressTotal;

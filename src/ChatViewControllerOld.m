@@ -52,6 +52,8 @@
 	//self.moviePlayerController = 
 		//[[MPMoviePlayerViewController alloc]init];
 	
+	self.textFieldIsEditable = NO; // testing
+	
 	// system sound
 	NSString *recordStartPath = 
 		[NSString stringWithFormat:@"%@/102.m4a", NSBundle.mainBundle];
@@ -1097,6 +1099,10 @@ didScroll:(UIScrollView *)scrollView
 	[self.bubbleTableView reloadData];
 }
 
+- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
+	return self.textFieldIsEditable;
+}
+
 #pragma mark <ACTION SHEET DELEGATE>
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
 	// get selected item
@@ -1239,10 +1245,18 @@ didScroll:(UIScrollView *)scrollView
 
 -(void)recordSwitch:(id)sender{
 	UISwitch *s = sender;
-	if (s.isOn)
+	if (s.isOn){
+		self.textFieldIsEditable = NO;
+		self.textField.text = @"";
+		self.textField.placeholder = @"Recording audio...";
 		[self startRecording:nil];
-	else
+	}
+	else {
 		[self stopRecording:nil];
+		self.textFieldIsEditable = YES;
+		self.textField.text = @"";
+		self.textField.placeholder = @"";
+	}
 }
 
 -(void)sendVoiceMessage {
@@ -1289,38 +1303,40 @@ didScroll:(UIScrollView *)scrollView
 		});
 		return;
 	}
-
-	// send
-	tg_peer_t peer = {
-		self.dialog.peerType, 
-		self.dialog.peerId, 
-		self.dialog.accessHash
-	};	
 		
-	NSString *message = self.textField.text;
-	
+	// send
 	[self.download addOperationWithBlock:^{
+		
 		tg_document_t *vm = tg_voice_message(
 				self.appDelegate.tg, oggFile.UTF8String);
+
+		tg_peer_t peer = {
+			self.dialog.peerType, 
+			self.dialog.peerId, 
+			self.dialog.accessHash
+		};	
 		
 		int err = tg_document_send(
 				self.appDelegate.tg, 
 				&peer, 
 				vm,
-				message.UTF8String,
+				NULL,
 				NULL, NULL);
-
-		return;
+		
+		free(vm);
+		
 		if (err){
 			dispatch_sync(dispatch_get_main_queue(), ^{
 				[self.appDelegate showMessage:@"error to send message"];
 			});
+			return;
 		}
+		
 		// on done
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 		});
-		free(vm);
+		
 	}];
 }
 
