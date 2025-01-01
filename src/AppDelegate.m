@@ -69,9 +69,9 @@
   //[[NSNotificationCenter defaultCenter] addObserver:@"" selector:@selector(callMyWebService) name:nil object:nil];
 
 	// Override point for customization after application launch.
-	//[[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-	//[[UIApplication sharedApplication] registerForRemoteNotificationTypes:
-		//(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeSound|UIRemoteNotificationTypeAlert)];
+	[application beginReceivingRemoteControlEvents];
+	[application registerForRemoteNotificationTypes:
+		(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeSound|UIRemoteNotificationTypeAlert)];
 	
 	// start reachability
 	self.reach = [Reachability reachabilityWithHostname:@"www.google.ru"];

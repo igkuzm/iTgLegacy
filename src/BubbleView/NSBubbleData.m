@@ -9,6 +9,7 @@
 //
 
 #import "NSBubbleData.h"
+#include "Foundation/Foundation.h"
 #include "CoreGraphics/CoreGraphics.h"
 #include "UIKit/UIKit.h"
 #import <QuartzCore/QuartzCore.h>
@@ -57,29 +58,29 @@ const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 {
 	if (!self.width)
 		self.width = 220;
+
+	if (text.length < 10)
+		text = [NSString stringWithFormat:@"%@          ", text];
     
 	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
   CGSize size = [(text ? text : @"") 
 		sizeWithFont:font
     constrainedToSize:CGSizeMake(self.width, 9999) 
-		lineBreakMode:NSLineBreakByCharWrapping];
+		lineBreakMode:NSLineBreakByWordWrapping];
     
     self.textView = [[UITextView alloc] 
 			initWithFrame:CGRectMake(
 					0, 
 					0, 
-					size.width + 10, 
-					size.height + 15)];
+					size.width, 
+					size.height + 20)];
 
 		self.textView.editable = NO;
 		self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
 		self.textView.scrollEnabled = NO;
-    //label.numberOfLines = 0;
-    //label.lineBreakMode = NSLineBreakByWordWrapping;
     self.textView.text = (text ? text : @"");
-		//label.font = font;
 		self.textView.font = [UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
-		//label.textContainer.lineBreakMode = NSLineBreakByWordWrapping;
+		//self.textView.textContainer.lineBreakMode = NSLineBreakByWordWrapping;
     self.textView.backgroundColor = [UIColor clearColor];
 
 //#if !__has_feature(objc_arc)

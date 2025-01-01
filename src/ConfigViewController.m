@@ -13,7 +13,6 @@
 @implementation ConfigViewController
 
 - (void)viewDidLoad {
-	self.title = @"Config";
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	
 	[self reloadData];

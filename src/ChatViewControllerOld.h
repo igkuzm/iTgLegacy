@@ -2,6 +2,7 @@
 #include "BubbleView/UIBubbleTableView.h"
 #import "MediaPlayer/MediaPlayer.h"
 #import "AVFoundation/AVAudioRecorder.h"
+#import "FilePickerController.h"
 #include "TGDialog.h"
 #include "UIKit/UIKit.h"
 #import <UIKit/UIKit.h>
@@ -11,7 +12,8 @@
 <UIBubbleTableViewDataSource, UIBubbleTableViewDelegate,
 	UIImagePickerControllerDelegate, UITextFieldDelegate,
 	UIActionSheetDelegate, UINavigationControllerDelegate,
-	AppActivityDelegate, AuthorizationDelegate>
+	AppActivityDelegate, AuthorizationDelegate, 
+	FilePickerControllerDelegate>
 {
 }
 

@@ -15,6 +15,10 @@
 @property NSInteger type;
 @end
 
+@protocol FilePickerControllerDelegate <NSObject>
+-(void)filePickerControllerSelectedURL:(NSURL *)url;
+@end
+
 @interface FilePickerController : UITableViewController 
 <UISearchBarDelegate, UIAlertViewDelegate, UIActionSheetDelegate>
 {
@@ -25,6 +29,7 @@
 @property (strong) NSArray *data;
 @property (strong) NSMutableArray *loadedData;
 @property (strong) UISearchBar *searchBar;
+@property (strong) id<FilePickerControllerDelegate> filePickerControllerDelegate;
 
 - (id)initWithPath:(NSString *)path isNew:(BOOL)new;
 @end

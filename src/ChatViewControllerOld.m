@@ -1,4 +1,5 @@
 #import "ChatViewControllerOld.h"
+#import <MobileCoreServices/MobileCoreServices.h>
 #include "opus/include/opus/opus_defines.h"
 #include "CoreAudio/CoreAudioTypes.h"
 #include "AudioToolbox/AudioToolbox.h"
@@ -52,7 +53,7 @@
 	//self.moviePlayerController = 
 		//[[MPMoviePlayerViewController alloc]init];
 	
-	self.textFieldIsEditable = NO; // testing
+	self.textFieldIsEditable = YES; // testing
 	
 	// system sound
 	NSString *recordStartPath = 
@@ -284,15 +285,15 @@
 
 	// create actionSheet
 	UIActionSheet *as = [[UIActionSheet alloc]
-		initWithTitle:@"Отправить" 
+		initWithTitle:@"Send" 
 		delegate:self 
-		cancelButtonTitle:@"отмена" 
+		cancelButtonTitle:@"cancel" 
 		destructiveButtonTitle:nil 
 		otherButtonTitles:
-			@"файл",
-			@"фото",
-			@"изображение",
-			@"геопозицию",
+			@"file",
+			@"camera",
+			@"image/video",
+			@"geopoint",
 		nil];
 	[as showFromToolbar:self.navigationController.toolbar];
 }
@@ -492,7 +493,6 @@
 		[self.spinner startAnimating];
 	});
 
-
 	tg_peer_t peer = {
 		self.dialog.peerType,
 		self.dialog.peerId,
@@ -526,29 +526,11 @@
 					[self.bubbleTableView scrollBubbleViewToBottomAnimated:YES];
 	});
 
-	/*
-	[self.syncData addOperationWithBlock:^{
-		// set read history
-		NSInteger lastSectionIdx = 
-			[self.bubbleTableView numberOfSections] - 1;
-		NSArray *section = 
-			[self.bubbleTableView.bubbleSection objectAtIndex:lastSectionIdx];
-		NSBubbleData *bd = 
-			[section objectAtIndex:section.count - 1];
-		if (bd){
-			tg_peer_t peer = {
-				self.dialog.peerType,
-				self.dialog.peerId,
-				self.dialog.accessHash
-			};
-			*/
-			//tg_messages_set_read(
-					//self.appDelegate.tg, 
-					//peer, 
-					//self.dialog.topMessageId);
-		//}
-	//}];
-	//
+	// set read history
+	tg_messages_set_read(
+			self.appDelegate.tg, 
+			peer, 
+			0);
 }
 
 - (void)reloadData {
@@ -1112,6 +1094,7 @@ didScroll:(UIScrollView *)scrollView
 			{
 				FilePickerController *fpc = [[FilePickerController alloc]
 					initWithPath:@"/var/mobile" isNew:YES];
+				fpc.filePickerControllerDelegate = self;
 				UINavigationController *nc = [[UINavigationController alloc]
 					initWithRootViewController:fpc];
 				[self presentViewController:nc animated:TRUE completion:nil];
@@ -1124,6 +1107,15 @@ didScroll:(UIScrollView *)scrollView
 					[[UIImagePickerController alloc] init];
 				ipc.sourceType = UIImagePickerControllerSourceTypeCamera;
 				ipc.delegate = self;
+				
+				CFStringRef mTypes[2] = { kUTTypeImage, kUTTypeMovie  };
+				CFArrayRef mTypesArray = 
+					CFArrayCreate(CFAllocatorGetDefault(), (const void**)mTypes, 2, &kCFTypeArrayCallBacks);
+				ipc.mediaTypes = (__bridge NSArray*)mTypesArray;
+				CFRelease(mTypesArray);
+				ipc.videoMaximumDuration = 60.0f;
+				ipc.showsCameraControls = YES;
+				ipc.allowsEditing = YES;
         [self presentViewController:ipc animated:YES completion:nil];
 			}
 			break;
@@ -1134,6 +1126,13 @@ didScroll:(UIScrollView *)scrollView
 					[[UIImagePickerController alloc] init];
 				ipc.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
 				ipc.delegate = self;
+				CFStringRef mTypes[2] = { kUTTypeImage, kUTTypeMovie  };
+				CFArrayRef mTypesArray = 
+					CFArrayCreate(CFAllocatorGetDefault(), (const void**)mTypes, 2, &kCFTypeArrayCallBacks);
+				ipc.mediaTypes = (__bridge NSArray*)mTypesArray;
+				CFRelease(mTypesArray);
+				ipc.videoMaximumDuration = 60.0f;
+				ipc.allowsEditing = YES;
         [self presentViewController:ipc animated:YES completion:nil];
 			}
 			break;
@@ -1145,16 +1144,47 @@ didScroll:(UIScrollView *)scrollView
 
 #pragma mark <UIImagePickerController Delegate>
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
-  
-	// hide picker
-	[self dismissViewControllerAnimated:YES completion:nil];
-  //UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+	
+ [self dismissViewControllerAnimated:YES completion:nil];
+	 
+ // UIImagePickerControllerMediaType
+ if([info[UIImagePickerControllerMediaType] isEqualToString:(__bridge NSString *)(kUTTypeImage)]){
+    
+	//image
+	UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+	NSLog(@"UIMAGE: %@", image);
+	if (image){
+		[self sendPhoto:image];
+		UIImageWriteToSavedPhotosAlbum(
+				image, self, 
+				@selector(image:didFinishSavingWithError:contextInfo:), 
+				image);
+	}
 
-    //NSBubbleData *imgBubbleData = 
-			//[NSBubbleData dataWithImage:image date:[NSDate date] type:BubbleTypeMine];
-  //[self.bubbleDataArray addObject:imgBubbleData];
-	//[self.bubbleTableView reloadData];
+ } else {
+    
+	//video
+	NSURL *url = [info objectForKey:UIImagePickerControllerMediaURL];	
+	if (url){
+		NSString* mimeType = [self mimeTypeFromUrl:url];
+	
+		[self sendDocument:tg_document(
+				self.appDelegate.tg, 
+				url.path.UTF8String, 
+				url.lastPathComponent.UTF8String, 
+				mimeType)
+		];
+	 }
+ }
 }
+
+-(void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo{
+	if (error){
+		[self.appDelegate showMessage:error.localizedDescription];
+		return;
+	}
+	//[self sendPhoto:image];
+} 
 
 #pragma mark <Keyboard Functions>
 - (void)keyboardWillShow:(NSNotification *)notification {
@@ -1260,6 +1290,28 @@ didScroll:(UIScrollView *)scrollView
 	}
 }
 
+
+-(void)sendPhoto:(UIImage *)image {
+	NSString *tmpFile = 
+		[NSTemporaryDirectory() stringByAppendingPathComponent:@"tmp.png"];
+	NSData *data = UIImagePNGRepresentation(image);
+	[data writeToFile:tmpFile atomically:YES];
+
+	if (!self.appDelegate.tg ||
+			!self.appDelegate.reach.isReachable ||
+			!self.appDelegate.authorizedUser)
+	{
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.appDelegate showMessage:@"no network"];
+		});
+		return;
+	}
+	
+	tg_document_t *photo = tg_photo(
+			self.appDelegate.tg, tmpFile.UTF8String);
+	[self sendDocument:photo];
+}
+
 -(void)sendVoiceMessage {
 
 	NSString *cafFile = 
@@ -1295,6 +1347,12 @@ didScroll:(UIScrollView *)scrollView
 		return;
 	}
 
+	tg_document_t *vm = tg_voice_message(
+			self.appDelegate.tg, oggFile.UTF8String);
+	[self sendDocument:vm];	
+}
+
+- (void)sendDocument:(tg_document_t *)document {
 	if (!self.appDelegate.tg ||
 			!self.appDelegate.reach.isReachable ||
 			!self.appDelegate.authorizedUser)
@@ -1308,9 +1366,6 @@ didScroll:(UIScrollView *)scrollView
 	// send
 	[self.download addOperationWithBlock:^{
 		
-		tg_document_t *vm = tg_voice_message(
-				self.appDelegate.tg, oggFile.UTF8String);
-
 		tg_peer_t peer = {
 			self.dialog.peerType, 
 			self.dialog.peerId, 
@@ -1320,15 +1375,15 @@ didScroll:(UIScrollView *)scrollView
 		int err = tg_document_send(
 				self.appDelegate.tg, 
 				&peer, 
-				vm,
+				document,
 				NULL,
 				NULL, NULL);
 		
-		free(vm);
+		free(document);
 		
 		if (err){
 			dispatch_sync(dispatch_get_main_queue(), ^{
-				[self.appDelegate showMessage:@"error to send message"];
+				[self.appDelegate showMessage:@"error to send"];
 			});
 			return;
 		}
@@ -1365,6 +1420,33 @@ didScroll:(UIScrollView *)scrollView
 }
 -(void)authorizedAs:(tl_user_t *)user{
 	[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
+}
+
+#pragma mark <FilePickerController Delegate>
+-(void)filePickerControllerSelectedURL:(NSURL *)url {
+	
+	NSString* mimeType = [self mimeTypeFromUrl:url];
+	
+	[self sendDocument:tg_document(
+			self.appDelegate.tg, 
+			url.path.UTF8String, 
+			url.lastPathComponent.UTF8String, 
+			mimeType)
+	];
+}
+
+-(NSString *)mimeTypeFromUrl:(NSURL *)url{
+	NSURLRequest* fileUrlRequest = 
+		[[NSURLRequest alloc] initWithURL:url 
+													cachePolicy:NSURLCacheStorageNotAllowed 
+											timeoutInterval:.1];
+	NSError* error = nil;
+	NSURLResponse* response = nil;
+	NSData* fileData = 
+		[NSURLConnection sendSynchronousRequest:fileUrlRequest 
+													returningResponse:&response 
+																			error:&error];
+	return [response MIMEType];
 }
 
 @end

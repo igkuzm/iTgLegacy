@@ -37,6 +37,7 @@
 				frame.size.width - 120, 
 				16)];
 	self.title.font = [UIFont boldSystemFontOfSize:13];
+	self.title.backgroundColor = [UIColor clearColor];
 
 	[self.message setFrame: 
 		CGRectMake(
@@ -47,6 +48,7 @@
 	self.message.font = [UIFont systemFontOfSize:12];
   self.message.numberOfLines = 0;
   self.message.lineBreakMode = UILineBreakModeWordWrap;
+	self.message.backgroundColor = [UIColor clearColor];
 
 	// make time label
 	[self.time setFrame:
@@ -58,6 +60,7 @@
 	self.time.numberOfLines = 1;
 	self.time.font = [UIFont systemFontOfSize:8];
 	self.time.textColor = [UIColor blueColor];
+	self.time.backgroundColor = [UIColor clearColor];
 		
 	// unread mark
 	[self.unreadView setFrame:

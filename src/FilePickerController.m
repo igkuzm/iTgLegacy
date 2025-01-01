@@ -88,12 +88,16 @@ static _Bool isDir(struct dirent *d)
 				[NSString stringWithFormat:@"/var"];
 				FilePickerController *fc = 
 						[[FilePickerController alloc]initWithPath:path isNew:true];
+				fc.filePickerControllerDelegate = 
+					self.filePickerControllerDelegate;
 				[self.navigationController pushViewController:fc animated:false];
 		} else if ([self.path isEqual:@"/var"]){
 				NSString *path = 
 				[NSString stringWithFormat:@"/var/mobile"];
 				FilePickerController *fc = 
 						[[FilePickerController alloc]initWithPath:path isNew:false];
+				fc.filePickerControllerDelegate = 
+					self.filePickerControllerDelegate;
 				[self.navigationController pushViewController:fc animated:false];
 		}
 	} 
@@ -194,6 +198,8 @@ file_select_filter(const struct dirent *d){
 		[NSString stringWithFormat:@"%@/%@", self.path, self.selected.name];
 	FilePickerController *fc = 
 			[[FilePickerController alloc]initWithPath:path isNew:false];
+	fc.filePickerControllerDelegate = 
+				self.filePickerControllerDelegate;
 	[self.navigationController pushViewController:fc animated:true];
 }
 
@@ -205,17 +211,20 @@ file_select_filter(const struct dirent *d){
 		// open directory in new controller
 		FilePickerController *fc = 
 				[[FilePickerController alloc]initWithPath:path isNew:false];
+		fc.filePickerControllerDelegate = 
+				self.filePickerControllerDelegate;
 		[self.navigationController pushViewController:fc animated:true];
-		return;
+	} else {
+		UIActionSheet *as = 
+				[[UIActionSheet alloc]
+					initWithTitle:self.selected.name 
+					delegate:self 
+					cancelButtonTitle:@"Cancel" 
+					destructiveButtonTitle:nil 
+					otherButtonTitles:@"Send", nil];
+		[as showInView:tableView];
 	}
-	UIActionSheet *as = 
-			[[UIActionSheet alloc]
-				initWithTitle:self.selected.name 
-				delegate:self 
-				cancelButtonTitle:@"Отмена" 
-				destructiveButtonTitle:nil 
-				otherButtonTitles:@"Отправить", nil];
-	[as showInView:tableView];
+
 	// unselect row
 	[self.tableView deselectRowAtIndexPath:indexPath animated:true];
 }
@@ -240,25 +249,6 @@ file_select_filter(const struct dirent *d){
 {
 }
 
-void upload_file_callback(FILE *fp, size_t size, void *d, const char *error){
-	FilePickerController *self = d;
-	if (error){
-			NSLog(@"%s", error);
-			UIAlertView *alert = 
-				[[UIAlertView alloc]initWithTitle:@"error" 
-				message:[NSString stringWithUTF8String:error] 
-			  delegate:self 
-				cancelButtonTitle:@"Закрыть" 
-				otherButtonTitles:nil];
-			[alert show];
-	}
-	if (size){
-		NSLog(@"uploaded: %zu", size);
-	}
-	fclose(fp);
-}
-	
-
 #pragma mark <ALERT DELEGATE FUNCTIONS>
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
 }
@@ -266,7 +256,14 @@ void upload_file_callback(FILE *fp, size_t size, void *d, const char *error){
 #pragma mark <ACTION SHEET DELEGATE>
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
 	if (buttonIndex == 0) {
-		// send image
+		NSURL *url = [NSURL fileURLWithPath:self.path];
+		if (self.filePickerControllerDelegate)
+			[self.filePickerControllerDelegate
+			 	filePickerControllerSelectedURL:
+					[url URLByAppendingPathComponent:self.selected.name]];
+		// close file picker
+		[self.navigationController 
+		 dismissViewControllerAnimated:YES completion:nil];
 	}
 }	
 @end

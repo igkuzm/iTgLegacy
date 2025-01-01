@@ -11,85 +11,45 @@
 #include "UIKit/UIKit.h"
 #import "DialogsViewController.h"
 #import "ConfigViewController.h"
+#import "ContactsListViewController.h"
 
 @implementation RootViewController
 - (void)viewDidLoad {
 	
 	// contacts view
-	//DialogsViewController *cvc = 
-		//[[DialogsViewController alloc]init];
-	//UINavigationController *svnc =
-		//[[UINavigationController alloc]initWithRootViewController:cvc];
+	ContactsListViewController *cvc = 
+		[[ContactsListViewController alloc]init];
+	cvc.title = @"Contacts";
+	//[cvc getContacts];
+	UINavigationController *cvnc =
+		[[UINavigationController alloc]initWithRootViewController:cvc];
 	UITabBarItem *cvtbi = [[UITabBarItem alloc]
 			initWithTabBarSystemItem:UITabBarSystemItemContacts tag:0];
-	//[chatsnc setTabBarItem:chatstbi];
-
+	[cvnc setTabBarItem:cvtbi];
 
 	// chats view
-	DialogsViewController *chatsvc = 
+	DialogsViewController *dvc = 
 		[[DialogsViewController alloc]init];
-	UINavigationController *chatsnc =
-		[[UINavigationController alloc]initWithRootViewController:chatsvc];
-	UITabBarItem *chatstbi = [[UITabBarItem alloc]
-			initWithTitle:@"Messages" 
-			image:[UIImage imageNamed:@"TabIconMessages.png"] 
-			tag:1];
-	[chatsnc setTabBarItem:chatstbi];
+	dvc.title = @"Dialogs";
+	UINavigationController *dvcnc =
+		[[UINavigationController alloc]initWithRootViewController:dvc];
+	UITabBarItem *dvctbi = [[UITabBarItem alloc]
+		initWithTabBarSystemItem:UITabBarSystemItemRecents tag:1];
+	[dvcnc setTabBarItem:dvctbi];
 
 	// config view
 	ConfigViewController *configvc = 
 		[[ConfigViewController alloc]initWithStyle:UITableViewStyleGrouped];
+	configvc.title = @"Config";
 	UINavigationController *confignc =
 		[[UINavigationController alloc]initWithRootViewController:configvc];
 	UITabBarItem *configtbi = [[UITabBarItem alloc]
-			initWithTitle:@"Settings" 
-			image:[UIImage imageNamed:@"TabIconSettings.png"] 
-			tag:2];
+		initWithTabBarSystemItem:UITabBarSystemItemMore tag:2];
+
 	[confignc setTabBarItem:configtbi];
 
-
-	// search view
-	//SearchViewController *searchvc = 
-		//[[SearchViewController alloc]init];
-	//UINavigationController *searchnc =
-		//[[UINavigationController alloc]initWithRootViewController:searchvc];
-	//UITabBarItem *searchtbi = [[UITabBarItem alloc]
-			//initWithTabBarSystemItem:UITabBarSystemItemSearch tag:1];
-	//[searchnc setTabBarItem:searchtbi];
-
-	// player view
-	//PlayerViewController *pvc = 
-		//[[PlayerViewController alloc]init];
-	//UINavigationController *pnc =
-		//[[UINavigationController alloc]initWithRootViewController:pvc];
-	//UITabBarItem *ptbi = [[UITabBarItem alloc]
-		//initWithTitle:@"Плеер" image:[UIImage imageNamed:@"player"] tag:2];
-			////initWithTabBarSystemItem:UITabBarSystemItemRecents tag:3];
-	//[pnc setTabBarItem:ptbi];
-
-
-	// favorites view
-	//FavoritesViewController *favvc = 
-		//[[FavoritesViewController alloc]init];
-	//UINavigationController *favnc =
-		//[[UINavigationController alloc]initWithRootViewController:favvc];
-	//UITabBarItem *favtbi = [[UITabBarItem alloc]
-			//initWithTabBarSystemItem:UITabBarSystemItemFavorites tag:3];
-	//[favnc setTabBarItem:favtbi];
-
-	// playlists view
-	//PlaylistsViewController *plvc = 
-		//[[PlaylistsViewController alloc]init];
-	//UINavigationController *plnc =
-		//[[UINavigationController alloc]initWithRootViewController:plvc];
-	//UITabBarItem *pltbi = [[UITabBarItem alloc]
-		//initWithTitle:@"Плейлисты" image:[UIImage imageNamed:@"playlist"] tag:4];
-			////initWithTabBarSystemItem:UITabBarSystemItemRecents tag:3];
-	//[plnc setTabBarItem:pltbi];
-
-
-	//[self setViewControllers:@[feednc, searchnc, pnc, favnc, plnc] animated:TRUE];
-	[self setViewControllers:@[chatsnc, chatsnc, confignc] animated:TRUE];
+	[self setViewControllers:@[cvnc, dvcnc, confignc] animated:TRUE];
+	[self setSelectedViewController:dvcnc];
 }
 
 @end

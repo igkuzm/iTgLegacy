@@ -20,7 +20,6 @@
 @implementation DialogsViewController
 
 - (void)viewDidLoad {
-	self.title = @"Чаты";
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	self.appDelegate.authorizationDelegate = self;
 	self.appDelegate.appActivityDelegate = self;
@@ -45,7 +44,7 @@
 		[[UISearchBar alloc] initWithFrame:CGRectMake(0,70,320,44)];
 	self.tableView.tableHeaderView=self.searchBar;	
 	self.searchBar.delegate = self;
-	self.searchBar.placeholder = @"Поиск:";
+	self.searchBar.placeholder = @"Search:";
 
 	// refresh control
 	self.refreshControl=
@@ -337,10 +336,14 @@ static int get_dialogs_cached_cb(void *d, const tg_dialog_t *dialog)
 	}
 
 	[cell setDialog:dialog];
-	if (dialog.pinned)
-		cell.backgroundColor = [UIColor grayColor];
 	
 	return cell;
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+	TGDialog *dialog = [self.data objectAtIndex:indexPath.item];
+	if (dialog.pinned)
+		cell.backgroundColor = [UIColor lightGrayColor];
 }
 
 #pragma mark <UITableView Delegate>
@@ -473,5 +476,6 @@ static int get_dialogs_cached_cb(void *d, const tg_dialog_t *dialog)
 		[self.timer fire];
 	[self.syncData cancelAllOperations];
 }
+
 @end
 // vim:ft=objc
