@@ -22,6 +22,8 @@
 @property (strong) UIRefreshControl *refreshControl;
 @property NSInteger currentIndex;
 @property Boolean updatePhotos;
+
+-(void)getDialogsFrom:(NSDate *)date;
 @end
 
 // vim:ft=objc

@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 #include "../libtg/tg/peer.h"
 #include "../libtg/tg/messages.h"
+#include "TGDialog.h"
 
 @interface TGMessage : NSObject
 {
@@ -32,7 +33,7 @@
 @property (strong) NSString *message;
 @property (strong) NSString *mimeType;
 
--(id)initWithMessage:(const tg_message_t *)message;
+- (id)initWithMessage:(const tg_message_t *)m dialog:(const TGDialog *)d;
 
 @end
 // vim:ft=objc

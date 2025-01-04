@@ -58,20 +58,46 @@ const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 {
 	if (!self.width)
 		self.width = 220;
+	
+	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
 
 	if (text.length < 10)
-		text = [NSString stringWithFormat:@"%@          ", text];
-    
-	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
-  CGSize size = [(text ? text : @"") 
+		text = [NSString stringWithFormat:@"%@                    ", text];
+
+	CGSize size = [(text ? text : @"") 
 		sizeWithFont:font
     constrainedToSize:CGSizeMake(self.width, 9999) 
 		lineBreakMode:NSLineBreakByWordWrapping];
-    
+ 
+	int addHeight = 0;
+	if (self.name)
+		addHeight = 20;
+
+	UIView *view = [[UIView alloc] initWithFrame:CGRectMake(
+					0, 
+					0, 
+					size.width, 
+					size.height + 20 + addHeight)];
+
+	if (self.name){
+		self.nameLabel = [[UILabel alloc] initWithFrame:CGRectMake(
+				8, 8, self.width, 20)];
+		self.nameLabel.backgroundColor = [UIColor clearColor];
+		self.nameLabel.text = self.name;
+		if (self.nameColor){
+			self.nameLabel.textColor = self.nameColor;
+		} else {
+			self.nameLabel.textColor = [UIColor lightGrayColor];
+		}
+		self.nameLabel.font = 
+			[UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
+		[view addSubview:self.nameLabel];
+	}
+
     self.textView = [[UITextView alloc] 
 			initWithFrame:CGRectMake(
 					0, 
-					0, 
+					self.name?20:0, 
 					size.width, 
 					size.height + 20)];
 
@@ -79,16 +105,18 @@ const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 		self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
 		self.textView.scrollEnabled = NO;
     self.textView.text = (text ? text : @"");
-		self.textView.font = [UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
+		self.textView.font = 
+			[UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
 		//self.textView.textContainer.lineBreakMode = NSLineBreakByWordWrapping;
     self.textView.backgroundColor = [UIColor clearColor];
+		[view addSubview:self.textView];
 
 //#if !__has_feature(objc_arc)
     //[label autorelease];
 //#endif
     
     UIEdgeInsets insets = (type == BubbleTypeMine ? textInsetsMine : textInsetsSomeone);
-    return [self initWithView:self.textView date:date type:type insets:insets];
+    return [self initWithView:view date:date type:type insets:insets];
 }
 
 #pragma mark - Image bubble

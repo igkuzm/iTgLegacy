@@ -7,7 +7,7 @@ iTgLegacy_SOURCES = \
 		DialogViewCell.m \
 		DialogsViewController.m \
 		ChatViewCell.m \
-		ChatViewControllerOld.m \
+		ChatViewController.m \
 		ContactsListViewController.m \
 		ConfigViewController.m \
 		TextEditViewController.m \
@@ -21,13 +21,8 @@ iTgLegacy_SOURCES = \
 		BubbleView/UIBubbleTableView.m \
 		BubbleView/UIBubbleTableViewCell.m \
 		BubbleView/UIBubbleTypingTableViewCell.m \
-		APLSlideMenu/APLSlideMenuSegue.m \
-		APLSlideMenu/APLSlideMenuViewController.m \
-		SVProgressHUD/SVProgressHUD.m \
-		TRMalleableFrameView/TRMalleableFrameView.m \
 		Base64/Base64.m \
 		UIImage+Utils/UIImage+Utils.m \
-		RequestFactory/CaRequestFactory.m \
 		opusfile/internal.c \
 		opusfile/opusfile.c \
 		opusfile/info.c \
@@ -77,6 +72,8 @@ _images:
 	cp -f LaunchScreen.nib iTgLegacy.app/.
 
 iTgLegacy.app: iTgLegacy _dir _plist _images
+	cp -f ../provision_profiles/iTgLegacydevelopment.mobileprovision telegram.mobileprovision 
+	cp -f ../provision_profiles/iTgLegacydevelopment.mobileprovision iTgLegacy.app/telegram.mobileprovision 
 	cp -f .libs/iTgLegacy iTgLegacy.app/. 
 	cp -f ../libtg/.libs/tgtest iTgLegacy.app/. 
 	cp -f ../libtg/pub.pkcs iTgLegacy.app/. 
@@ -96,10 +93,12 @@ iTgLegacy.app: iTgLegacy _dir _plist _images
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libcrypto.dylib;
 
 iTgLegacy.ipa: iTgLegacy.app
-	mkdir Payload
-	cp -r iTgLegacy.app Payload/.
-	${ZIP} -r iTgLegacy.ipa Payload iTunesArtwork iTunesMetadata.plist
-	rm -rf Payload
+	rm -fr app
+	mkdir -p app/Payload
+	cp -r iTgLegacy.app app/Payload/.
+	zsign -m telegram.mobileprovision -k ../certificates/app.key -p "ig.kuzm@gmail.com" -e iTgLegacy.xcent app -o iTgLegacy.ipa
+#${ZIP} -r iTgLegacy.ipa Payload iTunesArtwork iTunesMetadata.plist
+#rm -rf Payload
 
 clean-local:
 	rm -r iTgLegacy.app

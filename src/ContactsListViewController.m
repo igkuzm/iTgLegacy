@@ -1,5 +1,5 @@
 #import "ContactsListViewController.h"
-#import "ChatViewControllerOld.h"
+#import "ChatViewController.h"
 #include "AddressBook/AddressBook.h"
 #include "CoreFoundation/CoreFoundation.h"
 #include "Foundation/Foundation.h"
@@ -8,6 +8,7 @@
 #import <AddressBookUI/AddressBookUI.h>
 #include "UIImage+Utils/UIImage+Utils.h"
 #include "../libtg/tg/peer.h"
+#include "../libtg/tg/user.h"
 
 @implementation TGContact
 - (id)init
@@ -108,7 +109,7 @@
 		cell.imageView.image = [UIImage imageWithImage:image 
 			scaledToSize:CGSizeMake(50, 50)];
 	}
-	else
+	else 
 		cell.imageView.image = [UIImage imageNamed:@"missingAvatar.png"];
 
 	cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;	
@@ -145,25 +146,63 @@
 	// try to get peer
 	[self.syncData addOperationWithBlock:^{
 		if (contact.phones){
-			NSArray *phones = [contact.phones componentsSeparatedByString:@" "];
+			NSArray *phones = 
+				[contact.phones componentsSeparatedByString:@" "];
+			
+			// try to get user in local database first
+			//for (NSString *phone in phones){
+				//tg_user_t *user = tg_user_get_by_phone(
+						//self.appDelegate.tg, 
+						//phone.UTF8String);
+				//if (user){
+					//TGDialog *dialog = [[TGDialog alloc] init];
+					//dialog.peerType = TG_PEER_TYPE_USER;
+					//dialog.peerId = user->id_;
+					//dialog.accessHash = user->access_hash_;
+					//dialog.photoId = user->photo_id;
+					//dialog.title = contact.name; 
+					//if (user->username_)
+						//dialog.title = 
+							//[NSString stringWithUTF8String:user->username_];
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//[spinner stopAnimating];
+						//[spinner removeFromSuperview];
+						//[self openDialog:dialog];
+					//});
+					//tg_user_free(user);
+					//free(user);
+					//return;
+				//}
+			//}
+
+			// if no user - try to get from telegram
 			for (NSString *phone in phones){
-				tg_peer_t peer = 
-					tg_peer_by_phone(self.appDelegate.tg, phone.UTF8String);
+				tg_peer_t peer = tg_peer_by_phone(
+						self.appDelegate.tg, 
+						phone.UTF8String);
 				if (peer.access_hash){
+					TGDialog *dialog = [[TGDialog alloc] init];
+					dialog.peerType = peer.type;
+					dialog.peerId = peer.id;
+					dialog.accessHash = peer.access_hash;
+					dialog.title = contact.name;
+					// try to find user by id in local database
+					tg_user_t *user = tg_user_get(
+							self.appDelegate.tg, 
+							peer.id);
+					if (user){
+						dialog.photoId = user->photo_id;
+						if (user->username_)
+							dialog.title = 
+								[NSString stringWithUTF8String:user->username_];
+						tg_user_free(user);
+						free(user);
+					}
 					dispatch_sync(dispatch_get_main_queue(), ^{
-						ChatViewController *vc = [[ChatViewController alloc]init];
-						vc.hidesBottomBarWhenPushed = YES;
-						TGDialog *dialog = [[TGDialog alloc]init];
-						dialog.peerId = peer.id;
-						dialog.peerType = peer.type;
-						dialog.accessHash = peer.access_hash;
-						vc.dialog = dialog;
-						vc.spinner = self.spinner;
-						[self.navigationController 
-							pushViewController:vc animated:TRUE];
+						[spinner stopAnimating];
+						[spinner removeFromSuperview];
+						[self openDialog:dialog];
 					});
-					[spinner stopAnimating];
-					[spinner removeFromSuperview];
 					return;;
 				}
 			}
@@ -174,6 +213,15 @@
 			[self.appDelegate showMessage:@"can't find user in telegram"];
 		});
 	}];
+}
+
+-(void)openDialog:(TGDialog *)dialog {
+	ChatViewController *vc = [[ChatViewController alloc]init];
+	vc.hidesBottomBarWhenPushed = YES;
+	vc.dialog = dialog;
+	vc.spinner = self.spinner;
+	[self.navigationController 
+			pushViewController:vc animated:TRUE];
 }
 
 -(void)addButtonPushed:(id)sender{

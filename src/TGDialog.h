@@ -21,6 +21,7 @@
 @property (strong) NSOperationQueue *syncData;
 @property Boolean pinned;
 @property Boolean hidden;
+@property Boolean broadcast;
 
 -(id)initWithDialog:(const tg_dialog_t *)dialog tg:(tg_t *)tg;
 

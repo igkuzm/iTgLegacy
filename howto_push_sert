@@ -1,0 +1,22 @@
+1. Generate key
+openssl genrsa -out app.key 2048
+
+2. Create applesigning request
+openssl req -new -key app.key -out Certificate.csr
+
+3. Go to developer.apple.com in certificates create and
+download new sertificate and provision profile
+
+4.convert downloaded apple cer to pem
+openssl x509 -in aps.cer -inform DER -out aps.pem -outform PEM
+openssl x509 -in aps_development.cer -inform DER -out aps_development.pem -outform PEM
+
+5.convert pem to p12
+openssl pkcs12 -export -out aps.p12 -inkey app.key -in aps.pem
+openssl pkcs12 -export -out aps_development.p12 -inkey app.key -in aps_development.pem
+
+6.convert p12 to pem
+openssl pkcs12 -in aps.p12 -out apns.pem -nodes -clcerts
+openssl pkcs12 -in aps_development.p12 -out apns_development.pem -nodes -clcerts
+
+7. then upload to my.telegram.com/apps server

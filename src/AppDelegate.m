@@ -7,6 +7,10 @@
  */
 
 #import "AppDelegate.h"
+#include "TGDialog.h"
+#include "DialogsViewController.h"
+#include "ChatViewController.h"
+#include "AudioToolbox/AudioToolbox.h"
 #include <string.h>
 #include <stdio.h>
 #import <UIKit/UIResponder.h>
@@ -15,6 +19,9 @@
 #include "RootViewController.h"
 #include "../libtg/libtg.h"
 #include "../libtg/tg/dialogs.h"
+#include "../libtg/api_id.h"
+#include "../libtg/tg/user.h"
+#include "../libtg/tg/peer.h"
 
 @implementation AppDelegate
 
@@ -34,6 +41,9 @@
 	NSLog(@"start...");
 
 	self.syncData = [[NSOperationQueue alloc]init];
+	
+	// set badge number
+	application.applicationIconBadgeNumber = 0;
 
 	// create cache
 	NSString *cache = [NSSearchPathForDirectoriesInDomains(
@@ -108,15 +118,25 @@
 
 	// start window
 	self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
-	RootViewController *vc = 
+	self.rootViewController = 
 			[[RootViewController alloc]init];
-	[self.window setRootViewController:vc];
+	[self.window setRootViewController:self.rootViewController];
 	[self.window makeKeyAndVisible];	
 
 	[self loadTgLib];
 	[self authorize];
 	
 	return true;
+}
+
+- (void)showAlarm:(NSString *)text {
+  UIAlertView *alertView = [[UIAlertView alloc] 
+		initWithTitle:@"Alarm"
+		message:text 
+		delegate:nil
+		cancelButtonTitle:@"OK"
+		otherButtonTitles:nil];
+	[alertView show];
 }
 
 - (void)remoteControlReceivedWithEvent:(UIEvent *)event {
@@ -222,26 +242,104 @@
 }
 
 #pragma mark <NOTIFICATIONS FUNCTIONS>
--(void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo{
-	[self showMessage:@"NOTIFICATION"];
-			//NSString *aStrEventType = userInfo[@"eventType"];
-			//if ([aStrEventType isEqualToString:@"callWebService"]) {
-								//[[NSNotificationCenter defaultCenter] postNotificationName:@"callWebService" object:nil];
-										
-			//}else{
-								//// Implement other notification here
-								////     
-			//}
+-(void)openDislogForNotification:(NSDictionary *)userInfo{
+	if ([userInfo valueForKey:@"from_id"]){
+		NSNumber *n = [userInfo valueForKey:@"from_id"];
+		uint64_t from_id = [n longLongValue]; 
+		tg_user_t *user = tg_user_get(self.tg, from_id);
+		if (user){
+			UINavigationController *nc =
+					[((RootViewController *)self.rootViewController).viewControllers objectAtIndex:1]; 
+			if (nc){
+				[((RootViewController *)self.rootViewController) setSelectedViewController:nc];
+				[nc popToRootViewControllerAnimated:NO];
+
+				TGDialog *dialog = [[TGDialog alloc] init];
+				dialog.peerType = TG_PEER_TYPE_USER;
+				dialog.peerId = from_id;
+				dialog.accessHash = user->access_hash_;
+				dialog.photoId = user->photo_id;
+				dialog.title = [NSString stringWithUTF8String:user->username_];
+
+				DialogsViewController *dc = 
+					(DialogsViewController *)[nc visibleViewController];
+				
+				ChatViewController *vc = [[ChatViewController alloc]init];
+				vc.hidesBottomBarWhenPushed = YES;
+				vc.dialog = dialog;
+				vc.spinner = dc.spinner;
+				[nc pushViewController:vc animated:TRUE];
+			}
+		}
+	}
 }
 
+-(void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo{
+	//[self showMessage:[NSString stringWithFormat:@"%@", userInfo]];
+	UIApplication.sharedApplication.applicationIconBadgeNumber++;
+
+	if(application.applicationState == UIApplicationStateInactive) {
+
+     NSLog(@"Inactive - the user has tapped in the notification when app was closed or in background");
+     //do some tasks
+    //[self manageRemoteNotification:userInfo];
+     //completionHandler(UIBackgroundFetchResultNewData);
+		 [self openDislogForNotification:userInfo];
+ } else if (application.applicationState == UIApplicationStateBackground) {
+
+     NSLog(@"application Background - notification has arrived when app was in background");
+     NSString* contentAvailable = [NSString stringWithFormat:@"%@", [[userInfo valueForKey:@"aps"] valueForKey:@"content-available"]];
+
+     if([contentAvailable isEqualToString:@"1"]) {
+         // do tasks
+         //[self manageRemoteNotification:userInfo];
+         NSLog(@"content-available is equal to 1");
+         //completionHandler(UIBackgroundFetchResultNewData);
+     }
+		 [self openDislogForNotification:userInfo];
+ } else {
+     NSLog(@"application Active - notication has arrived while app was opened");
+      //play sound
+			NSURL *url = [NSBundle.mainBundle.resourceURL URLByAppendingPathComponent:@"2.m4a"];
+			SystemSoundID soundID;
+			AudioServicesCreateSystemSoundID((__bridge CFURLRef)url, &soundID);
+			AudioServicesPlaySystemSound(soundID);
+			// add bange to tabBarItem
+			UINavigationController *nc =
+				[((RootViewController *)self.rootViewController).viewControllers objectAtIndex:1]; 
+			if (nc){
+				int badge = nc.tabBarItem.badgeValue.intValue;
+				badge++;
+				nc.tabBarItem.badgeValue = 
+					[NSString stringWithFormat:@"%d", badge];
+			}
+
+			// reload data
+			if (self.dialogsViewController){
+				[(DialogsViewController *)self.dialogsViewController getDialogsFrom:[NSDate date]];
+			}
+  }
+}
+
+
 -(void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-		 NSLog(@"TOKEN: %@", deviceToken);
+	self.tokenAlreadyRequested = YES;
+	NSLog(@"TOKEN: %@", deviceToken);
+	NSString *token = [[deviceToken description] stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"<>"]];
+  token = [token stringByReplacingOccurrencesOfString:@" " withString:@""];
+  NSLog(@"Device token: %@", token);
+	self.token = token;
 }
 
 -(void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
 	NSLog(@"FAILD TO GET TOKEN: %@", error);
 } 
 
+- (void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification {
+    [self showAlarm:notification.alertBody];
+    //application.applicationIconBadgeNumber = 0;
+    NSLog(@"AppDelegate didReceiveLocalNotification %@", notification.userInfo);
+}
 
 #pragma <LibTg FUNCTIONS>
 
@@ -255,25 +353,24 @@
 						objectAtIndex:0] 
 			stringByAppendingPathComponent:@"tgdata.db"];
 	
-	if ([[NSUserDefaults standardUserDefaults] valueForKey:@"ApiId"] &&
-			[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"])
-	{
-		self.tg = tg_new(
-				[databasePath UTF8String],
-				0,
-				[[NSUserDefaults standardUserDefaults] integerForKey:@"ApiId"], 
-				[[[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"] UTF8String],
-				"pub.pkcs");
-		if (!self.tg){
-			[self showMessage:@"can't init LibTg"];
-		} else {
-				NSLog(@"LibTg inited");
-				if (self.authorizationDelegate)
-					[self.authorizationDelegate tgLibLoaded];
-		}
-		tg_set_on_error(self.tg, self, on_err);
-		//tg_set_on_log(self.tg, self, on_log);
+	int SETUP_API_ID(apiId)
+	char * SETUP_API_HASH(apiHash)
+	
+	self.tg = tg_new(
+			[databasePath UTF8String],
+			0,
+			apiId, 
+			apiHash,
+			"pub.pkcs");
+	if (!self.tg){
+		[self showMessage:@"can't init LibTg"];
+	} else {
+			NSLog(@"LibTg inited");
+			if (self.authorizationDelegate)
+				[self.authorizationDelegate tgLibLoaded];
 	}
+	tg_set_on_error(self.tg, self, on_err);
+	//tg_set_on_log(self.tg, self, on_log);
 }
 
 static void on_err(void *d, const char *err)
@@ -300,10 +397,19 @@ static void on_log(void *d, const char *msg)
 	//[NSUserDefaults.standardUserDefaults 
 		//setValue:[NSString stringWithUTF8String:(char*)user->username_.data] 
 			//forKey:@"userName"];
-	//[self showMessage:@"authorized!"];
 	if (self.authorizationDelegate)
 		[self.authorizationDelegate authorizedAs:user];
 	self.authorizationDelegate = nil;
+	if (self.token){
+		[self.syncData addOperationWithBlock:^{
+			if (tg_account_register_ios(self.tg, self.token.UTF8String, true) == 0)	
+				NSLog(@"Register device with token: %@", self.token);
+			else
+				NSLog(@"Can't register device with token: %@", self.token);
+		}];
+	}
+	// get colors
+	//[self getPeerColorset];
 }
 
 -(void)signIn:(NSString *)phone_number 
@@ -343,14 +449,6 @@ static void on_log(void *d, const char *msg)
 		return;
 	}
 
-	if (![[NSUserDefaults standardUserDefaults] valueForKey:@"ApiId"] ||
-			![[NSUserDefaults standardUserDefaults] valueForKey:@"ApiHash"])
-	{
-		// no config
-		[self showMessage:@"no ApiId or ApiHash"];
-		return;
-	}
-
 	if (!self.tg)
 		[self loadTgLib];
 	
@@ -387,6 +485,32 @@ static void on_log(void *d, const char *msg)
 	if (self.appActivityDelegate)
 		[self.appActivityDelegate willResignActive];
 	[self.syncData cancelAllOperations];
+}
+
+static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg_colors_t *dark_colors)
+{
+	AppDelegate *self = d;
+	NSDictionary *c = @{
+		@"color_id":[NSNumber numberWithInt:color_id],
+		@"0":[NSNumber numberWithInt:colors->rgb0],
+		@"1":[NSNumber numberWithInt:colors->rgb1],
+		@"2":[NSNumber numberWithInt:colors->rgb2],
+		@"3":[NSNumber numberWithInt:dark_colors->rgb0],
+		@"4":[NSNumber numberWithInt:dark_colors->rgb1],
+		@"5":[NSNumber numberWithInt:dark_colors->rgb2],
+	};
+
+	[self.colorset addObject:c];
+}
+
+- (void) getPeerColorset{
+	self.colorset = [NSMutableArray array];
+	[self.syncData addOperationWithBlock:^{
+		tg_get_peer_profile_colors(
+				self.tg, 
+				0, 
+				self, getPeerColorsetCb);
+	}];
 }
 @end
 

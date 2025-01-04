@@ -30,6 +30,14 @@ AS_VAR_IF([ZIP], [], [
 ])
 AC_SUBST([ZIP])
 
+AS_VAR_IF([ZSIGN], [], [ 
+	AC_PATH_PROG(ZSIGN,zsign,none)
+	AS_IF([test x"$ZSIGN" == x"none"], 
+		[AC_MSG_ERROR([Please install zsign (github:zhlynn/zsign). Or set ZSIGN=])
+	])
+])
+AC_SUBST([ZIP])
+
 AC_CANONICAL_HOST
 case "${host_os}" in
     cygwin*|mingw*)

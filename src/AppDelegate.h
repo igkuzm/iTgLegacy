@@ -33,10 +33,12 @@ enum {
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
+@property (strong, nonatomic) NSString *token;
 @property (strong, nonatomic) NSTimer *timer;
 @property (strong, nonatomic) UIWindow *window;
 @property (strong,nonatomic) NSURL *url;
 @property NSInteger allertType;
+@property Boolean tokenAlreadyRequested;
 @property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
 @property (strong, nonatomic) void (^askYesNo_onYes)();
 @property (strong) NSOperationQueue *syncData;
@@ -53,11 +55,16 @@ enum {
 @property (strong) NSString *peerPhotoCache;
 @property (strong) NSString *smallPhotoCache;
 @property (strong) NSString *thumbDocCache;
+@property (strong) id rootViewController;
+@property (strong) id dialogsViewController;
+
+@property (strong) NSMutableArray *colorset;
 
 -(void)showMessage:(NSString *)msg;
 -(void)askYesNo:(NSString *)msg onYes:(void (^)())onYes;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;
 -(void)authorize;
+-(void)showNotification:(NSString *)msg;
 
 @end
 

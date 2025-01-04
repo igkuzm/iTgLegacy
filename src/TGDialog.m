@@ -58,6 +58,8 @@
 		if ([NSFileManager.defaultManager fileExistsAtPath:self.photoPath])
 			self.photo = [UIImage 
 				imageWithData:[NSData dataWithContentsOfFile:self.photoPath]];
+
+		self.broadcast = d->broadcast;
 	}
 	return self;
 }

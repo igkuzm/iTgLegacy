@@ -6,6 +6,7 @@
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #import "DialogsViewController.h"
+#include "RootViewController.h"
 #include "CoreGraphics/CoreGraphics.h"
 #include "TGDialog.h"
 #include "../libtg/tg/files.h"
@@ -20,9 +21,13 @@
 @implementation DialogsViewController
 
 - (void)viewDidLoad {
+	[super viewDidLoad];
+	
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	self.appDelegate.authorizationDelegate = self;
 	self.appDelegate.appActivityDelegate = self;
+	self.appDelegate.dialogsViewController = self;
+
 	self.syncData = [[NSOperationQueue alloc]init];
 	self.syncData.maxConcurrentOperationCount = 1;
 	self.loadedData = [NSMutableArray array];
@@ -80,6 +85,12 @@
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
 		[self.navigationController setToolbarHidden: YES];
+		
+		UINavigationController *nc =
+				[((RootViewController *)self.appDelegate.rootViewController).viewControllers objectAtIndex:1]; 
+		if (nc){
+			nc.tabBarItem.badgeValue = 0;
+		}
 }
 
 - (void)viewWillDisappear:(BOOL)animated {

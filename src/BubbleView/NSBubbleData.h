@@ -25,6 +25,9 @@ typedef enum _NSBubbleType
 @property (readonly, nonatomic, strong) NSDate *date;
 @property (readonly, nonatomic) NSBubbleType type;
 @property (nonatomic, strong) UIView *view;
+@property (nonatomic, strong) NSString *name;
+@property (nonatomic, strong) UILabel *nameLabel;
+@property (nonatomic, strong) UIColor *nameColor;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *sizeLabel;
 @property (nonatomic, strong) UITextView *textView;

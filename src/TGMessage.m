@@ -4,7 +4,7 @@
 #include "Foundation/Foundation.h"
 
 @implementation TGMessage
-- (id)initWithMessage:(const tg_message_t *)m{
+- (id)initWithMessage:(const tg_message_t *)m dialog:(const TGDialog *)d{
 	if (self = [super init]) {
 		self.silent = m->silent_;
 		self.pinned = m->pinned_;
@@ -55,8 +55,11 @@
 
 		NSNumber *userId = [NSUserDefaults.standardUserDefaults 
 			valueForKey:@"userId"];
-		self.mine = 
-			(userId && [userId longLongValue] == m->from_id_);
+		self.mine = (userId && userId.longLongValue == m->from_id_);
+		if (d.peerType == TG_PEER_TYPE_CHANNEL && !d.broadcast){
+			if (!self.mine)
+				self.mine = (m->from_id_ == 0);	
+		}
 
 		self.photoPath = 
 			[NSString stringWithFormat:@"%@/%lld", 

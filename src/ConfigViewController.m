@@ -30,7 +30,7 @@
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
 	switch (section){
 		case 0:
-			return @"Настройки API";
+			return @"Acounts";
 			break;						
 	}
 	return @"";
@@ -39,7 +39,7 @@
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
 	NSInteger rows = 0;
 	if (section == 0)
-		rows = 3;
+		rows = 1;
 	
 	return rows;
 }
@@ -55,23 +55,23 @@
 	switch (indexPath.section) {
 		case 0: {
 							switch (indexPath.row) {
+								//case 0:{
+													//[cell setAccessoryType:
+														//UITableViewCellAccessoryDisclosureIndicator];
+													//[cell.textLabel setText:@"ApiId"];
+													//[cell.detailTextLabel setText:
+														//[[NSUserDefaults standardUserDefaults]valueForKey:@"ApiId"]];
+													//break;
+											 //}
+								//case 1:{
+													//[cell setAccessoryType:
+														//UITableViewCellAccessoryDisclosureIndicator];
+													//[cell.textLabel setText:@"ApiHash"];
+													//[cell.detailTextLabel setText:
+														//[[NSUserDefaults standardUserDefaults]valueForKey:@"ApiHash"]];
+													//break;
+											 //}
 								case 0:{
-													[cell setAccessoryType:
-														UITableViewCellAccessoryDisclosureIndicator];
-													[cell.textLabel setText:@"ApiId"];
-													[cell.detailTextLabel setText:
-														[[NSUserDefaults standardUserDefaults]valueForKey:@"ApiId"]];
-													break;
-											 }
-								case 1:{
-													[cell setAccessoryType:
-														UITableViewCellAccessoryDisclosureIndicator];
-													[cell.textLabel setText:@"ApiHash"];
-													[cell.detailTextLabel setText:
-														[[NSUserDefaults standardUserDefaults]valueForKey:@"ApiHash"]];
-													break;
-											 }
-								case 2:{
 													if (self.appDelegate.authorizedUser) {
 														[cell setAccessoryType:
 															UITableViewCellAccessoryCheckmark];
@@ -106,27 +106,27 @@
 	switch (indexPath.section) {
 		case 0: {
 							switch (indexPath.row) {
-								case 0:{
-													self.selectedKey = @"ApiId";
-													TextEditViewController *twc = 
-														[[TextEditViewController alloc]init];
-													[twc setText:[[NSUserDefaults standardUserDefaults]
-														valueForKey:@"ApiId"]];
-													[twc setDelegate:self];
-													[self.navigationController pushViewController:twc animated:true];
-													break;
-											 }
-								case 1:{
-													self.selectedKey = @"ApiHash";
-													TextEditViewController *twc = 
-														[[TextEditViewController alloc]init];
-													[twc setText:[[NSUserDefaults standardUserDefaults]
-														valueForKey:@"ApiHash"]];
-													[twc setDelegate:self];
-													[self.navigationController pushViewController:twc animated:true];
-													break;
-											 }
-							 case 2:{
+								//case 0:{
+													//self.selectedKey = @"ApiId";
+													//TextEditViewController *twc = 
+														//[[TextEditViewController alloc]init];
+													//[twc setText:[[NSUserDefaults standardUserDefaults]
+														//valueForKey:@"ApiId"]];
+													//[twc setDelegate:self];
+													//[self.navigationController pushViewController:twc animated:true];
+													//break;
+											 //}
+								//case 1:{
+													//self.selectedKey = @"ApiHash";
+													//TextEditViewController *twc = 
+														//[[TextEditViewController alloc]init];
+													//[twc setText:[[NSUserDefaults standardUserDefaults]
+														//valueForKey:@"ApiHash"]];
+													//[twc setDelegate:self];
+													//[self.navigationController pushViewController:twc animated:true];
+													//break;
+											 //}
+							 case 0:{
 													self.appDelegate.authorizationDelegate = self;
 													[self.appDelegate authorize];
 													break;
