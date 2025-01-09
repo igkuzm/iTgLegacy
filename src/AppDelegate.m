@@ -41,6 +41,7 @@
 	NSLog(@"start...");
 
 	self.syncData = [[NSOperationQueue alloc]init];
+	self.syncData.maxConcurrentOperationCount = 1;
 	
 	// set badge number
 	application.applicationIconBadgeNumber = 0;
@@ -259,7 +260,8 @@
 				dialog.peerId = from_id;
 				dialog.accessHash = user->access_hash_;
 				dialog.photoId = user->photo_id;
-				dialog.title = [NSString stringWithUTF8String:user->username_];
+				if (user->first_name_)
+					dialog.title = [NSString stringWithUTF8String:user->first_name_];
 
 				DialogsViewController *dc = 
 					(DialogsViewController *)[nc visibleViewController];
@@ -370,7 +372,7 @@
 				[self.authorizationDelegate tgLibLoaded];
 	}
 	tg_set_on_error(self.tg, self, on_err);
-	//tg_set_on_log(self.tg, self, on_log);
+	tg_set_on_log(self.tg, self, on_log);
 }
 
 static void on_err(void *d, const char *err)
@@ -391,6 +393,7 @@ static void on_log(void *d, const char *msg)
 
 -(void)afteLoginUser:(tl_user_t *)user {
 	self.authorizedUser = user;
+	NSLog(@"AUTHORIZED! as: %s", user->username_.data);
 	NSNumber *userId = [NSNumber numberWithLongLong:user->id_];
 	[NSUserDefaults.standardUserDefaults 
 		setValue:userId forKey:@"userId"];
@@ -462,6 +465,7 @@ static void on_log(void *d, const char *msg)
 		
 		if (self.tg->key.size > 0){
 			while (!user){
+				NSLog(@"try to get user authorize");
 				sleep(1);	
 				user = tg_is_authorized(self.tg);
 			}
@@ -511,6 +515,13 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 				0, 
 				self, getPeerColorsetCb);
 	}];
+}
+
+-(Boolean)isOnLineAndAuthorized{
+	return
+		self.tg && 
+		self.authorizedUser != nil && 
+		self.reach.isReachable;
 }
 @end
 

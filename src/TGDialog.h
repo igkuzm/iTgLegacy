@@ -23,7 +23,7 @@
 @property Boolean hidden;
 @property Boolean broadcast;
 
--(id)initWithDialog:(const tg_dialog_t *)dialog tg:(tg_t *)tg;
+-(id)initWithDialog:(const tg_dialog_t *)dialog tg:(tg_t *)tg syncData:(NSOperationQueue *)syncData;
 
 @end
 

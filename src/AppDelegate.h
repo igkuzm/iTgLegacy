@@ -65,6 +65,7 @@ enum {
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;
 -(void)authorize;
 -(void)showNotification:(NSString *)msg;
+-(Boolean)isOnLineAndAuthorized;
 
 @end
 

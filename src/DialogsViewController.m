@@ -9,6 +9,7 @@
 #include "RootViewController.h"
 #include "CoreGraphics/CoreGraphics.h"
 #include "TGDialog.h"
+#include "../libtg/tg/queue.h"
 #include "../libtg/tg/files.h"
 #include "ChatViewController.h"
 #include "UIKit/UIKit.h"
@@ -73,8 +74,6 @@
 	// hide searchbar
   [self.tableView setContentOffset:CGPointMake(0, 44)];
 	
-	// load data
-	[self reloadData];
 
 	// timer
 	self.timer = [NSTimer scheduledTimerWithTimeInterval:60 
@@ -86,6 +85,9 @@
     [super viewWillAppear:animated];
 		[self.navigationController setToolbarHidden: YES];
 		
+		// load data
+		[self reloadData];
+		
 		UINavigationController *nc =
 				[((RootViewController *)self.appDelegate.rootViewController).viewControllers objectAtIndex:1]; 
 		if (nc){
@@ -96,7 +98,7 @@
 - (void)viewWillDisappear:(BOOL)animated {
 	if (self.timer)
 		[self.timer fire];
-	[self.syncData cancelAllOperations];
+	//[self cancelAll];
 	[super viewWillDisappear:animated];
 }
 
@@ -111,6 +113,15 @@
 -(void)timer:(id)sender{
 	// do timer funct
 	[self getDialogsFrom:[NSDate date]];
+}
+
+- (void)cancelAll{
+	[self.spinner stopAnimating];
+	if (self.refreshControl)
+		[self.refreshControl endRefreshing];
+	if (self.appDelegate.tg)
+		tg_queue_cancell_all(self.appDelegate.tg);
+	[self.syncData cancelAllOperations];
 }
 
 #pragma mark <Data functions>
@@ -140,8 +151,7 @@
 }
 
 -(void)reloadData{
-	[self.syncData cancelAllOperations];
-	[self.spinner stopAnimating];
+	[self cancelAll];
 
 	if (!self.appDelegate.tg)
 		return;
@@ -208,37 +218,34 @@
 }
 
 -(void)getDialogsFrom:(NSDate *)date{
-	[self.syncData cancelAllOperations];
+	//[self cancelAll];
+	if (self.appDelegate.isOnLineAndAuthorized){
 	
-	if (!self.appDelegate.tg ||
-			!self.appDelegate.reach.isReachable ||
-			!self.appDelegate.authorizedUser)
-		return;
+		if (!self.refreshControl.refreshing)
+			[self.spinner startAnimating];
 
-	if (!self.refreshControl.refreshing)
-		[self.spinner startAnimating];
+		[self.syncData addOperationWithBlock:^{
+				pthread_t p = tg_get_dialogs_async(
+						self.appDelegate.tg, 
+						20, 
+						[date timeIntervalSince1970], 
+						NULL, 
+						NULL, 
+						self, 
+						get_dialogs_cb,
+						 NULL);
 
-	[self.syncData addOperationWithBlock:^{
-		//sleep(1); //for FLOOD_WAIT
-		tg_get_dialogs(
-				self.appDelegate.tg, 
-				20, 
-				[date timeIntervalSince1970], 
-				NULL, 
-				NULL, 
-				self, 
-				get_dialogs_cb);
+				pthread_join(p, NULL);
+				dispatch_sync(dispatch_get_main_queue(), ^{
+					[self.refreshControl endRefreshing];
+					[self.spinner stopAnimating];
+					[self filterData];
 
-		// update photo
-		[self updatePhoto];
-				
-		// on done
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.refreshControl endRefreshing];
-			[self.spinner stopAnimating];
-			[self filterData];
-		});
-	}];
+				});
+				// update photo
+				//[self updatePhoto];
+		}];
+	}
 }
 
 #pragma mark <LibTG functions> 
@@ -250,7 +257,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	// drop hidden dialogs
 	if (dialog->folder_id == 1)
 		return 0;
-
+		
 	DialogsViewController *self = d;
 	//[self.appDelegate showMessage:@"ADD DIALOG!"];
 	TGDialog *current = NULL;
@@ -262,7 +269,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	}
 	if (!current){
 		current = 
-			[[TGDialog alloc]initWithDialog:dialog tg:self.appDelegate.tg];
+			[[TGDialog alloc]initWithDialog:dialog tg:self.appDelegate.tg syncData:self.syncData];
 		[self.loadedData addObject:current];
 	} else {
 		current.accessHash = dialog->access_hash;
@@ -361,8 +368,7 @@ static int get_dialogs_cached_cb(void *d, const tg_dialog_t *dialog)
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 
 	[self.searchBar resignFirstResponder];
-	[self.syncData cancelAllOperations];
-	[self.spinner stopAnimating];
+	//[self cancelAll];
 	
 	TGDialog *dialog = [self.data objectAtIndex:indexPath.item];
 	self.selected = dialog;
@@ -481,11 +487,9 @@ static int get_dialogs_cached_cb(void *d, const tg_dialog_t *dialog)
 //}
 #pragma mark <AppActivity Delegate>
 -(void)willResignActive {
-	[self.spinner stopAnimating];
-	[self.refreshControl endRefreshing];
 	if (self.timer)
 		[self.timer fire];
-	[self.syncData cancelAllOperations];
+	//[self cancelAll];
 }
 
 @end

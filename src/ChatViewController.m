@@ -26,6 +26,7 @@
 #include "../libtg/tg/updates.h"
 #include "../libtg/tg/messages.h"
 #include "../libtg/tg/files.h"
+#include "../libtg/tg/queue.h"
 #include "UIImage+Utils/UIImage+Utils.h"
 #include "opus/include/opus/opus.h"
 #include "opusenc/opusenc.h"
@@ -168,27 +169,6 @@
 		addObserver:self selector:@selector(keyboardWillShow:)
 		name:UIKeyboardWillShowNotification object:nil];
 
-	// set icon
-	self.icon = [[UIImageView alloc]
-		initWithFrame:CGRectMake(
-		self.navigationController.navigationBar.bounds.size.width - 40, 
-		self.navigationController.navigationBar.bounds.size.height/2 - 20,
-		40, 40)];
-	[self.navigationController.navigationBar 
-		addSubview:self.icon];
-	UIImage *image;
-	NSString *photoPath = 
-			[NSString stringWithFormat:@"%@/%lld.%lld", 
-				self.appDelegate.peerPhotoCache, 
-				self.dialog.peerId, self.dialog.photoId]; 
-		if ([NSFileManager.defaultManager fileExistsAtPath:photoPath])
-			image = [UIImage 
-				imageWithData:[NSData dataWithContentsOfFile:photoPath]];
-		else
-			image = [UIImage imageNamed:@"missingAvatar.png"]; 
-	self.icon.image = [UIImage imageWithImage:image 
-			scaledToSize:CGSizeMake(40, 40)];
-
 	// load data
 	[self reloadData];
 }
@@ -213,6 +193,28 @@
 		[self toolbarForChannel];
 	}
 
+	// set icon
+	self.icon = [[UIImageView alloc]
+		initWithFrame:CGRectMake(
+		self.navigationController.navigationBar.bounds.size.width - 40, 
+		self.navigationController.navigationBar.bounds.size.height/2 - 20,
+		40, 40)];
+	[self.navigationController.navigationBar 
+		addSubview:self.icon];
+	UIImage *image;
+	NSString *photoPath = 
+			[NSString stringWithFormat:@"%@/%lld.%lld", 
+				self.appDelegate.peerPhotoCache, 
+				self.dialog.peerId, self.dialog.photoId]; 
+		if ([NSFileManager.defaultManager fileExistsAtPath:photoPath])
+			image = [UIImage 
+				imageWithData:[NSData dataWithContentsOfFile:photoPath]];
+		else
+			image = [UIImage imageNamed:@"missingAvatar.png"]; 
+	self.icon.image = [UIImage imageWithImage:image 
+			scaledToSize:CGSizeMake(40, 40)];
+
+
 	// set updates handler
 	if (self.appDelegate.tg){
 		self.appDelegate.tg->on_update_data = self;
@@ -223,18 +225,23 @@
 - (void)viewWillDisappear:(BOOL)animated {
 	[self.textField endEditing:YES];
 	[self.textField resignFirstResponder];
-	[self.spinner stopAnimating];
-	[self.syncData cancelAllOperations];
-	[self.download cancelAllOperations];
-	// stop timer
-	if (self.timer)
-		[self.timer fire];
+	//[self cancelAll];
 	[self.icon removeFromSuperview];
 	// remove updates handler
 	if (self.appDelegate.tg)
 		self.appDelegate.tg->on_update = NULL;
 	
 	[super viewWillDisappear:animated];
+}
+
+- (void)cancelAll{
+	[self.spinner stopAnimating];
+	if (self.refreshControl)
+		[self.refreshControl endRefreshing];
+	if (self.appDelegate.tg)
+		tg_queue_cancell_all(self.appDelegate.tg);
+	[self.syncData cancelAllOperations];
+	[self.download cancelAllOperations];
 }
 
 -(void)toolbarForChannel{
@@ -279,10 +286,8 @@
 
 -(void)timer:(id)sender{
 	// do timer funct
-	[self.syncData cancelAllOperations];
-	if (self.appDelegate.tg &&
-			self.appDelegate.authorizedUser && 
-			self.appDelegate.reach.isReachable)
+	//[self cancelAll];
+	if (self.appDelegate.isOnLineAndAuthorized)
 	{
 		[self.syncData addOperationWithBlock:^{
 			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
@@ -292,9 +297,7 @@
 
 - (void)onSend:(id)sender{
 	NSString *text = self.textField.text;
-	if (self.appDelegate.tg &&
-			self.appDelegate.authorizedUser && 
-			self.appDelegate.reach.isReachable)
+	if (self.appDelegate.isOnLineAndAuthorized)
 	{
 		[self.syncData addOperationWithBlock:^{
 			tg_peer_t peer = {
@@ -302,9 +305,10 @@
 					self.dialog.peerId, 
 					self.dialog.accessHash
 			};
-			tg_message_send(
+			pthread_t p = tg_message_send(
 					self.appDelegate.tg, 
 					peer, text.UTF8String);
+			pthread_join(p, NULL);
 			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 		}];
 	}
@@ -352,27 +356,25 @@
 	if (!download)
 		return;
 	
-	if (!self.appDelegate.tg ||
-			!self.appDelegate.reach.isReachable ||
-			!self.appDelegate.authorizedUser)
-		return;
-	
-	// try to get image from database
-	if (d.message.photoId && !d.message.photoData){
-		char *photo  = 
-			tg_get_photo_file(
-					self.appDelegate.tg, 
-					d.message.photoId, 
-					d.message.photoAccessHash, 
-					d.message.photoFileReference.UTF8String, 
-					"s");
-		if (photo){
-			// add photo to BubbleData
-			d.message.photoData = [NSData dataFromBase64String:
-					[NSString stringWithUTF8String:photo]];
-			d.message.photo = [UIImage imageWithData:d.message.photoData];
-			[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
-			free(photo);
+	if (self.appDelegate.isOnLineAndAuthorized)
+		{
+		// try to get image from database
+		if (d.message.photoId && !d.message.photoData){
+			char *photo  = 
+				tg_get_photo_file(
+						self.appDelegate.tg, 
+						d.message.photoId, 
+						d.message.photoAccessHash, 
+						d.message.photoFileReference.UTF8String, 
+						"s");
+			if (photo){
+				// add photo to BubbleData
+				d.message.photoData = [NSData dataFromBase64String:
+						[NSString stringWithUTF8String:photo]];
+				d.message.photo = [UIImage imageWithData:d.message.photoData];
+				[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
+				free(photo);
+			}
 		}
 	}
 }
@@ -504,78 +506,73 @@
 - (void)appendDataFrom:(int)offset date:(NSDate *)date 
 		scrollToBottom:(Boolean)scrollToBottom
 {
-	[self.syncData cancelAllOperations];
-	//sleep(1); //for FLOOD_WAIT
+	//[self.syncData cancelAllOperations];
 	
 	if (!self.dialog){
 		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
 		return;
 	}
 
-	if (!self.appDelegate.tg ||
-			!self.appDelegate.authorizedUser ||
-			!self.appDelegate.reach.isReachable)
+	if (self.appDelegate.isOnLineAndAuthorized)
 	{
 		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.refreshControl endRefreshing];
-			[self.spinner stopAnimating];
+			[self.spinner startAnimating];
 		});
-		return;
+
+		tg_peer_t peer = {
+			self.dialog.peerType,
+			self.dialog.peerId,
+			self.dialog.accessHash
+		};
+
+		int limit = 
+			peer.type == TG_PEER_TYPE_CHANNEL?6:8;
+
+		NSDictionary *dict = 
+			@{@"self":self, @"update": @1, @"scroll": [NSNumber numberWithBool:scrollToBottom]};
+
+		pthread_t p = tg_messages_get_history_async(
+				self.appDelegate.tg, 
+				peer, 
+				offset, 
+				[date timeIntervalSince1970], 
+				0, 
+				limit, 
+				0, 
+				0, 
+				NULL, 
+				dict, 
+				messages_callback,
+				NULL);
+
+		pthread_join(p, NULL);
+		
+		// on done
+		dispatch_sync(dispatch_get_main_queue(), ^{
+					[self.refreshControl endRefreshing];
+					[self.spinner stopAnimating];
+					[self.bubbleTableView reloadData];
+					if (scrollToBottom)
+						[self.bubbleTableView scrollBubbleViewToBottomAnimated:YES];
+		});
+
+		// set read history
+		tg_messages_set_read(
+				self.appDelegate.tg, 
+				peer, 
+				0);
+		
 	}
-	
-	dispatch_sync(dispatch_get_main_queue(), ^{
-		[self.spinner startAnimating];
-	});
-
-	tg_peer_t peer = {
-		self.dialog.peerType,
-		self.dialog.peerId,
-		self.dialog.accessHash
-	};
-
-	int limit = 
-		peer.type == TG_PEER_TYPE_CHANNEL?6:8;
-
-	NSDictionary *dict = @{@"self":self, @"update": @1};
-
-	tg_messages_get_history(
-			self.appDelegate.tg, 
-			peer, 
-			offset, 
-			[date timeIntervalSince1970], 
-			0, 
-			limit, 
-			0, 
-			0, 
-			NULL, 
-			dict, 
-			messages_callback);
-
-	// on done
-	dispatch_sync(dispatch_get_main_queue(), ^{
-				[self.refreshControl endRefreshing];
-				[self.spinner stopAnimating];
-				[self.bubbleTableView reloadData];
-				if (scrollToBottom)
-					[self.bubbleTableView scrollBubbleViewToBottomAnimated:YES];
-	});
-
-	// set read history
-	tg_messages_set_read(
-			self.appDelegate.tg, 
-			peer, 
-			0);
 }
 
 - (void)reloadData {
 	if (!self.appDelegate.tg)
 		return;
 
-	[self.syncData cancelAllOperations];
+	//[self.syncData cancelAllOperations];
 
 	// animate spinner
-	if (!self.refreshControl.refreshing)
-		[self.spinner startAnimating];
+	[self.spinner startAnimating];
 
 	//[self.bubbleDataArray removeAllObjects];
 
@@ -587,7 +584,7 @@
 
 	[self.syncData addOperationWithBlock:^{
 		
-		NSDictionary *dict = @{@"self":self, @"update": @0};
+		NSDictionary *dict = @{@"self":self, @"update": @0, @"scroll": @0};
 		
 		tg_get_messages_from_database(
 			self.appDelegate.tg, 
@@ -598,7 +595,7 @@
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			//[self.spinner stopAnimating];
 			[self.bubbleTableView reloadData];
-			[self.bubbleTableView scrollToBottomWithAnimation:NO];
+			[self.bubbleTableView scrollToBottomWithAnimation:YES];
 		});
 
 		// update data
@@ -665,10 +662,10 @@ static void on_update(void *d, int type, void *value)
 }
 
 static int messages_callback(void *d, const tg_message_t *m){
+	
 	NSDictionary *dict = d; //@{@"self":self, @"update": @1};
 	ChatViewController *self = [dict objectForKey:@"self"];
 	NSNumber *update = [dict objectForKey:@"update"];
-
 
 	NSBubbleData *item = NULL; 
 	for (NSBubbleData *d in self.bubbleDataArray){
@@ -1532,12 +1529,10 @@ didScroll:(UIScrollView *)scrollView
 
 #pragma mark <AppActivity Delegate>
 -(void)willResignActive {
-	[self.spinner stopAnimating];
+	//[self cancelAll];
 	if (self.timer)
 		[self.timer fire];
-	[self.syncData cancelAllOperations];
-	[self.download cancelAllOperations];
-  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  //[[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 #pragma mark <Authorization Delegate>

@@ -10,11 +10,10 @@
 
 @implementation TGDialog
 
-- (id)initWithDialog:(const tg_dialog_t *)d tg:(tg_t *)tg 
+- (id)initWithDialog:(const tg_dialog_t *)d tg:(tg_t *)tg syncData:(NSOperationQueue *)syncData;
 {
 	if (self = [super init]) {
-		self.syncData = [[NSOperationQueue alloc]init];
-		self.syncData.maxConcurrentOperationCount = 1;
+		self.syncData = syncData;
 		
 		if (d->name)
 			self.title = [NSString stringWithUTF8String:d->name];
