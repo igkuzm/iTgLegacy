@@ -31,10 +31,8 @@
 	UIApplication.sharedApplication.idleTimerDisabled = YES;
 
 	// logging
-	NSString *log = [[NSSearchPathForDirectoriesInDomains(
-			NSDocumentDirectory, NSUserDomainMask, YES) 
-						objectAtIndex:0] 
-			stringByAppendingPathComponent:@"iTgLegacy.log"];
+	NSString *log = 
+		[NSTemporaryDirectory() stringByAppendingPathComponent:@"iTgLegacy.txt"];
 	[[NSFileManager defaultManager] removeFileAtPath:log handler:nil];
 	self.log = freopen([log UTF8String], "a+", stderr);
 
@@ -372,7 +370,8 @@
 				[self.authorizationDelegate tgLibLoaded];
 	}
 	tg_set_on_error(self.tg, self, on_err);
-	tg_set_on_log(self.tg, self, on_log);
+	if ([NSUserDefaults.standardUserDefaults  boolForKey:@"debug"])
+		tg_set_on_log(self.tg, self, on_log);
 }
 
 static void on_err(void *d, const char *err)
@@ -523,6 +522,18 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 		self.authorizedUser != nil && 
 		self.reach.isReachable;
 }
+
+-(void)setDebug:(Boolean)debug {
+	if (!self.tg)
+		return;
+	NSLog(@"Set debugging %s", debug?"ON":"OFF");
+	if (debug)
+		tg_set_on_log(self.tg, self, on_log);
+	else 
+		tg_set_on_log(self.tg, NULL, NULL);
+
+}
+
 @end
 
 // vim:ft=objc

@@ -67,6 +67,7 @@ enum {
 -(void)showNotification:(NSString *)msg;
 -(Boolean)isOnLineAndAuthorized;
 
+-(void)setDebug:(Boolean)debug;
 @end
 
 // vim:ft=objc
