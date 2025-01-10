@@ -18,6 +18,7 @@
 #import "DialogViewCell.h"
 #include <unistd.h>
 #import "UIImage+Utils/UIImage+Utils.h"
+#import "TSMessages/TSMessage.h"
 
 @implementation DialogsViewController
 
@@ -68,7 +69,7 @@
 	// compose button
 	UIBarButtonItem *compose = [[UIBarButtonItem alloc]
 		initWithBarButtonSystemItem:UIBarButtonSystemItemCompose 
-		target:self action:nil];
+		target:self action:@selector(composeButtonPushed:)];
 	self.navigationItem.rightBarButtonItem = compose;
 
 	// hide searchbar
@@ -108,6 +109,14 @@
 
 -(void)refresh:(id)sender{
 	[self reloadData];
+}
+
+-(void)composeButtonPushed:(id)sender{
+	[TSMessage 
+		showNotificationWithTitle:@"title" 
+										 subtitle:@"subTitle"
+										     type:TSMessageNotificationTypeMessage
+	];
 }
 
 -(void)timer:(id)sender{

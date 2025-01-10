@@ -29,6 +29,7 @@
 
 	// lock crush
 	UIApplication.sharedApplication.idleTimerDisabled = YES;
+	
 
 	// logging
 	NSString *log = 
@@ -304,6 +305,7 @@
 			SystemSoundID soundID;
 			AudioServicesCreateSystemSoundID((__bridge CFURLRef)url, &soundID);
 			AudioServicesPlaySystemSound(soundID);
+			AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
 			// add bange to tabBarItem
 			UINavigationController *nc =
 				[((RootViewController *)self.rootViewController).viewControllers objectAtIndex:1]; 
@@ -318,6 +320,19 @@
 			if (self.dialogsViewController){
 				[(DialogsViewController *)self.dialogsViewController getDialogsFrom:[NSDate date]];
 			}
+
+			// show allert
+			NSDictionary *aps = [userInfo valueForKey:@"aps"];
+			NSDictionary *alert = [aps valueForKey:@"alert"];
+			NSString *title = [alert valueForKey:@"title"];
+			NSString *body = [alert valueForKey:@"body"];
+			UIAlertView *alertView = 
+				[[UIAlertView alloc] 
+					initWithTitle:title
+					message:body delegate:nil
+					cancelButtonTitle:@"OK"
+					otherButtonTitles:nil];
+      [alertView show];
   }
 }
 

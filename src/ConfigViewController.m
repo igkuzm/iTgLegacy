@@ -171,8 +171,8 @@
 						NSString *log = [NSTemporaryDirectory() 
 								stringByAppendingPathComponent:@"iTgLegacy.txt"];
 						 NSURL *url = [NSURL fileURLWithPath:log];
-						QuickLookController *qlc = [[QuickLookController alloc]
-							initQLPreviewControllerWithData:@[url]];	
+						QuickLookController *qlc = [[[QuickLookController alloc]
+							initQLPreviewControllerWithData:@[url]]autorelease];	
 						[self presentViewController:qlc 
 															 animated:TRUE completion:nil];
 					 }
