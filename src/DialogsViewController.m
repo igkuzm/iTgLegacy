@@ -165,35 +165,31 @@
 }
 
 -(void)updatePhoto {
-
-	if (!self.appDelegate.tg ||
-			!self.appDelegate.reach.isReachable ||
-			!self.appDelegate.authorizedUser)
-		return;
-	
-	for (TGDialog *d in self.loadedData){
-		if (!d.photo){
-			tg_peer_t peer = {
-					d.peerType,
-					d.peerId,
-					d.accessHash
-			};
-			char *photo = tg_get_peer_photo_file(
-						self.appDelegate.tg, 
-						&peer, 
-						false, 
-						d.photoId); 
-			if (photo){
-				NSData *data = [NSData 
-					dataFromBase64String:
-						[NSString stringWithUTF8String:photo]];
-				if (data){
-					[data writeToFile:d.photoPath atomically:YES];
-					d.photo = [UIImage imageWithData:data];
-				}
-			} // end if (photo)
-		} // end if (!d.photo)
-	} // end for TGDialog
+	if (self.appDelegate.isOnLineAndAuthorized){
+		for (TGDialog *d in self.loadedData){
+			if (!d.photo){
+				tg_peer_t peer = {
+						d.peerType,
+						d.peerId,
+						d.accessHash
+				};
+				char *photo = tg_get_peer_photo_file(
+							self.appDelegate.tg, 
+							&peer, 
+							false, 
+							d.photoId); 
+				if (photo){
+					NSData *data = [NSData 
+						dataFromBase64String:
+							[NSString stringWithUTF8String:photo]];
+					if (data){
+						[data writeToFile:d.photoPath atomically:YES];
+						d.photo = [UIImage imageWithData:data];
+					}
+				} // end if (photo)
+			} // end if (!d.photo)
+		} // end for TGDialog
+	}
 }
 
 -(void)getDialogsCached:(Boolean)update{
@@ -243,7 +239,7 @@
 
 				});
 				// update photo
-				//[self updatePhoto];
+				[self updatePhoto];
 		}];
 	}
 }
@@ -288,48 +284,6 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	}
 
 	return 0;
-}
-
-//static int peer_photo_callback(void *d, const char *photo)
-//{
-	//NSDictionary *data = d;
-	//ChatViewController *self = [data valueForKey:@"self"];
-	//TGDialog *dialog = [data valueForKey:@"dialog"];
-	//if (photo){
-		////dispatch_sync(dispatch_get_main_queue(), ^{
-			////[self.appDelegate showMessage:@"Photo OK!"];
-		////});
-		//NSData *img = [NSData dataFromBase64String:
-			//[NSString stringWithUTF8String:photo]];
-		//if (img){
-			//dispatch_sync(dispatch_get_main_queue(), ^{
-				//dialog.photo = [UIImage 
-					//imageWithImage:[UIImage imageWithData:img] 
-					//scaledToSize:CGSizeMake(40, 40)]; 
-			//});
-		//}
-	//}
-
-	//return 0;
-//}
-
-
-static int get_dialogs_cached_cb(void *d, const tg_dialog_t *dialog)
-{
-	return 0;
-	//DialogsViewController *self = d;
-	//TGDialog *item = [[TGDialog alloc]initWithDialog:dialog];
-	//char *photo = peer_photo_file_from_database(
-			//self.appDelegate.tg, 
-			//item.peerId, item.photoId);
-	//if (photo){
-		//NSData *data = [NSData dataFromBase64String:
-			//[NSString stringWithUTF8String:photo]];
-		//if (data)
-			//item.photo = [UIImage imageWithData:data];
-	//}
-	//[self.loadedData addObject:item];
-	//return 0;
 }
 
 #pragma mark <UITableView DataSource>
