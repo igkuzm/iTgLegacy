@@ -71,6 +71,7 @@
 		initWithBarButtonSystemItem:UIBarButtonSystemItemCompose 
 		target:self action:@selector(composeButtonPushed:)];
 	self.navigationItem.rightBarButtonItem = compose;
+	[compose release];
 
 	// hide searchbar
   [self.tableView setContentOffset:CGPointMake(0, 44)];
@@ -108,6 +109,7 @@
 }
 
 -(void)refresh:(id)sender{
+	[self cancelAll];
 	[self reloadData];
 }
 
@@ -135,6 +137,7 @@
 
 #pragma mark <Data functions>
 -(void)filterData{
+	
 	NSArray *array = [self.loadedData sortedArrayUsingComparator:
 		^NSComparisonResult(id obj1, id obj2)
 	{
@@ -160,7 +163,7 @@
 }
 
 -(void)reloadData{
-	[self cancelAll];
+	//[self cancelAll];
 
 	if (!self.appDelegate.tg)
 		return;
@@ -171,34 +174,6 @@
 
 	// get dialogs
 	[self getDialogsCached:YES];
-}
-
--(void)updatePhoto {
-	if (self.appDelegate.isOnLineAndAuthorized){
-		for (TGDialog *d in self.loadedData){
-			if (!d.photo){
-				tg_peer_t peer = {
-						d.peerType,
-						d.peerId,
-						d.accessHash
-				};
-				char *photo = tg_get_peer_photo_file(
-							self.appDelegate.tg, 
-							&peer, 
-							false, 
-							d.photoId); 
-				if (photo){
-					NSData *data = [NSData 
-						dataFromBase64String:
-							[NSString stringWithUTF8String:photo]];
-					if (data){
-						[data writeToFile:d.photoPath atomically:YES];
-						d.photo = [UIImage imageWithData:data];
-					}
-				} // end if (photo)
-			} // end if (!d.photo)
-		} // end for TGDialog
-	}
 }
 
 -(void)getDialogsCached:(Boolean)update{
@@ -247,8 +222,6 @@
 					[self filterData];
 
 				});
-				// update photo
-				[self updatePhoto];
 		}];
 	}
 }
@@ -286,6 +259,9 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 				[NSString stringWithUTF8String:dialog->top_message_text];
 		else 
 			current.top_message = @"";
+		current.unread_count = dialog->unread_count;
+		current.topMessageId = dialog->top_message_id;
+		current.topMessageFromId = dialog->top_message_from_peer_id;
 		
 		if (dialog->name)
 			current.title =
@@ -436,18 +412,6 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	[self getDialogsFrom:[NSDate date]];
 }
 
-#pragma mark <AllertDelegate functions>
-//- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-	//if (buttonIndex == 1){
-		//c_yandex_music_remove_playlist(
-				//[self.token UTF8String], 
-				//self.selected.uid, 
-				//self.selected.kind, 
-				//NULL, NULL);
-		//[self.loadedData removeObject:self.selected];
-		//[self filterData];
-	//}
-//}
 #pragma mark <AppActivity Delegate>
 -(void)willResignActive {
 	if (self.timer)

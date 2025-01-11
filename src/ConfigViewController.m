@@ -31,9 +31,15 @@
 	[self.appDelegate setDebug:sw.isOn];
 }
 
+-(void)showNotificationsSwitch:(id)sender{
+	UISwitch *sw = sender;
+	[self.appDelegate toggleShowNotifications:sw.isOn];
+}
+
+
 #pragma mark <TableViewDelegate Meythods>
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-	return 2;
+	return 3;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
@@ -44,6 +50,10 @@
 		case 1:
 			return @"Developing";
 			break;						
+		case 2:
+			return @"Dialogs settings";
+			break;						
+
 	}
 	return @"";
 }
@@ -54,6 +64,8 @@
 		rows = 1;
 	if (section == 1)
 		rows = 2;
+	if (section == 2)
+		rows = 1;
 	
 	return rows;
 }
@@ -61,7 +73,9 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	
 	UITableViewCell *cell; 
-	if (indexPath.section == 1 && indexPath.row == 0) {
+	if ((indexPath.section == 1 && indexPath.row == 0) || 
+	    (indexPath.section == 2 && indexPath.row == 0)) 
+	{
 		cell = [self.tableView 
 			dequeueReusableCellWithIdentifier:@"cell"];
 		if (!cell)
@@ -110,6 +124,7 @@
 					case 0:
 						{
 							cell.textLabel.text = @"Debugging";
+							cell.detailTextLabel.text = @"";
 							cell.selectionStyle = UITableViewCellSelectionStyleNone;
 							UISwitch *sw = [[UISwitch alloc] 
 								initWithFrame:CGRectZero];
@@ -135,6 +150,32 @@
 			}
 			break;
 	
+		case 2: 
+			{
+				switch (indexPath.row) {
+					case 0:
+						{
+							cell.textLabel.text = @"Show notifications in dialogs";
+							cell.detailTextLabel.text = @"";
+							cell.selectionStyle = UITableViewCellSelectionStyleNone;
+							UISwitch *sw = [[UISwitch alloc] 
+								initWithFrame:CGRectZero];
+							cell.accessoryView = sw;
+							if ([NSUserDefaults.standardUserDefaults 
+								boolForKey:@"showNotifications"])
+								[sw setOn:YES animated:NO];
+							[sw addTarget:self 
+									action:@selector(showNotificationsSwitch:) 
+									forControlEvents:UIControlEventValueChanged];
+						}
+						break;
+					
+					default:
+						break;
+				}
+			}
+			break;
+
 		default:
 			break;
 	}

@@ -18,6 +18,7 @@
 @property (strong) NSMutableArray *cache;
 @property (strong) UISearchBar *searchBar;
 @property (strong) NSOperationQueue *syncData;
+@property (strong) NSOperationQueue *download;
 @property (strong) UIActivityIndicatorView *spinner;
 @property (strong) UIRefreshControl *refreshControl;
 @property NSInteger currentIndex;

@@ -60,6 +60,8 @@ enum {
 
 @property (strong) NSMutableArray *colorset;
 
+@property Boolean showNotifications;
+
 -(void)showMessage:(NSString *)msg;
 -(void)askYesNo:(NSString *)msg onYes:(void (^)())onYes;
 -(void)askInput:(NSString *)msg onDone:(void (^)(NSString *text))onDone;
@@ -68,6 +70,7 @@ enum {
 -(Boolean)isOnLineAndAuthorized;
 
 -(void)setDebug:(Boolean)debug;
+-(void)toggleShowNotifications:(Boolean)showNotifications;
 @end
 
 // vim:ft=objc

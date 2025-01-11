@@ -21,6 +21,8 @@
 		self.unreadView = [[UIImageView alloc] init];
 		[self.contentView addSubview:self.unreadView];
 		self.unread = [[UILabel alloc] init];
+		self.checkView = [[UIImageView alloc] init];
+		[self.contentView addSubview:self.checkView];
 		//[self.unreadView addSubview:self.unread];
 	}
 	return self;
@@ -61,7 +63,16 @@
 	self.time.font = [UIFont systemFontOfSize:8];
 	self.time.textColor = [UIColor blueColor];
 	self.time.backgroundColor = [UIColor clearColor];
-		
+
+	// read checkmark
+	[self.checkView setFrame:
+			CGRectMake(
+				frame.size.width - 60, 
+				16, 
+				18, 
+				10)];
+	self.checkView.backgroundColor = [UIColor clearColor];
+
 	// unread mark
 	[self.unreadView setFrame:
 			CGRectMake(
@@ -105,11 +116,13 @@
 	self.title.text = dialog.title;
 	self.message.text = dialog.top_message;
 	
-	if (dialog.photo)
-		self.imageView.image = [UIImage imageWithImage:dialog.photo 
-			scaledToSize:CGSizeMake(50, 50)];
-	else
-		self.imageView.image = [UIImage imageNamed:@"missingAvatar.png"];
+	self.imageView.image = [UIImage imageWithImage:dialog.photo 
+		scaledToSize:CGSizeMake(50, 50)];
+	[self.imageView addSubview:dialog.spinner];
+	dialog.spinner.center = CGPointMake(25, 25);
+	if (!dialog.hasPhoto){
+		[dialog setPeerPhoto];
+	}
 
 	NSDateComponents *now  = [self dateCompFromDate:[NSDate date]];
 	NSDateComponents *then = [self dateCompFromDate:dialog.date];
@@ -126,19 +139,43 @@
 		self.time.text = [dateFormatter stringFromDate:dialog.date];
 	}
 
-	if (dialog.unread_count > 0){
-		NSString *s = @"";
-		if (dialog.unread_count / 1000 > 0){
-			s = [NSString stringWithFormat:@"%dk", 
-				dialog.unread_count/1000];
-		} else {
-			s = [NSString stringWithFormat:@"%d", 
-				dialog.unread_count];
-		}
-		self.unread.text = s;
-		self.unreadView.hidden = NO;
-	} else {
+	NSNumber *userId = [NSUserDefaults.standardUserDefaults 
+		valueForKey:@"userId"];
+
+	if (dialog.peerType == TG_PEER_TYPE_USER){
+		NSLog(@"TOP MSG FROM ID: %lld", dialog.topMessageFromId);
+	}
+
+	if (dialog.peerType == TG_PEER_TYPE_USER &&
+			dialog.peerId != userId.longLongValue &&
+			(dialog.topMessageFromId == userId.longLongValue))
+	{
 		self.unreadView.hidden = YES;
+		self.checkView.hidden = NO;
+		if (dialog.unread_count > 0){
+			self.checkView.image = [UIImage 
+				imageNamed:@"ModernConversationListIconDelivered.png"];
+		} else {
+			self.checkView.image = [UIImage 
+				imageNamed:@"ModernConversationListIconRead.png"];
+		}
+	} else {
+		self.checkView.hidden = YES;
+		if (dialog.unread_count > 0) 
+		{
+			NSString *s = @"";
+			if (dialog.unread_count / 1000 > 0){
+				s = [NSString stringWithFormat:@"%dk", 
+					dialog.unread_count/1000];
+			} else {
+				s = [NSString stringWithFormat:@"%d", 
+					dialog.unread_count];
+			}
+			self.unread.text = s;
+			self.unreadView.hidden = NO;
+		} else {
+			self.unreadView.hidden = YES;
+		}
 	}
 }
 @end

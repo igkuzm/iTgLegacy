@@ -8,6 +8,8 @@
 //  To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/
 //
 
+#include "CoreGraphics/CoreGraphics.h"
+#include "UIKit/UIKit.h"
 #import <QuartzCore/QuartzCore.h>
 #import "UIBubbleTableViewCell.h"
 #import "NSBubbleData.h"
@@ -17,6 +19,8 @@
 @property (nonatomic, retain) UIView *customView;
 @property (nonatomic, retain) UIImageView *bubbleImage;
 @property (nonatomic, retain) UIImageView *avatarImage;
+@property (nonatomic, retain) UIView *dateView;
+@property (nonatomic, retain) UIImageView *checkView;
 
 - (void) setupInternalData;
 
@@ -125,7 +129,48 @@
 					x, y, 
 					width + self.data.insets.left + self.data.insets.right, 
 					height + self.data.insets.top + self.data.insets.bottom);
-    
+
+		TGMessage *message = self.data.message;
+		//if (message.mine){
+			//self.dateView = [[[UIImageView alloc]init]autorelease];
+			//self.dateView.frame = CGRectMake(
+					//self.bubbleImage.frame.origin.x - 62, 
+					//self.bubbleImage.frame.origin.y + 
+						//self.bubbleImage.frame.size.height - 40, 
+					//200, 20);
+			//self.dateView.backgroundColor = [UIColor whiteColor];
+
+			//CAShapeLayer * shapeLayer = [CAShapeLayer layer];
+			//UIBezierPath * bezierPath = [UIBezierPath bezierPath];
+			//[bezierPath moveToPoint:CGPointMake(0, 0)];
+			//[bezierPath addLineToPoint:CGPointMake(0,20)];
+			//[bezierPath addLineToPoint:CGPointMake(170,20)];
+			//[bezierPath addLineToPoint:CGPointMake(180,90)];
+			//[bezierPath addLineToPoint:CGPointMake(190, 20)];
+			//[bezierPath addLineToPoint:CGPointMake(200,20)];
+			//[bezierPath addLineToPoint:CGPointMake(200, 0)];
+			//[bezierPath closePath];
+			//shapeLayer.path = bezierPath.CGPath;
+
+			//self.dateView.layer.mask = shapeLayer;
+
+			//// add subview
+			//[self.contentView addSubview:self.dateView];
+		//}
+		//if (message.mine){
+			//self.checkView = [[[UIImageView alloc]init]autorelease];
+			//self.checkView.frame = CGRectMake(
+					//self.bubbleImage.frame.origin.x - 20, 
+					//self.bubbleImage.frame.origin.y + 
+						//self.bubbleImage.frame.size.height - 20, 
+					//18, 10);
+
+			//self.checkView.image = [UIImage 
+				//imageNamed:@"ModernConversationListIconRead.png"];
+			
+			//// add subview
+			//[self.contentView addSubview:self.checkView];
+		//}
 }
 
 @end

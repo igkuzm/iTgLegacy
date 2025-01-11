@@ -14,6 +14,7 @@
 {
 	if (self = [super init]) {
 		self.syncData = syncData;
+		self.syncData.maxConcurrentOperationCount = 1;
 		
 		if (d->name)
 			self.title = [NSString stringWithUTF8String:d->name];
@@ -32,6 +33,7 @@
 		}
 
 		self.topMessageId = d->top_message_id;
+		self.topMessageFromId = d->top_message_from_peer_id;
 
 		self.accessHash = d->access_hash;
 		self.peerId = d->peer_id;
@@ -39,28 +41,69 @@
 		self.date = 
 			[NSDate dateWithTimeIntervalSince1970:d->top_message_date]; 
 		self.unread_count = d->unread_count;
-		self.imageView = NULL;
-
+		self.spinner = [[UIActivityIndicatorView alloc]
+			initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
 
 		self.pinned = d->pinned;
 		self.hidden = (d->folder_id == 1);
 		
 		self.photoId = d->photo_id;
 		
-		self.photo = NULL;
-			
-		AppDelegate *appDelegate = 
-			UIApplication.sharedApplication.delegate;
-		self.photoPath = 
-			[NSString stringWithFormat:@"%@/%lld.%lld", 
-				appDelegate.peerPhotoCache, self.peerId, self.photoId]; 
-		if ([NSFileManager.defaultManager fileExistsAtPath:self.photoPath])
-			self.photo = [UIImage 
-				imageWithData:[NSData dataWithContentsOfFile:self.photoPath]];
-
+		[self setPeerPhoto];
+		
 		self.broadcast = d->broadcast;
 	}
 	return self;
+}
+
+-(void)setPeerPhoto{
+	AppDelegate *appDelegate = 
+			UIApplication.sharedApplication.delegate;
+	self.photoPath = 
+		[NSString stringWithFormat:@"%@/%lld.%lld", 
+			appDelegate.peerPhotoCache, self.peerId, self.photoId]; 
+	if ([NSFileManager.defaultManager fileExistsAtPath:self.photoPath])
+	{
+		// set photo from local data
+		self.photo = [UIImage 
+			imageWithData:[NSData dataWithContentsOfFile:self.photoPath]];
+		self.hasPhoto = YES;
+	}
+	else {
+		self.hasPhoto = NO;
+		[self.spinner startAnimating];
+		// set default photo
+		self.photo = [UIImage imageNamed:@"missingAvatar.png"];
+		// download photo
+		if (appDelegate.isOnLineAndAuthorized){
+			[self.syncData addOperationWithBlock:^{
+				tg_peer_t peer = {
+						self.peerType,
+						self.peerId,
+						self.accessHash
+				};
+				char *photo = tg_get_peer_photo_file(
+							appDelegate.tg, 
+							&peer, 
+							false, 
+							self.photoId); 
+				if (photo){
+					NSData *data = [NSData 
+						dataFromBase64String:
+							[NSString stringWithUTF8String:photo]];
+					if (data){
+						// save photo
+						[data writeToFile:self.photoPath atomically:YES];
+						self.photo = [UIImage imageWithData:data];
+					}
+					self.photo = [UIImage imageWithData:data];
+					self.hasPhoto = YES;
+					free(photo);
+				} // end if (photo)
+				[self.spinner stopAnimating];
+			}];
+		}
+	}
 }
 
 @end

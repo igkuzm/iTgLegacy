@@ -82,6 +82,10 @@
 	[application beginReceivingRemoteControlEvents];
 	[application registerForRemoteNotificationTypes:
 		(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeSound|UIRemoteNotificationTypeAlert)];
+
+	// show notifications in dialogs
+	self.showNotifications = [NSUserDefaults.standardUserDefaults 
+			boolForKey:@"showNotifications"];
 	
 	// start reachability
 	self.reach = [Reachability reachabilityWithHostname:@"www.google.ru"];
@@ -322,17 +326,19 @@
 			}
 
 			// show allert
-			NSDictionary *aps = [userInfo valueForKey:@"aps"];
-			NSDictionary *alert = [aps valueForKey:@"alert"];
-			NSString *title = [alert valueForKey:@"title"];
-			NSString *body = [alert valueForKey:@"body"];
-			UIAlertView *alertView = 
-				[[UIAlertView alloc] 
-					initWithTitle:title
-					message:body delegate:nil
-					cancelButtonTitle:@"OK"
-					otherButtonTitles:nil];
-      [alertView show];
+			if (self.showNotifications){
+				NSDictionary *aps = [userInfo valueForKey:@"aps"];
+				NSDictionary *alert = [aps valueForKey:@"alert"];
+				NSString *title = [alert valueForKey:@"title"];
+				NSString *body = [alert valueForKey:@"body"];
+				UIAlertView *alertView = 
+					[[UIAlertView alloc] 
+						initWithTitle:title
+						message:body delegate:nil
+						cancelButtonTitle:@"OK"
+						otherButtonTitles:nil];
+				[alertView show];
+			}
   }
 }
 
@@ -547,6 +553,14 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 	else 
 		tg_set_on_log(self.tg, NULL, NULL);
 
+}
+-(void)toggleShowNotifications:(Boolean)showNotifications
+{
+	NSLog(@"Set showNotifications %s", 
+			showNotifications?"ON":"OFF");
+	[NSUserDefaults.standardUserDefaults 
+			setBool:showNotifications forKey:@"showNotifications"];
+	self.showNotifications = showNotifications;
 }
 
 @end
