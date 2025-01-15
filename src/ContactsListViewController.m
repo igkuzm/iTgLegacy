@@ -10,16 +10,6 @@
 #include "../libtg/tg/peer.h"
 #include "../libtg/tg/user.h"
 
-@implementation TGContact
-- (id)init
-{
-	if (self = [super init]) {
-		
-	}
-	return self;
-}
-@end
-
 @implementation ContactsListViewController
 
 - (void)viewDidLoad {
@@ -44,6 +34,8 @@
 	self.tableView.tableHeaderView=self.searchBar;	
 	self.searchBar.delegate = self;
 	self.searchBar.placeholder = @"Search:";
+
+	[self.tableView reloadData]; // load search bar
 	
 	self.refreshControl=[[UIRefreshControl alloc]init];
 	[self.refreshControl setAttributedTitle:[[NSAttributedString alloc] initWithString:@""]];
@@ -63,13 +55,56 @@
 }
 
 -(void)filterData{
-	if (self.searchString == nil || [self.searchString isEqualToString:@""]) {
+	if (self.searchString == nil || 
+			[self.searchString isEqualToString:@""]) 
+	{
 		self.data = self.loadedData;
 	}else {
-		NSPredicate *predicate = 
-			[NSPredicate predicateWithFormat:
-			@"self.name contains[c] %@ or self.nickname contains[c] %@ or self.phones contains[c] %@ or self.emails contains[c] %@", 
-			self.searchString,self.searchString,self.searchString,self.searchString];
+		NSPredicate *predicate = [NSPredicate predicateWithBlock:
+			^BOOL(id evaluatedObject, NSDictionary *bindings) 
+		{
+			ABRecordRef person=(__bridge ABRecordRef)evaluatedObject;
+			
+			NSString *name = (__bridge NSString *)
+				ABRecordCopyCompositeName(person);
+			if (name && [name rangeOfString:self.searchString].location != NSNotFound){
+				return YES;
+			}
+			
+			NSString *nickName = (__bridge NSString *)
+				ABRecordCopyValue(
+						person, kABPersonNicknameProperty);
+			if (nickName && [nickName rangeOfString:self.searchString].location != NSNotFound){
+				return YES;
+			}
+
+			ABMultiValueRef phonesProperty =
+				ABRecordCopyValue(
+						person, kABPersonPhoneProperty);
+			NSArray *phones = (__bridge NSArray *)
+				ABMultiValueCopyArrayOfAllValues(phonesProperty);
+			CFRelease(phonesProperty);
+			for (NSString *value in phones) {
+				if ([value rangeOfString:self.searchString].location!=NSNotFound) {
+						return YES;
+				}
+			}
+
+			ABMultiValueRef emailsProperty =
+				ABRecordCopyValue(
+						person, kABPersonEmailProperty);
+			NSArray *emails = (__bridge NSArray *)
+				ABMultiValueCopyArrayOfAllValues(emailsProperty);
+			CFRelease(emailsProperty);
+			for (NSString *value in emails) {
+				if ([value rangeOfString:self.searchString].location!=NSNotFound) {
+						return YES;
+				}
+			}
+
+			return NO;
+		}];
+
 		self.data = [self.loadedData filteredArrayUsingPredicate:predicate];
 	}
 	[self.spinner stopAnimating];
@@ -77,8 +112,8 @@
 }
 
 - (void) viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-		[self.navigationController setToolbarHidden: YES];
+	[super viewWillAppear:animated];
+	[self.navigationController setToolbarHidden: YES];
 }
 
 -(void)refresh:(id)sender{
@@ -97,15 +132,26 @@
 	if (!cell)
 		cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"cell"];	
 
-	TGContact *contact = [self.data objectAtIndex:indexPath.item];
-	cell.textLabel.text = contact.name;
-	
+	ABRecordRef person = (__bridge ABRecordRef)
+		[self.data objectAtIndex:indexPath.item];
 
-	if (contact.phones)
-		cell.detailTextLabel.text = contact.phones;
+	NSString *name = (__bridge NSString *)
+	 	ABRecordCopyCompositeName(person);
+	cell.textLabel.text = name;
 	
-	if (contact.imageData){
-		UIImage *image = [UIImage imageWithData:contact.imageData];
+	ABMultiValueRef phonesProperty =
+		ABRecordCopyValue(person, kABPersonPhoneProperty);
+	NSArray *phones = (__bridge NSArray *)
+		ABMultiValueCopyArrayOfAllValues(phonesProperty);
+	if (phones){
+		cell.detailTextLabel.text = 
+			[phones componentsJoinedByString:@" "];
+	}
+	
+	NSData *imageData = (__bridge NSData *)
+		ABPersonCopyImageDataWithFormat(person, kABPersonImageFormatThumbnail);
+	if (imageData){
+		UIImage *image = [UIImage imageWithData:imageData];
 		cell.imageView.image = [UIImage imageWithImage:image 
 			scaledToSize:CGSizeMake(50, 50)];
 	}
@@ -119,11 +165,10 @@
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 	
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
+	
 	[self.searchBar resignFirstResponder];
 	
-	if (!self.appDelegate.tg ||
-			!self.appDelegate.reach.isReachable ||
-			!self.appDelegate.authorizedUser)
+	if (!self.appDelegate.isOnLineAndAuthorized)
 	{
 		[self.appDelegate showMessage:@"no network"];
 		return;
@@ -132,7 +177,9 @@
 	UITableViewCell *cell = 
 		[tableView cellForRowAtIndexPath:indexPath];
 
-	TGContact *contact = [self.data objectAtIndex:indexPath.item];
+	ABRecordRef person = (__bridge ABRecordRef)
+		[self.data objectAtIndex:indexPath.item];
+	
 	// spinner
 	UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc]
 		initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
@@ -145,9 +192,11 @@
 
 	// try to get peer
 	[self.syncData addOperationWithBlock:^{
-		if (contact.phones){
-			NSArray *phones = 
-				[contact.phones componentsSeparatedByString:@" "];
+		ABMultiValueRef phonesProperty =
+			ABRecordCopyValue(person, kABPersonPhoneProperty);
+		NSArray *phones = (__bridge NSArray *)
+			ABMultiValueCopyArrayOfAllValues(phonesProperty);
+		if (phones){
 			
 			// try to get user in local database first
 			//for (NSString *phone in phones){
@@ -185,7 +234,9 @@
 					dialog.peerType = peer.type;
 					dialog.peerId = peer.id;
 					dialog.accessHash = peer.access_hash;
-					dialog.title = contact.name;
+					NSString *name = (__bridge NSString *)
+						ABRecordCopyCompositeName(person);
+					dialog.title = name;
 					// try to find user by id in local database
 					tg_user_t *user = tg_user_get(
 							self.appDelegate.tg, 
@@ -237,6 +288,9 @@
 
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText{
 	self.searchString=searchText;
+	if (self.searchString.length > 3 || 
+			self.searchString.length == 0)
+		[self filterData];
 }
 
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
@@ -256,6 +310,24 @@
 }
 
 #pragma mark <Contacts Manager>
+-(void)syncContacts{
+	[self.spinner startAnimating];
+
+	[self.syncData addOperationWithBlock:^{
+		ABAddressBookRef addressBook = ABAddressBookCreateWithOptions(NULL, NULL);
+		CFArrayRef people = 
+			ABAddressBookCopyArrayOfAllPeopleInSourceWithSortOrdering(
+					addressBook, 
+					NULL, 
+					kABPersonSortByLastName);
+
+		self.loadedData = (__bridge NSMutableArray *)people;
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.spinner stopAnimating];
+			[self filterData];
+		});
+	}];
+}
 -(void)getContacts{
 	ABAddressBookRequestAccessWithCompletion(
 			ABAddressBookCreateWithOptions(
@@ -263,59 +335,12 @@
 			^(bool granted, CFErrorRef error) 
 	{
 		if (!granted){
-			NSLog(@"Just denied");
+			NSLog(@"Access to contacts denied");
 			return;
 		}
 
-		NSLog(@"Just authorized");
-		
-		[self.spinner startAnimating];
-
-		self.loadedData = [NSMutableArray array];
-
-		ABAddressBookRef addressBook = ABAddressBookCreateWithOptions(NULL, NULL);
-		CFArrayRef people = ABAddressBookCopyArrayOfAllPeopleInSourceWithSortOrdering(addressBook, NULL, kABPersonSortByLastName);
-		//CFMutableArrayRef peopleMutable = CFArrayCreateMutableCopy(
-        //kCFAllocatorDefault,
-        //CFArrayGetCount(people),
-        //people);
-		
-		NSUInteger peopleCounter = 0;
-		for (peopleCounter = 0; peopleCounter < ((__bridge NSArray *)people).count; peopleCounter++)
-		{
-			TGContact *contact = [[TGContact alloc]init];
-			ABRecordRef thisPerson = (__bridge ABRecordRef) [(__bridge NSArray *)people objectAtIndex:peopleCounter];
-
-			NSString *name = (__bridge NSString *) ABRecordCopyCompositeName(thisPerson);
-			if (name.length > 0)
-				contact.name = [NSString stringWithString:name];
-			else
-				contact.name = @"no name";
-
-			NSString *nickname = (__bridge NSString *) ABRecordCopyValue(thisPerson, kABPersonNicknameProperty);
-			if (nickname.length > 0)
-				contact.nickname = [NSString stringWithString:nickname];
-
-			NSData *contactImageData = (__bridge NSData *)ABPersonCopyImageDataWithFormat(thisPerson, kABPersonImageFormatThumbnail);
-			if (contactImageData)
-				contact.imageData = [NSData dataWithData:contactImageData];
-
-			ABMultiValueRef phonesProperty = ABRecordCopyValue(thisPerson, kABPersonPhoneProperty);
-			NSArray *phones = (__bridge NSArray *)ABMultiValueCopyArrayOfAllValues(phonesProperty);
-			if (phones)
-				contact.phones = [phones componentsJoinedByString:@" "];
-			
-			ABMultiValueRef emailsProperty = ABRecordCopyValue(thisPerson, kABPersonEmailProperty);
-			NSArray *emails = (__bridge NSArray *)ABMultiValueCopyArrayOfAllValues(emailsProperty);
-			if (emails)
-				contact.emails = [emails componentsJoinedByString:@" "];
-						
-			// add contact
-			[self.loadedData addObject:contact];
-		}
-		CFRelease(addressBook);
-
-		[self filterData];
+		NSLog(@"Access to contacts authorized");
+		[self syncContacts];
 	});
 }
 

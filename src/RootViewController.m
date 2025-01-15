@@ -20,7 +20,7 @@
 	ContactsListViewController *cvc = 
 		[[ContactsListViewController alloc]init];
 	cvc.title = @"Contacts";
-	//[cvc getContacts];
+	[cvc getContacts];
 	UINavigationController *cvnc =
 		[[UINavigationController alloc]initWithRootViewController:cvc];
 	UITabBarItem *cvtbi = [[UITabBarItem alloc]

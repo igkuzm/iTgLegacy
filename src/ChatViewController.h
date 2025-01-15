@@ -38,6 +38,7 @@
 @property (strong) UIImageView *icon;
 @property (strong) NSTimer *timer;
 @property (strong) UITextField *textField;
+//@property (strong) UITextView *textField;
 @property (strong, nonatomic) TGDialog *dialog;
 @property (strong, nonatomic) NSString *currentImage;
 @property (nonatomic, strong) NSMutableArray *bubbleDataArray;
@@ -65,7 +66,6 @@
 @property (strong) UIImage *peerPhoto;
 
 @property () int position;
--(ChatViewController *)initWithDialog:(TGDialog *)dialog;
 @end
 
 // vim:ft=objc

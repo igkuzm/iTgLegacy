@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #import "Base64/Base64.h"
 #include "../libtg/tg/peer.h"
+#include "../libtg/tg/messages.h"
 #include "../libtg/tg/files.h"
 #import "UIImage+Utils/UIImage+Utils.h"
 
@@ -48,6 +49,9 @@
 		self.hidden = (d->folder_id == 1);
 		
 		self.photoId = d->photo_id;
+
+		self.readDate = -1;
+		[self syncReadDate];
 		
 		[self setPeerPhoto];
 		
@@ -100,7 +104,37 @@
 					self.hasPhoto = YES;
 					free(photo);
 				} // end if (photo)
-				[self.spinner stopAnimating];
+				dispatch_sync(dispatch_get_main_queue(), ^{
+					[self.spinner stopAnimating];
+				});
+			}];
+		}
+	}
+}
+
+-(void)syncReadDate{
+	NSNumber *userId = [NSUserDefaults.standardUserDefaults 
+		valueForKey:@"userId"];
+	if (self.peerType == TG_PEER_TYPE_USER &&
+			self.peerId != userId.longLongValue &&
+			(self.topMessageFromId == userId.longLongValue))
+	{
+		AppDelegate *appDelegate = 
+				UIApplication.sharedApplication.delegate;
+		if (appDelegate.isOnLineAndAuthorized){
+			[self.syncData addOperationWithBlock:^{
+				tg_peer_t peer = {
+						self.peerType,
+						self.peerId,
+						self.accessHash
+				};
+				int date = tg_messages_get_read_date(
+						appDelegate.tg, peer, self.topMessageId);
+				if (date){
+					dispatch_sync(dispatch_get_main_queue(), ^{
+						self.readDate = date;
+					});
+				}
 			}];
 		}
 	}

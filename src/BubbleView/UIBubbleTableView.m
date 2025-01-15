@@ -306,6 +306,10 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 			[self.bubbleDelegate bubbleTableView:self didScroll:scrollView];
 }
 
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+	if (self.bubbleDelegate)
+		[self.bubbleDelegate bubbleTableViewDidBeginDragging:self];
+}
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
 	float bottomEdge = 

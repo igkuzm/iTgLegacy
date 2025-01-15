@@ -42,6 +42,8 @@
 		self.mediaType = m->media_type;
 		self.isVoice = m->doc_isVoice;
 		self.isVideo = m->doc_isVideo;
+		self.isSticker = m->is_sticker;
+		self.isService = m->is_service;
 		if (m->doc_mime_type){
 			self.mimeType = [NSString stringWithUTF8String:m->doc_mime_type];
 		}

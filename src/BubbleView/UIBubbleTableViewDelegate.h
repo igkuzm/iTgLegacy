@@ -18,6 +18,8 @@ didSelectData:(NSBubbleData *)data;
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 didScroll:(UIScrollView *)scrollView;
 
+- (void)bubbleTableViewDidBeginDragging:(UIBubbleTableView *)bubbleTableView;
+
 - (void)bubbleTableViewOnTap:(UIBubbleTableView *)bubbleTableView;
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView

@@ -142,9 +142,9 @@
 	NSNumber *userId = [NSUserDefaults.standardUserDefaults 
 		valueForKey:@"userId"];
 
-	if (dialog.peerType == TG_PEER_TYPE_USER){
-		NSLog(@"TOP MSG FROM ID: %lld", dialog.topMessageFromId);
-	}
+	//if (dialog.peerType == TG_PEER_TYPE_USER){
+		//NSLog(@"TOP MSG FROM ID: %lld", dialog.topMessageFromId);
+	//}
 
 	if (dialog.peerType == TG_PEER_TYPE_USER &&
 			dialog.peerId != userId.longLongValue &&
@@ -152,7 +152,10 @@
 	{
 		self.unreadView.hidden = YES;
 		self.checkView.hidden = NO;
-		if (dialog.unread_count > 0){
+		if (dialog.readDate == -1){
+			self.checkView.image = nil;
+		}
+		else if (dialog.readDate == 0){
 			self.checkView.image = [UIImage 
 				imageNamed:@"ModernConversationListIconDelivered.png"];
 		} else {

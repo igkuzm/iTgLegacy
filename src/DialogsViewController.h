@@ -3,12 +3,14 @@
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 #import "TGDialog.h"
+#import <AddressBook/ABAddressBook.h>
+#import <AddressBookUI/AddressBookUI.h>
 
 @interface DialogsViewController : UITableViewController
 <UITableViewDelegate, UITableViewDataSource, 
  UISearchBarDelegate, UIActionSheetDelegate,
  UIScrollViewDelegate, AuthorizationDelegate,
- AppActivityDelegate>
+ AppActivityDelegate, ABPeoplePickerNavigationControllerDelegate>
 @property (strong) AppDelegate *appDelegate;
 @property (strong) NSTimer *timer;
 @property (strong) TGDialog *selected;

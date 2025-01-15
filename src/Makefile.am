@@ -21,10 +21,6 @@ iTgLegacy_SOURCES = \
 		BubbleView/UIBubbleTableView.m \
 		BubbleView/UIBubbleTableViewCell.m \
 		BubbleView/UIBubbleTypingTableViewCell.m \
-		TSMessages/TSMessageView.m \
-		TSMessages/TSMessage.m \
-		TSMessages/TSBlurView.m \
-		TSMessages/HexColors.m \
 		Base64/Base64.m \
 		UIImage+Utils/UIImage+Utils.m \
 		opusfile/internal.c \
@@ -44,13 +40,13 @@ iTgLegacy_SOURCES = \
 		main.m
 
 iTgLegacy_OBJCFLAGS = \
-	-Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus
+	-Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus -fobjc-arc
 
 iTgLegacy_CFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -fno-objc-arc -Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus -Ilibopusenc/include -Ilibopusenc/src
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus -Ilibopusenc/include -Ilibopusenc/src
 
 iTgLegacy_LDFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -fno-objc-arc -Lopus/lib -lopus
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -Lopus/lib -lopus
 
 iTgLegacy_LDADD = \
 			-lssl -lcurl -L../libs -ltg -L../libtg/tg/.libs -Lopus/lib -lopus
@@ -73,8 +69,6 @@ _images:
 	cp -f ../images/*.jpg iTgLegacy.app/.
 	cp -f ../sounds/*.m4a iTgLegacy.app/.
 	cp -f BubbleView/images/*.png iTgLegacy.app/.
-	cp -f TSMessages/Assets/*.png iTgLegacy.app/.
-	cp -f TSMessages/Assets/*.json iTgLegacy.app/.
 	cp -f LaunchScreen.nib iTgLegacy.app/.
 
 iTgLegacy.app: iTgLegacy _dir _plist _images

@@ -10,17 +10,6 @@
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 
-@interface TGContact : NSObject
-{
-}
-@property (strong) NSString *name;
-@property (strong) NSString *nickname;
-@property (strong) NSString *phones;
-@property (strong) NSString *emails;
-@property (strong) NSData *imageData;
-
-@end
-
 @interface ContactsListViewController : UITableViewController 
 <UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate>
 

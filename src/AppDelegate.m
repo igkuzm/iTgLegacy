@@ -34,7 +34,7 @@
 	// logging
 	NSString *log = 
 		[NSTemporaryDirectory() stringByAppendingPathComponent:@"iTgLegacy.txt"];
-	[[NSFileManager defaultManager] removeFileAtPath:log handler:nil];
+	[[NSFileManager defaultManager] removeItemAtPath:log error:nil];
 	self.log = freopen([log UTF8String], "a+", stderr);
 
 	NSLog(@"start...");
@@ -390,14 +390,14 @@
 			if (self.authorizationDelegate)
 				[self.authorizationDelegate tgLibLoaded];
 	}
-	tg_set_on_error(self.tg, self, on_err);
+	tg_set_on_error(self.tg, (__bridge void *)self, on_err);
 	if ([NSUserDefaults.standardUserDefaults  boolForKey:@"debug"])
-		tg_set_on_log(self.tg, self, on_log);
+		tg_set_on_log(self.tg, (__bridge void *)self, on_log);
 }
 
 static void on_err(void *d, const char *err)
 {
-	AppDelegate *self = d;
+	AppDelegate *self = (__bridge AppDelegate *)d;
 	NSLog(@"%s", err);
 	//dispatch_sync(dispatch_get_main_queue(), ^{
 		//[self showMessage: 
@@ -407,7 +407,7 @@ static void on_err(void *d, const char *err)
 
 static void on_log(void *d, const char *msg)
 {
-	AppDelegate *self = d;
+	AppDelegate *self = (__bridge AppDelegate *)d;
 	NSLog(@"%s", msg);
 }
 
@@ -433,6 +433,8 @@ static void on_log(void *d, const char *msg)
 	}
 	// get colors
 	//[self getPeerColorset];
+	
+	/* TODO: updates.getState - to have unread messages count <15-01-25, yourname> */
 }
 
 -(void)signIn:(NSString *)phone_number 
@@ -513,7 +515,7 @@ static void on_log(void *d, const char *msg)
 
 static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg_colors_t *dark_colors)
 {
-	AppDelegate *self = d;
+	AppDelegate *self = (__bridge AppDelegate *)d;
 	NSDictionary *c = @{
 		@"color_id":[NSNumber numberWithInt:color_id],
 		@"0":[NSNumber numberWithInt:colors->rgb0],
@@ -533,7 +535,7 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 		tg_get_peer_profile_colors(
 				self.tg, 
 				0, 
-				self, getPeerColorsetCb);
+				(__bridge void *)self, getPeerColorsetCb);
 	}];
 }
 
@@ -549,7 +551,7 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 		return;
 	NSLog(@"Set debugging %s", debug?"ON":"OFF");
 	if (debug)
-		tg_set_on_log(self.tg, self, on_log);
+		tg_set_on_log(self.tg, (__bridge void *)self, on_log);
 	else 
 		tg_set_on_log(self.tg, NULL, NULL);
 

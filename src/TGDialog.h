@@ -24,9 +24,11 @@
 @property Boolean hidden;
 @property Boolean broadcast;
 @property Boolean hasPhoto;
+@property int readDate;
 
 -(id)initWithDialog:(const tg_dialog_t *)dialog tg:(tg_t *)tg syncData:(NSOperationQueue *)syncData;
 -(void)setPeerPhoto;
+-(void)syncReadDate;
 
 @end
 

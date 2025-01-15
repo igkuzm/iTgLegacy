@@ -11,6 +11,7 @@
 #include "TGDialog.h"
 #include "../libtg/tg/queue.h"
 #include "../libtg/tg/files.h"
+#include "../libtg/tg/user.h"
 #include "ChatViewController.h"
 #include "UIKit/UIKit.h"
 #include "Foundation/Foundation.h"
@@ -18,7 +19,8 @@
 #import "DialogViewCell.h"
 #include <unistd.h>
 #import "UIImage+Utils/UIImage+Utils.h"
-#import "TSMessages/TSMessage.h"
+#import <AddressBook/ABAddressBook.h>
+#import <AddressBookUI/AddressBookUI.h>
 
 @implementation DialogsViewController
 
@@ -71,7 +73,6 @@
 		initWithBarButtonSystemItem:UIBarButtonSystemItemCompose 
 		target:self action:@selector(composeButtonPushed:)];
 	self.navigationItem.rightBarButtonItem = compose;
-	[compose release];
 
 	// hide searchbar
   [self.tableView setContentOffset:CGPointMake(0, 44)];
@@ -114,11 +115,10 @@
 }
 
 -(void)composeButtonPushed:(id)sender{
-	[TSMessage 
-		showNotificationWithTitle:@"title" 
-										 subtitle:@"subTitle"
-										     type:TSMessageNotificationTypeMessage
-	];
+	ABPeoplePickerNavigationController *picker =
+				[[ABPeoplePickerNavigationController alloc] init];
+	picker.peoplePickerDelegate = self;
+	[self presentViewController:picker animated:TRUE completion:nil];
 }
 
 -(void)timer:(id)sender{
@@ -183,7 +183,7 @@
 		
 		tg_get_dialogs_from_database(
 				self.appDelegate.tg, 
-				self, 
+				(__bridge void *)self, 
 				get_dialogs_cb);
 
 		dispatch_sync(dispatch_get_main_queue(), ^{
@@ -211,7 +211,7 @@
 						[date timeIntervalSince1970], 
 						NULL, 
 						NULL, 
-						self, 
+						(__bridge void *)self, 
 						get_dialogs_cb,
 						 NULL);
 
@@ -236,7 +236,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	if (dialog->folder_id == 1)
 		return 0;
 		
-	DialogsViewController *self = d;
+	DialogsViewController *self = (__bridge DialogsViewController *)d;
 	//[self.appDelegate showMessage:@"ADD DIALOG!"];
 	TGDialog *current = NULL;
 	for (TGDialog *item in self.loadedData){
@@ -259,9 +259,11 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 				[NSString stringWithUTF8String:dialog->top_message_text];
 		else 
 			current.top_message = @"";
+		
 		current.unread_count = dialog->unread_count;
 		current.topMessageId = dialog->top_message_id;
 		current.topMessageFromId = dialog->top_message_from_peer_id;
+		[current syncReadDate];
 		
 		if (dialog->name)
 			current.title =
@@ -417,6 +419,91 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	if (self.timer)
 		[self.timer fire];
 	//[self cancelAll];
+}
+
+#pragma mark <>ABPeoplePickerNavigationController Delegate>
+- (void)peoplePickerNavigationControllerDidCancel:
+(ABPeoplePickerNavigationController *)peoplePicker
+{
+	[peoplePicker dismissViewControllerAnimated:true completion:nil];
+}
+
+- (BOOL)peoplePickerNavigationController:
+(ABPeoplePickerNavigationController *)peoplePicker
+      shouldContinueAfterSelectingPerson:(ABRecordRef)person 
+{
+	if (!self.appDelegate.isOnLineAndAuthorized){
+		[self.appDelegate showMessage:@"no network"];
+		return NO;
+	}
+	NSString *name = (__bridge NSString *)
+	 	ABRecordCopyCompositeName(person);
+	ABMultiValueRef phonesProperty = 
+		ABRecordCopyValue(person, kABPersonPhoneProperty);
+	NSArray *phones = (__bridge NSArray *)
+		ABMultiValueCopyArrayOfAllValues(phonesProperty);
+	if (phones){
+		[peoplePicker dismissViewControllerAnimated:true completion:nil];
+		[self.spinner startAnimating];
+		[[[NSOperationQueue alloc]init]addOperationWithBlock:^{
+			for (NSString *phone in phones){
+				tg_peer_t peer = tg_peer_by_phone(
+						self.appDelegate.tg, 
+						phone.UTF8String);
+				if (peer.access_hash){
+					TGDialog *dialog = [[TGDialog alloc] init];
+					dialog.peerType = peer.type;
+					dialog.peerId = peer.id;
+					dialog.accessHash = peer.access_hash;
+					dialog.title = name;
+					// try to find user by id in local database
+					tg_user_t *user = tg_user_get(
+							self.appDelegate.tg, 
+							peer.id);
+					if (user){
+						dialog.photoId = user->photo_id;
+						if (user->username_)
+							dialog.title = 
+								[NSString stringWithUTF8String:user->username_];
+						tg_user_free(user);
+						free(user);
+					}
+					dispatch_sync(dispatch_get_main_queue(), ^{
+						[self.spinner stopAnimating];
+						[self openDialog:dialog];
+					});
+					return;
+				}
+			}
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[self.spinner stopAnimating];
+				[self.appDelegate showMessage:@"can't find user in telegram"];
+			});
+		}];
+	} else {
+		[self.appDelegate showMessage:@"can't find user in telegram"];
+		return NO;
+	}
+
+	return NO;
+}
+
+- (BOOL)peoplePickerNavigationController:
+(ABPeoplePickerNavigationController *)peoplePicker
+      shouldContinueAfterSelectingPerson:(ABRecordRef)person 
+			property:(ABPropertyID)property
+      identifier:(ABMultiValueIdentifier)identifier
+{
+  return NO;
+}
+
+-(void)openDialog:(TGDialog *)dialog {
+	ChatViewController *vc = [[ChatViewController alloc]init];
+	vc.hidesBottomBarWhenPushed = YES;
+	vc.dialog = dialog;
+	vc.spinner = self.spinner;
+	[self.navigationController 
+			pushViewController:vc animated:TRUE];
 }
 
 @end

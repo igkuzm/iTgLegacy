@@ -61,10 +61,16 @@ const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 	
 	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
 
-	if (text.length < 10)
-		text = [NSString stringWithFormat:@"%@                    ", text];
+	// add spaces for small text
+	NSMutableString *str = [NSMutableString string];
+	[str appendString:(text?text:@"")];
+	int i;
+	for (i=text.length; i<20; ++i){
+		[str appendString:@" "];
+	} 
+	text = str;
 
-	CGSize size = [(text ? text : @"") 
+	CGSize size = [text 
 		sizeWithFont:font
     constrainedToSize:CGSizeMake(self.width, 9999) 
 		lineBreakMode:NSLineBreakByWordWrapping];
@@ -104,10 +110,9 @@ const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 		self.textView.editable = NO;
 		self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
 		self.textView.scrollEnabled = NO;
-    self.textView.text = (text ? text : @"");
-		self.textView.font = 
+    self.textView.text = text;
+		self.textView.font =  
 			[UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
-		//self.textView.textContainer.lineBreakMode = NSLineBreakByWordWrapping;
     self.textView.backgroundColor = [UIColor clearColor];
 		[view addSubview:self.textView];
 
@@ -173,7 +178,18 @@ const UIEdgeInsets imageInsetsSomeone = {11, 18, 16, 14};
 	[self.imageView addSubview:self.spinner];
 
 	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
-	CGSize textSize = [(text ? text : @"") 
+
+	// add spaces for small text
+	NSMutableString *str = [NSMutableString string];
+	[str appendString:(text?text:@"")];
+	int i;
+	for (i=text.length; i<20; ++i){
+		[str appendString:@" "];
+	} 
+	text = str;
+
+
+	CGSize textSize = [text 
 		sizeWithFont:font 
 		constrainedToSize:CGSizeMake(self.width, 9999) 
 		lineBreakMode:NSLineBreakByWordWrapping];
@@ -182,13 +198,13 @@ const UIEdgeInsets imageInsetsSomeone = {11, 18, 16, 14};
 		initWithFrame:CGRectMake(
 				0, 
 				size.height, 
-				textSize.width + 10, 
-				textSize.height + 15)];
+				textSize.width, 
+				textSize.height + 20)];
 	self.textView.editable = NO;
 	self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
 	self.textView.scrollEnabled = NO;
-	self.textView.text = (text ? text : @"");
-	self.textView.font = 
+	self.textView.text = text;
+	self.textView.font =  
 		[UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
 	self.textView.backgroundColor = [UIColor clearColor];
 

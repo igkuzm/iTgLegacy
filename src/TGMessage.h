@@ -12,6 +12,8 @@
 @property Boolean pinned;
 @property Boolean isVoice;
 @property Boolean isVideo;
+@property Boolean isSticker;
+@property Boolean isService;
 @property uint32_t id;
 @property uint32_t mediaType;
 @property uint64_t photoId;
