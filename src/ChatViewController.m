@@ -649,6 +649,16 @@ static void on_update(void *d, int type, void *value)
 					});
 
 			}
+		case TG_UPDATE_CHAT_USER_TYPING:
+			{
+				struct {uint64_t chat_id; uint64_t user_id;} *t = value; 
+				if (self.dialog.peerId == t->chat_id)
+					dispatch_sync(dispatch_get_main_queue(), ^{
+						self.bubbleTableView.typingBubble = 
+							NSBubbleTypingTypeSomebody;
+						[self.bubbleTableView reloadData];
+					});
+			}
 		case TG_UPDATE_USER_RECORD_AUDIO:
 			{
 				uint64_t *user_id = value;
