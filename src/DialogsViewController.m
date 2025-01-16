@@ -97,9 +97,6 @@
     [super viewWillAppear:animated];
 		[self.navigationController setToolbarHidden: YES];
 		
-		// cancel all
-		[self cancelAll];
-
 		// load data
 		[self reloadData];
 		

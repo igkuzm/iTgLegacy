@@ -74,6 +74,12 @@
 		self.hasPhoto = YES;
 	}
 	else {
+		if (self.photoId == 0){
+			self.hasPhoto = YES;
+			self.photo = [UIImage imageNamed:@"missingAvatar.png"];
+			return;
+		}
+
 		self.hasPhoto = NO;
 		[self.spinner startAnimating];
 		// set default photo
