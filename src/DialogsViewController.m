@@ -22,10 +22,19 @@
 #import <AddressBook/ABAddressBook.h>
 #import <AddressBookUI/AddressBookUI.h>
 
+@interface  DialogsViewController()
+{
+}
+@property uint64_t hash;
+@end
+
 @implementation DialogsViewController
+@synthesize hash = _hash;
 
 - (void)viewDidLoad {
 	[super viewDidLoad];
+
+	self.hash = 0;
 	
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	self.appDelegate.authorizationDelegate = self;
@@ -88,6 +97,9 @@
     [super viewWillAppear:animated];
 		[self.navigationController setToolbarHidden: YES];
 		
+		// cancel all
+		[self cancelAll];
+
 		// load data
 		[self reloadData];
 		
@@ -209,7 +221,7 @@
 						self.appDelegate.tg, 
 						20, 
 						[date timeIntervalSince1970], 
-						NULL, 
+						&_hash, 
 						NULL, 
 						(__bridge void *)self, 
 						get_dialogs_cb,

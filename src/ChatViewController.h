@@ -53,12 +53,14 @@
 // toolbar
 @property (strong) UIBarButtonItem *progress;
 @property (strong) UIBarButtonItem *send;
+@property (strong) UIBarButtonItem *attach;
 @property (strong) UIBarButtonItem *add;
 @property (strong) UIBarButtonItem *textFieldItem;
 @property (strong) UIBarButtonItem *flexibleSpace;
 @property (strong) UIBarButtonItem *cancel;
 @property (strong) UIBarButtonItem *label;
 @property (strong) UIBarButtonItem *record;
+@property (strong) UIButton        *recordButton;
 
 //@property (weak, nonatomic) UITextView *inputField;
 @property (strong, nonatomic) UIImageView *inputFieldImageView;

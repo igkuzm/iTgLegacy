@@ -107,8 +107,8 @@
 	//self.textField = [[UITextView alloc]
 		initWithFrame:CGRectMake(
 				0,0,
-				self.navigationController.toolbar.frame.size.width - 125, 
-				30)];
+				self.navigationController.toolbar.frame.size.width - 110, 
+				29)];
 	self.textField.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 	[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
 	//[self.textField.layer setCornerRadius:14.0f];
@@ -120,27 +120,36 @@
 	self.flexibleSpace = [[UIBarButtonItem alloc] 
 		initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
 		target:nil action:nil];
-	
+		
+	self.attach = [[UIBarButtonItem alloc]
+		initWithImage:[UIImage imageNamed:@"InputAttachmentsSeparatorAttachments"]	
+		style:UIBarButtonItemStylePlain 
+		target:self action:@selector(onAdd:)];
+
 	self.send = [[UIBarButtonItem alloc]
 		initWithImage:[UIImage imageNamed:@"Send"]	
 		style:UIBarButtonItemStyleDone 
 		target:self action:@selector(onSend:)];
 
-	UISwitch *record = [[UISwitch alloc] initWithFrame:
-		CGRectMake(0, 0, 30, 30)];
-	[record setOffImage:[UIImage imageNamed:@"record"]];
-	[record addTarget:self 
-						 action:@selector(recordSwitch:) 
-	 forControlEvents:UIControlEventValueChanged];
+	//UISwitch *record = [[UISwitch alloc] initWithFrame:
+		//CGRectMake(0, 0, 30, 30)];
+	//[record setOffImage:[UIImage imageNamed:@"record"]];
+	//[record addTarget:self 
+						 //action:@selector(recordSwitch:) 
+	 //forControlEvents:UIControlEventValueChanged];
 
-	self.record = [[UIBarButtonItem alloc]
-		initWithCustomView:record];
+	//self.record = [[UIBarButtonItem alloc]
+		//initWithCustomView:record];
 	
-	self.add = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem:UIBarButtonSystemItemAdd 
-		//initWithImage:[UIImage imageNamed:@"attach"] 
-						//style:UIBarButtonItemStyleBordered
-						target:self action:@selector(onAdd:)];
+	self.record = [[UIBarButtonItem alloc]
+		initWithImage:[UIImage imageNamed:@"ios-mic-32"] 
+						style:UIBarButtonItemStyleBordered
+					 target:self action:@selector(recordSwitch:)];
+	
+	//self.add = [[UIBarButtonItem alloc]
+		//initWithImage:[UIImage imageNamed:@"UIButtonBarAction"] 
+						//style:UIBarButtonItemStylePlain
+						//target:self action:@selector(onAdd:)];
 	
 	self.cancel = [[UIBarButtonItem alloc]
 		initWithBarButtonSystemItem:UIBarButtonSystemItemCancel 
@@ -255,24 +264,26 @@
 
 -(void)toolbarAsEntry{
 	[self 
-		setToolbarItems:@[self.flexibleSpace, 
-		                  self.add, 
-											self.flexibleSpace, 
+		setToolbarItems:@[
+											self.flexibleSpace,
+											self.attach, 
+											self.flexibleSpace,
 											self.textFieldItem, 
-											self.flexibleSpace, 
-											self.record, 
+											self.flexibleSpace,
+											self.record,
 											self.flexibleSpace]
 		animated:YES];
 }
 
 -(void)toolbarAsEntryTyping{
 	[self 
-		setToolbarItems:@[self.flexibleSpace, 
-		                  self.add, 
-											self.flexibleSpace, 
+		setToolbarItems:@[
+											self.flexibleSpace,
+											self.attach, 
+											self.flexibleSpace,
 											self.textFieldItem, 
-											self.flexibleSpace, 
-											self.send, 
+											self.flexibleSpace,
+											self.send,
 											self.flexibleSpace]
 		animated:YES];
 }
@@ -280,10 +291,10 @@
 -(void)toolbarAsProgress{
 	[self 
 		setToolbarItems:@[self.progress, 
-											self.flexibleSpace, 
 											self.label, 
-											self.flexibleSpace, 
-											self.cancel]
+											self.flexibleSpace,
+											self.cancel,
+											self.flexibleSpace]
 		animated:YES];
 }
 
@@ -341,7 +352,10 @@
 
 - (void)onCancel:(id)sender{
 	[self.download cancelAllOperations];
-	[self toolbarAsEntry];
+	if (self.dialog.broadcast)
+		[self toolbarForChannel];
+	else
+		[self toolbarAsEntry];
 }
 
 -(void)refresh:(id)sender{
@@ -1010,7 +1024,10 @@ int get_document_progress(void *d, int size, int total){
 			// on done
 			[d writeToFile:filepath atomically:YES];
 			dispatch_sync(dispatch_get_main_queue(), ^{
-				[self toolbarAsEntry];
+				if (self.dialog.broadcast)
+					[self toolbarForChannel];
+				else
+					[self toolbarAsEntry];
 				[self openUrl:url data:data];
 			});
 		}];
@@ -1415,14 +1432,17 @@ didScroll:(UIScrollView *)scrollView
 }
 
 -(void)recordSwitch:(id)sender{
-	UISwitch *s = sender;
-	if (s.isOn){
+	//UISwitch *s = sender;
+	UIBarButtonItem *record = sender;
+	if (record.style == UIBarButtonItemStyleBordered){
+		record.style = UIBarButtonItemStyleDone;
 		self.textFieldIsEditable = NO;
 		self.textField.text = @"";
 		self.textField.placeholder = @"Recording audio...";
 		[self startRecording:nil];
 	}
 	else {
+		record.style = UIBarButtonItemStyleBordered;
 		[self stopRecording:nil];
 		self.textFieldIsEditable = YES;
 		self.textField.text = @"";
