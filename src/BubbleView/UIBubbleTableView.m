@@ -281,6 +281,9 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     
     cell.data = data;
     cell.showAvatar = self.showAvatars;
+		
+		if (!data.message.mine)
+			cell.accessoryType = UITableViewCellAccessoryDetailDisclosureButton;
 
 		//if ([cell.data.view isKindOfClass:[UITextView class]]){
 			//UITextView *tw = (UITextView *)cell.data.view;
@@ -371,6 +374,19 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 
 	return;
 }
+
+- (void)tableView:(UITableView *)tableView 
+	accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath 
+{
+	NSBubbleData *data = 
+		[[self.bubbleSection objectAtIndex:indexPath.section] 
+												 objectAtIndex:indexPath.row - 1];
+
+	if (self.bubbleDelegate)
+		[self.bubbleDelegate 
+			bubbleTableView:self accessoryButtonTappedForData:data];
+}
+
 
 #pragma mark - Public interface
 

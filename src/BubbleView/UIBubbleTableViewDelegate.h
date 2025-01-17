@@ -30,4 +30,7 @@ didEndDecelerationgTo:(NSBubbleData *)data;
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 didEndDecelerationgToBottom:(Boolean)bottom;
+
+- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
+accessoryButtonTappedForData:(NSBubbleData *)data;
 @end

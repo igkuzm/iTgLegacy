@@ -1,4 +1,5 @@
 #import "ChatViewController.h"
+#include "AddressBook/AddressBook.h"
 #include <stdint.h>
 #import <MobileCoreServices/MobileCoreServices.h>
 #include "opus/include/opus/opus_defines.h"
@@ -34,6 +35,8 @@
 #include "opusfile/opusfile.h"
 #include "../libtg/tools/cafextract.h"
 #include "../libtg/tools/pcm_to_opusogg.h"
+#import <AddressBook/ABAddressBook.h>
+#import <AddressBookUI/AddressBookUI.h>
 
 @interface  ChatViewController()
 {
@@ -336,6 +339,7 @@
 	[self.textField resignFirstResponder];
 
 	// create actionSheet
+	self.actionSheetType = ActionSheetAttach;
 	UIActionSheet *as = [[UIActionSheet alloc]
 		initWithTitle:@"Send" 
 		delegate:self 
@@ -345,7 +349,7 @@
 			@"file",
 			@"camera",
 			@"image/video",
-			@"geopoint",
+			@"contact",
 		nil];
 	[as showFromToolbar:self.navigationController.toolbar];
 }
@@ -400,12 +404,6 @@
 											 download:(Boolean)download{
 	// add image placeholder to BubbleData
 	switch (d.message.mediaType) {
-		case id_messageMediaContact:
-			{
-				d.message.photo = 
-					[UIImage imageNamed:@"avatar@2x.png"];
-			}
-			break;
 		case id_messageMediaDocument:
 			{
 				if (d.message.isVoice){
@@ -513,10 +511,19 @@
 			{
 				d.message.photo = 
 					[UIImage imageNamed:@"filetype_icon_unknown@2x.png"];
-
 			}
 			break;
 	
+		case id_messageMediaContact:
+			{
+				d.message.photo = 
+					[UIImage imageWithImage:[UIImage 
+									 imageNamed:@"missingAvatar.png"] 
+								 scaledToSize:CGSizeMake(20, 20)];
+			}
+			break;
+	
+
 		default:
 				d.message.photo = 
 					[UIImage imageNamed:@"filetype_icon_unknown@2x.png"];
@@ -723,7 +730,9 @@ static int messages_callback(void *d, const tg_message_t *m){
 			if (m->photo_id){
 				[self getPhotoForMessageCached:item 
 					download:[update boolValue]];
-			} else if (m->doc_id){
+			} else if (m->doc_id || 
+					m->media_type == id_messageMediaContact)
+			{
 				[self getDocumentForMessageChached:item
 					download:[update boolValue]];
 			}
@@ -780,7 +789,9 @@ static int messages_callback(void *d, const tg_message_t *m){
 			if (m->photo_id){
 				[self getPhotoForMessageCached:item 
 					download:[update boolValue]];
-			} else if (m->doc_id){
+			} else if (m->doc_id || 
+					m->media_type == id_messageMediaContact)
+			{
 				[self getDocumentForMessageChached:item
 					download:[update boolValue]];
 			}
@@ -796,7 +807,8 @@ static int messages_callback(void *d, const tg_message_t *m){
 						date:item.message.date 
 						type:type text:text];
 				
-				if (m->doc_id && item.message.docFileName)
+				if ((m->doc_id && item.message.docFileName) ||
+					m->media_type == id_messageMediaContact)
 					item.titleLabel.text = item.message.docFileName;
 				
 				if (m->doc_id){
@@ -1045,6 +1057,19 @@ int get_document_progress(void *d, int size, int total){
 	[data.spinner stopAnimating];
 }
 
+-(void)getContact:(NSBubbleData *)data{
+	TGMessage *m = data.message;
+	
+	NSString *tmpFile = [NSTemporaryDirectory() 
+		stringByAppendingPathComponent:@"tmp.vcard"];
+	[NSFileManager.defaultManager removeItemAtPath:tmpFile error:nil];
+	[m.contactVcard writeToFile:tmpFile atomically:YES];
+	NSURL *url = [NSURL fileURLWithPath: tmpFile];
+	QuickLookController *qlc = [[QuickLookController alloc]
+		initQLPreviewControllerWithData:@[url]];	
+	[self presentViewController:qlc animated:TRUE completion:nil];
+}
+
 -(void)getPhoto:(NSBubbleData *)data{
 	TGMessage *m = data.message;
 	NSString *filepath = [self.appDelegate.imagesCache 
@@ -1103,12 +1128,14 @@ int get_document_progress(void *d, int size, int total){
 		}
 }
 
-#pragma mark <UIBubbleTableViewDelegate>
+#pragma mark <UIBubbleTableView Delegate>
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectData:(NSBubbleData *)data 
 {
 	TGMessage *m = data.message;
 	if (m){
-		if (m.photoId){
+		if (m.mediaType == id_messageMediaContact){
+			[self getContact:data];
+		} else if (m.photoId){
 			[self getPhoto:data];
 		}	else if (m.docId){
 			[self getDoc:data];
@@ -1156,6 +1183,22 @@ didScroll:(UIScrollView *)scrollView
 	[self.syncData addOperationWithBlock:^{
 		[self appendDataFrom:self.bubbleDataArray.count-1 date:[NSDate date] scrollToBottom:NO];
 	}];
+}
+
+- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView 
+	accessoryButtonTappedForData:(NSBubbleData *)data 
+{
+	// create actionSheet
+	self.actionSheetType = ActionSheetMessage;
+	UIActionSheet *as = [[UIActionSheet alloc]
+		initWithTitle:@"" 
+		delegate:self 
+		cancelButtonTitle:@"cancel" 
+		destructiveButtonTitle:nil 
+		otherButtonTitles:
+			@"reply",
+		nil];
+	[as showFromToolbar:self.navigationController.toolbar];
 }
 
 #pragma mark <UIBubbleTableView DataSource>
@@ -1237,56 +1280,69 @@ didScroll:(UIScrollView *)scrollView
 #pragma mark <ACTION SHEET DELEGATE>
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
 	// get selected item
-	switch (buttonIndex){
-		case 0:
-			{
-				FilePickerController *fpc = [[FilePickerController alloc]
-					initWithPath:@"/var/mobile" isNew:YES];
-				fpc.filePickerControllerDelegate = self;
-				UINavigationController *nc = [[UINavigationController alloc]
-					initWithRootViewController:fpc];
-				[self presentViewController:nc animated:TRUE completion:nil];
-			}
-			break;
+	if (self.actionSheetType == ActionSheetAttach)
+	{
+		switch (buttonIndex){
+			case 0:
+				{
+					FilePickerController *fpc = [[FilePickerController alloc]
+						initWithPath:@"/var/mobile" isNew:YES];
+					fpc.filePickerControllerDelegate = self;
+					UINavigationController *nc = [[UINavigationController alloc]
+						initWithRootViewController:fpc];
+					[self presentViewController:nc animated:TRUE completion:nil];
+				}
+				break;
 
-		case 1:
-			{
-				UIImagePickerController *ipc = 
-					[[UIImagePickerController alloc] init];
-				ipc.sourceType = UIImagePickerControllerSourceTypeCamera;
-				ipc.delegate = self;
-				
-				CFStringRef mTypes[2] = { kUTTypeImage, kUTTypeMovie  };
-				CFArrayRef mTypesArray = 
-					CFArrayCreate(CFAllocatorGetDefault(), (const void**)mTypes, 2, &kCFTypeArrayCallBacks);
-				ipc.mediaTypes = (__bridge NSArray*)mTypesArray;
-				CFRelease(mTypesArray);
-				ipc.videoMaximumDuration = 60.0f;
-				ipc.showsCameraControls = YES;
-				ipc.allowsEditing = YES;
-        [self presentViewController:ipc animated:YES completion:nil];
-			}
-			break;
+			case 1:
+				{
+					UIImagePickerController *ipc = 
+						[[UIImagePickerController alloc] init];
+					ipc.sourceType = UIImagePickerControllerSourceTypeCamera;
+					ipc.delegate = self;
+					
+					CFStringRef mTypes[2] = { kUTTypeImage, kUTTypeMovie  };
+					CFArrayRef mTypesArray = 
+						CFArrayCreate(CFAllocatorGetDefault(), (const void**)mTypes, 2, &kCFTypeArrayCallBacks);
+					ipc.mediaTypes = (__bridge NSArray*)mTypesArray;
+					CFRelease(mTypesArray);
+					ipc.videoMaximumDuration = 60.0f;
+					ipc.showsCameraControls = YES;
+					ipc.allowsEditing = YES;
+					[self presentViewController:ipc animated:YES completion:nil];
+				}
+				break;
 
-		case 2:
-			{
-				UIImagePickerController *ipc = 
-					[[UIImagePickerController alloc] init];
-				ipc.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-				ipc.delegate = self;
-				CFStringRef mTypes[2] = { kUTTypeImage, kUTTypeMovie  };
-				CFArrayRef mTypesArray = 
-					CFArrayCreate(CFAllocatorGetDefault(), (const void**)mTypes, 2, &kCFTypeArrayCallBacks);
-				ipc.mediaTypes = (__bridge NSArray*)mTypesArray;
-				CFRelease(mTypesArray);
-				ipc.videoMaximumDuration = 60.0f;
-				ipc.allowsEditing = YES;
-        [self presentViewController:ipc animated:YES completion:nil];
-			}
-			break;
+			case 2:
+				{
+					UIImagePickerController *ipc = 
+						[[UIImagePickerController alloc] init];
+					ipc.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
+					ipc.delegate = self;
+					CFStringRef mTypes[2] = { kUTTypeImage, kUTTypeMovie  };
+					CFArrayRef mTypesArray = 
+						CFArrayCreate(CFAllocatorGetDefault(), (const void**)mTypes, 2, &kCFTypeArrayCallBacks);
+					ipc.mediaTypes = (__bridge NSArray*)mTypesArray;
+					CFRelease(mTypesArray);
+					ipc.videoMaximumDuration = 60.0f;
+					ipc.allowsEditing = YES;
+					[self presentViewController:ipc animated:YES completion:nil];
+				}
+				break;
 
-		default:
-			break;
+			case 3:
+				{
+					ABPeoplePickerNavigationController *picker =
+						[[ABPeoplePickerNavigationController alloc] init];
+					picker.peoplePickerDelegate = self;
+					[self presentViewController:picker 
+														 animated:TRUE completion:nil];
+				}
+				break;
+
+			default:
+				break;
+		}
 	}
 }	
 
@@ -1616,6 +1672,81 @@ didScroll:(UIScrollView *)scrollView
 																			error:&error];
 	return [response MIMEType];
 }
+
+#pragma mark <>ABPeoplePickerNavigationController Delegate>
+- (void)peoplePickerNavigationControllerDidCancel:
+(ABPeoplePickerNavigationController *)peoplePicker
+{
+	[peoplePicker dismissViewControllerAnimated:true completion:nil];
+}
+
+- (BOOL)peoplePickerNavigationController:
+(ABPeoplePickerNavigationController *)peoplePicker
+      shouldContinueAfterSelectingPerson:(ABRecordRef)person 
+{
+	NSString *firstName = (__bridge NSString *)ABRecordCopyValue(
+			person, kABPersonFirstNameProperty);
+	
+	NSString *lastName = (__bridge NSString *)ABRecordCopyValue(
+			person, kABPersonLastNameProperty);
+
+	ABMultiValueRef phonesProperty =
+		ABRecordCopyValue(person, kABPersonPhoneProperty);
+	NSArray *phones = (__bridge NSArray *)
+		ABMultiValueCopyArrayOfAllValues(phonesProperty);
+	NSString *phone = phones[0];
+
+	// vcard
+	ABRecordRef people[1];
+	people[0] = person;
+	CFArrayRef peopleArray = CFArrayCreate(NULL, (void *)people, 1, &kCFTypeArrayCallBacks);
+	NSData *vCardData =
+		CFBridgingRelease(ABPersonCreateVCardRepresentationWithPeople(peopleArray));
+	NSString *vCard = [[NSString alloc] 
+		initWithData:vCardData encoding:NSUTF8StringEncoding];
+
+	NSString *msg = [NSString stringWithFormat:
+		@"send contact: %@ %@ %@?", firstName, lastName, phone];
+	
+	[self.appDelegate askYesNo:msg onYes:^{
+		if (!self.appDelegate.isOnLineAndAuthorized){
+			[self.appDelegate showMessage:@"no network"];
+			return;
+		}
+		[self.download addOperationWithBlock:^{
+
+			tg_peer_t peer = {
+				self.dialog.peerType, 
+				self.dialog.peerId, 
+				self.dialog.accessHash
+			};	
+
+			tg_contact_send(
+					self.appDelegate.tg, 
+					&peer, 
+					phone.UTF8String, 
+					firstName.UTF8String, 
+					lastName.UTF8String, 
+					vCard.UTF8String, 
+					NULL);
+			
+			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+		}];
+		[peoplePicker dismissViewControllerAnimated:true completion:nil];
+	}];
+
+	return NO;
+}
+
+- (BOOL)peoplePickerNavigationController:
+(ABPeoplePickerNavigationController *)peoplePicker
+      shouldContinueAfterSelectingPerson:(ABRecordRef)person 
+			property:(ABPropertyID)property
+      identifier:(ABMultiValueIdentifier)identifier
+{
+  return NO;
+}
+
 
 @end
 // vim:ft=objc

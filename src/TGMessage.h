@@ -34,6 +34,11 @@
 @property (strong) NSDate *photoDate;
 @property (strong) NSString *message;
 @property (strong) NSString *mimeType;
+@property (strong) NSString *contactVcard;
+@property (strong) NSString *contactPhoneNumber;
+@property (strong) NSString *contactFirstName;
+@property (strong) NSString *contactLastName;
+@property uint64_t contactId;
 
 - (id)initWithMessage:(const tg_message_t *)m dialog:(const TGDialog *)d;
 

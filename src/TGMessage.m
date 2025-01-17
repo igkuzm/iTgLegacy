@@ -52,6 +52,22 @@
 			self.docFileName = 
 				[NSString stringWithUTF8String:m->doc_file_name];
 
+
+		// contact
+		if (m->contact_vcard)
+			self.contactVcard = [NSString stringWithUTF8String:m->contact_vcard];
+		if (m->contact_first_name)
+			self.contactFirstName = [NSString stringWithUTF8String:m->contact_first_name];
+		if (m->contact_last_name)
+			self.contactLastName = [NSString stringWithUTF8String:m->contact_last_name];
+		if (m->contact_phone_number)
+			self.contactPhoneNumber = [NSString stringWithUTF8String:m->contact_phone_number];
+		self.contactId = m->contact_user_id;
+
+		self.docFileName = [NSString stringWithFormat:@"%@ %@\n%@",
+			self.contactFirstName, 
+			self.contactLastName, self.contactPhoneNumber];
+
 		AppDelegate *appDelegate = 
 			UIApplication.sharedApplication.delegate;
 

@@ -7,6 +7,11 @@
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 
+enum {
+	ActionSheetAttach,
+	ActionSheetMessage,
+};
+
 @interface ChatViewController : UIViewController
 <UIBubbleTableViewDataSource, UIBubbleTableViewDelegate,
 	UIImagePickerControllerDelegate, UITextFieldDelegate,
@@ -29,6 +34,8 @@
 @property SystemSoundID recordStart;
 
 @property Boolean textFieldIsEditable;
+
+@property int actionSheetType;
 
 @property (strong) UIProgressView *progressView;
 @property (strong) UILabel *progressLabel;
