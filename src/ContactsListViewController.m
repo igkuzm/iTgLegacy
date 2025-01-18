@@ -18,6 +18,8 @@
 		UIApplication.sharedApplication.delegate;
 
   self.syncData = [[NSOperationQueue alloc]init];
+  self.filterQueue = [[NSOperationQueue alloc]init];
+	self.filterQueue.maxConcurrentOperationCount = 1;
 
 	// spinner
 	self.spinner = [[UIActivityIndicatorView alloc]
@@ -34,6 +36,7 @@
 	self.tableView.tableHeaderView=self.searchBar;	
 	self.searchBar.delegate = self;
 	self.searchBar.placeholder = @"Search:";
+	self.searchString = @"";
 
 	[self.tableView reloadData]; // load search bar
 	
@@ -55,60 +58,67 @@
 }
 
 -(void)filterData{
-	if (self.searchString == nil || 
-			[self.searchString isEqualToString:@""]) 
-	{
-		self.data = self.loadedData;
-	}else {
-		NSPredicate *predicate = [NSPredicate predicateWithBlock:
-			^BOOL(id evaluatedObject, NSDictionary *bindings) 
+	[self.filterQueue cancelAllOperations];
+
+	[self.filterQueue addOperationWithBlock:^{
+		if (![self.searchString isEqualToString:@""])
 		{
-			ABRecordRef person=(__bridge ABRecordRef)evaluatedObject;
-			
-			NSString *name = (__bridge NSString *)
-				ABRecordCopyCompositeName(person);
-			if (name && [name rangeOfString:self.searchString].location != NSNotFound){
-				return YES;
-			}
-			
-			NSString *nickName = (__bridge NSString *)
-				ABRecordCopyValue(
-						person, kABPersonNicknameProperty);
-			if (nickName && [nickName rangeOfString:self.searchString].location != NSNotFound){
-				return YES;
-			}
-
-			ABMultiValueRef phonesProperty =
-				ABRecordCopyValue(
-						person, kABPersonPhoneProperty);
-			NSArray *phones = (__bridge NSArray *)
-				ABMultiValueCopyArrayOfAllValues(phonesProperty);
-			CFRelease(phonesProperty);
-			for (NSString *value in phones) {
-				if ([value rangeOfString:self.searchString].location!=NSNotFound) {
-						return YES;
+			NSPredicate *predicate = [NSPredicate predicateWithBlock:
+				^BOOL(id evaluatedObject, NSDictionary *bindings) 
+			{
+				ABRecordRef person=(__bridge ABRecordRef)evaluatedObject;
+				
+				NSString *name = (__bridge NSString *)
+					ABRecordCopyCompositeName(person);
+				if (name && [name rangeOfString:self.searchString].location != NSNotFound){
+					return YES;
 				}
-			}
-
-			ABMultiValueRef emailsProperty =
-				ABRecordCopyValue(
-						person, kABPersonEmailProperty);
-			NSArray *emails = (__bridge NSArray *)
-				ABMultiValueCopyArrayOfAllValues(emailsProperty);
-			CFRelease(emailsProperty);
-			for (NSString *value in emails) {
-				if ([value rangeOfString:self.searchString].location!=NSNotFound) {
-						return YES;
+				
+				NSString *nickName = (__bridge NSString *)
+					ABRecordCopyValue(
+							person, kABPersonNicknameProperty);
+				if (nickName && [nickName rangeOfString:self.searchString].location != NSNotFound){
+					return YES;
 				}
-			}
 
-			return NO;
-		}];
+				ABMultiValueRef phonesProperty =
+					ABRecordCopyValue(
+							person, kABPersonPhoneProperty);
+				NSArray *phones = (__bridge NSArray *)
+					ABMultiValueCopyArrayOfAllValues(phonesProperty);
+				CFRelease(phonesProperty);
+				for (NSString *value in phones) {
+					if ([value rangeOfString:self.searchString].location!=NSNotFound) {
+							return YES;
+					}
+				}
 
-		self.data = [self.loadedData filteredArrayUsingPredicate:predicate];
-	}
-	[self.spinner stopAnimating];
-	[self.tableView reloadData];	
+				ABMultiValueRef emailsProperty =
+					ABRecordCopyValue(
+							person, kABPersonEmailProperty);
+				NSArray *emails = (__bridge NSArray *)
+					ABMultiValueCopyArrayOfAllValues(emailsProperty);
+				CFRelease(emailsProperty);
+				for (NSString *value in emails) {
+					if ([value rangeOfString:self.searchString].location!=NSNotFound) {
+							return YES;
+					}
+				}
+
+				return NO;
+			}];
+
+			self.data = [self.loadedData filteredArrayUsingPredicate:predicate];
+		
+		} else { // no search
+			self.data = self.loadedData;
+		}
+		
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.spinner stopAnimating];
+			[self.tableView reloadData];	
+		});
+	}];
 }
 
 - (void) viewWillAppear:(BOOL)animated {
@@ -286,11 +296,16 @@
 
 #pragma mark <SEARCHBAR FUNCTIONS>
 
-- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText{
-	self.searchString=searchText;
-	if (self.searchString.length > 3 || 
-			self.searchString.length == 0)
-		[self filterData];
+- (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {
+	self.searchBar.showsCancelButton = YES;
+	[self.navigationController setNavigationBarHidden:YES animated:YES];
+}
+
+- (void)searchBar:(UISearchBar *)searchBar 
+		textDidChange:(NSString *)searchText
+{
+	self.searchString = searchBar.text;
+	[self filterData];
 }
 
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
@@ -299,12 +314,16 @@
 
 -(void)searchBarTextDidEndEditing:(UISearchBar *)searchBar
 {
-	[self filterData];
+	[self.searchBar resignFirstResponder];
 }
 
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
-		self.searchString=@"";
+		self.searchString = @"";
+		self.searchBar.text = @"";
     [self.searchBar resignFirstResponder];
+		self.searchBar.showsCancelButton = NO;
+		[self.navigationController setNavigationBarHidden:NO animated:YES];
+		
 		// load data
 		[self filterData];
 }

@@ -43,6 +43,12 @@
 
 	self.syncData = [[NSOperationQueue alloc]init];
 	self.syncData.maxConcurrentOperationCount = 1;
+	
+	self.download = [[NSOperationQueue alloc]init];
+	
+  self.filterQueue = [[NSOperationQueue alloc]init];
+	self.filterQueue.maxConcurrentOperationCount = 1;
+	
 	self.loadedData = [NSMutableArray array];
 	self.cache = [NSMutableArray array];
 	self.data = [NSArray array];
@@ -146,29 +152,34 @@
 
 #pragma mark <Data functions>
 -(void)filterData{
+	[self.filterQueue cancelAllOperations];
 	
-	NSArray *array = [self.loadedData sortedArrayUsingComparator:
-		^NSComparisonResult(id obj1, id obj2)
-	{
-		TGDialog *d1 = (TGDialog *)obj1;
-		TGDialog *d2 = (TGDialog *)obj2;
-		
-		if (d1.pinned && !d2.pinned)
-			return NSOrderedAscending;
-		
-		if (d2.pinned && !d1.pinned)
-			return NSOrderedDescending;
-						 
-		return [d2.date compare:d1.date]; // last date is on top           
+	[self.filterQueue addOperationWithBlock:^{
+		NSArray *array = [self.loadedData sortedArrayUsingComparator:
+			^NSComparisonResult(id obj1, id obj2)
+		{
+			TGDialog *d1 = (TGDialog *)obj1;
+			TGDialog *d2 = (TGDialog *)obj2;
+			
+			if (d1.pinned && !d2.pinned)
+				return NSOrderedAscending;
+			
+			if (d2.pinned && !d1.pinned)
+				return NSOrderedDescending;
+							 
+			return [d2.date compare:d1.date]; // last date is on top           
+		}];
+
+		if (self.searchBar.text && self.searchBar.text.length > 0)
+			self.data = [array filteredArrayUsingPredicate:
+					[NSPredicate predicateWithFormat:@"self.title contains[c] %@", self.searchBar.text]];
+		else
+			self.data = array;
+
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.tableView reloadData];
+		});
 	}];
-
-	if (self.searchBar.text && self.searchBar.text.length > 0)
-		self.data = [array filteredArrayUsingPredicate:
-				[NSPredicate predicateWithFormat:@"self.title contains[c] %@", self.searchBar.text]];
-	else
-		self.data = array;
-
-	[self.tableView reloadData];
 }
 
 -(void)reloadData{
@@ -353,11 +364,6 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 
 #pragma mark <SCROLLVIEW DELEGATE>
 
-- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
-	// hide keyboard
-	[self.searchBar resignFirstResponder];
-}
-
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
 	float bottomEdge = 
 		scrollView.contentOffset.y + scrollView.frame.size.height;
@@ -391,9 +397,21 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 
 }
 
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+	// hide keyboard
+	[self.searchBar resignFirstResponder];
+}
+
 #pragma mark <UISearchBar functions>
 
-- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText{
+- (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {
+	self.searchBar.showsCancelButton = YES;
+	[self.navigationController setNavigationBarHidden:YES animated:YES];
+}
+
+- (void)searchBar:(UISearchBar *)searchBar 
+		textDidChange:(NSString *)searchText
+{
 	[self filterData];
 }
 
@@ -403,12 +421,15 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 }
 
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
-	[searchBar resignFirstResponder];
+	[self.searchBar resignFirstResponder];
 }
 
-- (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
-    [self.tableView setContentOffset:CGPointMake(0, 44) animated:YES];
+- (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar
+{
+    //[self.tableView setContentOffset:CGPointMake(0, 44) animated:YES];
     [self.searchBar resignFirstResponder];
+		self.searchBar.showsCancelButton = NO;
+		[self.navigationController setNavigationBarHidden:NO animated:YES];
 	
 		// load data
 		[self filterData];

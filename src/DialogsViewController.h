@@ -21,6 +21,7 @@
 @property (strong) UISearchBar *searchBar;
 @property (strong) NSOperationQueue *syncData;
 @property (strong) NSOperationQueue *download;
+@property (strong) NSOperationQueue *filterQueue;
 @property (strong) UIActivityIndicatorView *spinner;
 @property (strong) UIRefreshControl *refreshControl;
 @property NSInteger currentIndex;

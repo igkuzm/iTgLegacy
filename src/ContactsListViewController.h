@@ -20,6 +20,7 @@
 @property (strong,nonatomic) NSMutableArray *loadedData;
 @property (strong) UIActivityIndicatorView *spinner;
 @property (strong) NSOperationQueue *syncData;
+@property (strong) NSOperationQueue *filterQueue;
 
 -(void)getContacts;
 @end

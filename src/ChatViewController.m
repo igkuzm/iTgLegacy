@@ -105,6 +105,7 @@
 	[self.bubbleTableView addSubview:self.refreshControl];
 
 	// ToolBar
+	self.navigationController.toolbar.tintColor = [UIColor lightGrayColor];
 	self.textFieldIsEditable = YES; // testing
 	self.textField = [[UITextField alloc]
 	//self.textField = [[UITextView alloc]
@@ -653,6 +654,7 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
+						[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 
 			}
@@ -664,6 +666,7 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
+						[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_RECORD_AUDIO:
@@ -675,6 +678,7 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
+						[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_RECORD_ROUND:
@@ -686,6 +690,7 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
+						[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_CANCEL:
@@ -1245,9 +1250,9 @@ didScroll:(UIScrollView *)scrollView
 		}];
 	}
 
-	self.bubbleTableView.typingBubble = NSBubbleTypingTypeMe;
-	[self.bubbleTableView reloadData];
-	[self.bubbleTableView scrollToBottomWithAnimation:YES];
+	//self.bubbleTableView.typingBubble = NSBubbleTypingTypeMe;
+	//[self.bubbleTableView reloadData];
+	//[self.bubbleTableView scrollToBottomWithAnimation:YES];
 }
 
 - (void)textFieldDidEndEditing:(UITextField *)textField {
@@ -1269,8 +1274,8 @@ didScroll:(UIScrollView *)scrollView
 		}];
 	}
 
-	self.bubbleTableView.typingBubble = NSBubbleTypingTypeNobody;
-	[self.bubbleTableView reloadData];
+	//self.bubbleTableView.typingBubble = NSBubbleTypingTypeNobody;
+	//[self.bubbleTableView reloadData];
 }
 
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {

@@ -320,6 +320,9 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 	if (bottomEdge >= scrollView.contentSize.height) {
 		// BOTTOM
 		NSInteger lastSectionIdx = [self numberOfSections] - 1;
+		if (lastSectionIdx >= [self.bubbleSection count])
+			return;
+		
 		NSArray *section = 
 			[self.bubbleSection objectAtIndex:lastSectionIdx];
 		NSBubbleData *data = 
@@ -378,6 +381,19 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 - (void)tableView:(UITableView *)tableView 
 	accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath 
 {
+	
+	// Now typing
+	if (indexPath.section >= [self.bubbleSection count])
+	{
+			return;
+	}
+	
+	// Header
+	if (indexPath.row == 0)
+	{
+		return;
+	}
+	
 	NSBubbleData *data = 
 		[[self.bubbleSection objectAtIndex:indexPath.section] 
 												 objectAtIndex:indexPath.row - 1];
