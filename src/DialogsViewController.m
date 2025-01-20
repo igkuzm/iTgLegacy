@@ -233,17 +233,15 @@
 			[self.spinner startAnimating];
 
 		[self.syncData addOperationWithBlock:^{
-				pthread_t p = tg_get_dialogs_async(
+				tg_get_dialogs(
 						self.appDelegate.tg, 
 						20, 
 						[date timeIntervalSince1970], 
 						&_hash, 
 						NULL, 
 						(__bridge void *)self, 
-						get_dialogs_cb,
-						 NULL);
+						get_dialogs_cb);
 
-				pthread_join(p, NULL);
 				dispatch_sync(dispatch_get_main_queue(), ^{
 					[self.refreshControl endRefreshing];
 					[self.spinner stopAnimating];
