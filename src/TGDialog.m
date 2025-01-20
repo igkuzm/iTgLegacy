@@ -53,7 +53,7 @@
 		self.readDate = -1;
 		[self syncReadDate];
 		
-		[self setPeerPhoto];
+		//[self setPeerPhoto];
 		
 		self.broadcast = d->broadcast;
 	}

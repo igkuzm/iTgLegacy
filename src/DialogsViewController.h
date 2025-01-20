@@ -26,6 +26,7 @@
 @property (strong) UIRefreshControl *refreshControl;
 @property NSInteger currentIndex;
 @property Boolean updatePhotos;
+@property Boolean showNavigationBar;
 
 -(void)getDialogsFrom:(NSDate *)date;
 @end

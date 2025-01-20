@@ -203,6 +203,9 @@
 		target:self selector:@selector(timer:) 
 		userInfo:nil repeats:YES];
 
+	// show navigation bar
+	[self.navigationController setNavigationBarHidden:NO animated:YES];
+
 	// hide toolbar if channel
 	if (self.dialog.broadcast)
 	{
@@ -210,10 +213,11 @@
 	}
 
 	// set icon
-	self.icon = [[UIImageView alloc]
-		initWithFrame:CGRectMake(
+	//self.icon = [[UIImageView alloc]
+	self.icon = [UIButton buttonWithType:UIButtonTypeCustom];
+	self.icon.frame = CGRectMake(
 		0, 0,
-		30, 30)];
+		30, 30);
 	UIBarButtonItem *iconItem = [[UIBarButtonItem alloc]
 		initWithCustomView:self.icon];
 	self.navigationItem.rightBarButtonItem = iconItem;
@@ -227,8 +231,11 @@
 				imageWithData:[NSData dataWithContentsOfFile:photoPath]];
 		else
 			image = [UIImage imageNamed:@"missingAvatar.png"]; 
-	self.icon.image = [UIImage imageWithImage:image 
-			scaledToSize:CGSizeMake(30, 30)];
+	//self.icon.image = [UIImage imageWithImage:image 
+			//scaledToSize:CGSizeMake(30, 30)];
+	[self.icon setImage:[UIImage imageWithImage:image 
+			scaledToSize:CGSizeMake(30, 30)] 
+						 forState:UIControlStateNormal];
 
 
 	// set updates handler
@@ -1009,10 +1016,11 @@ int get_document_progress(void *d, int size, int total){
 		[self openUrl:url data:data];
 	} else {
 		// check connection
-		if (!self.appDelegate.tg ||
-				!self.appDelegate.authorizedUser ||
-				!self.appDelegate.reach.isReachable)
-			return;
+		if (!self.appDelegate.isOnLineAndAuthorized){
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[self.appDelegate showMessage:@"no network"];
+			});
+		}
 
 		// download file
 		[self toolbarAsProgress];
@@ -1583,16 +1591,28 @@ didScroll:(UIScrollView *)scrollView
 	[self sendDocument:vm];	
 }
 
+int send_document_progress(void *d, int size, int total){
+	ChatViewController *self = (__bridge ChatViewController *)d;
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		float fl = (float)size / total;
+		[self.progressView setProgress:fl];
+		self.progressLabel.text = 
+			[NSString stringWithFormat:@"%d /\n%d",
+				size, total];
+	});
+	return 0;
+}
+
 - (void)sendDocument:(tg_document_t *)document {
-	if (!self.appDelegate.tg ||
-			!self.appDelegate.reach.isReachable ||
-			!self.appDelegate.authorizedUser)
+	if (!self.appDelegate.isOnLineAndAuthorized)
 	{
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			[self.appDelegate showMessage:@"no network"];
 		});
 		return;
 	}
+
+	[self toolbarAsProgress];
 		
 	// send
 	[self.download addOperationWithBlock:^{
@@ -1608,18 +1628,30 @@ didScroll:(UIScrollView *)scrollView
 				&peer, 
 				document,
 				NULL,
-				NULL, NULL);
+				(__bridge void *)self,
+				send_document_progress);
 		
 		free(document);
 		
 		if (err){
 			dispatch_sync(dispatch_get_main_queue(), ^{
+				if (self.dialog.broadcast)
+					[self toolbarForChannel];
+				else
+					[self toolbarAsEntry];
+				
 				[self.appDelegate showMessage:@"error to send"];
 			});
 			return;
 		}
 		
 		// on done
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			if (self.dialog.broadcast)
+				[self toolbarForChannel];
+			else
+				[self toolbarAsEntry];
+		});
 		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 	}];
 }

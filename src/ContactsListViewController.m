@@ -20,6 +20,8 @@
   self.syncData = [[NSOperationQueue alloc]init];
   self.filterQueue = [[NSOperationQueue alloc]init];
 	self.filterQueue.maxConcurrentOperationCount = 1;
+	
+	self.showNavigationBar = YES;
 
 	// spinner
 	self.spinner = [[UIActivityIndicatorView alloc]
@@ -123,6 +125,12 @@
 
 - (void) viewWillAppear:(BOOL)animated {
 	[super viewWillAppear:animated];
+	// navigationBar
+		if (self.showNavigationBar)
+			[self.navigationController setNavigationBarHidden:NO animated:YES];
+		else
+			[self.navigationController setNavigationBarHidden:YES animated:YES];
+		
 	[self.navigationController setToolbarHidden: YES];
 }
 
@@ -299,6 +307,7 @@
 - (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {
 	self.searchBar.showsCancelButton = YES;
 	[self.navigationController setNavigationBarHidden:YES animated:YES];
+	self.showNavigationBar = NO;
 }
 
 - (void)searchBar:(UISearchBar *)searchBar 
@@ -323,6 +332,7 @@
     [self.searchBar resignFirstResponder];
 		self.searchBar.showsCancelButton = NO;
 		[self.navigationController setNavigationBarHidden:NO animated:YES];
+		self.showNavigationBar = YES;
 		
 		// load data
 		[self filterData];

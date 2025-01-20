@@ -22,6 +22,8 @@
 @property (strong) NSOperationQueue *syncData;
 @property (strong) NSOperationQueue *filterQueue;
 
+@property Boolean showNavigationBar;
+
 -(void)getContacts;
 @end
 

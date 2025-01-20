@@ -42,7 +42,8 @@ enum {
 @property int progressTotal;
 @property int progressCurrent;
 
-@property (strong) UIImageView *icon;
+//@property (strong) UIImageView *icon;
+@property (strong) UIButton *icon;
 @property (strong) NSTimer *timer;
 @property (strong) UITextField *textField;
 //@property (strong) UITextView *textField;

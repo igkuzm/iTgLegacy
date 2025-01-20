@@ -54,6 +54,8 @@
 	self.data = [NSArray array];
 	self.currentIndex = 0;
 
+	self.showNavigationBar = YES;
+
 	// spinner
 	self.spinner = [[UIActivityIndicatorView alloc]
 		initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
@@ -105,6 +107,12 @@
 		
 		// load data
 		[self reloadData];
+
+		// navigationBar
+		if (self.showNavigationBar)
+			[self.navigationController setNavigationBarHidden:NO animated:YES];
+		else
+			[self.navigationController setNavigationBarHidden:YES animated:YES];
 		
 		UINavigationController *nc =
 				[((RootViewController *)self.appDelegate.rootViewController).viewControllers objectAtIndex:1]; 
@@ -407,6 +415,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 - (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {
 	self.searchBar.showsCancelButton = YES;
 	[self.navigationController setNavigationBarHidden:YES animated:YES];
+	self.showNavigationBar = NO;
 }
 
 - (void)searchBar:(UISearchBar *)searchBar 
@@ -430,6 +439,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
     [self.searchBar resignFirstResponder];
 		self.searchBar.showsCancelButton = NO;
 		[self.navigationController setNavigationBarHidden:NO animated:YES];
+		self.showNavigationBar = YES;
 	
 		// load data
 		[self filterData];

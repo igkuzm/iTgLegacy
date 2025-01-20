@@ -115,6 +115,9 @@
 
 	self.title.text = dialog.title;
 	self.message.text = dialog.top_message;
+
+	if (!dialog.hasPhoto)
+		[dialog setPeerPhoto];
 	
 	self.imageView.image = [UIImage imageWithImage:dialog.photo 
 		scaledToSize:CGSizeMake(50, 50)];
