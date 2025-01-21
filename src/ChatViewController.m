@@ -1,4 +1,6 @@
 #import "ChatViewController.h"
+#include "CoreLocation/CoreLocation.h"
+#include "MapKit/MapKit.h"
 #include "AddressBook/AddressBook.h"
 #include <stdint.h>
 #import <MobileCoreServices/MobileCoreServices.h>
@@ -37,6 +39,8 @@
 #include "../libtg/tools/pcm_to_opusogg.h"
 #import <AddressBook/ABAddressBook.h>
 #import <AddressBookUI/AddressBookUI.h>
+#import <CoreLocation/CoreLocation.h>
+#import <MapKit/MapKit.h>
 
 @interface  ChatViewController()
 {
@@ -62,6 +66,9 @@
 
 	//self.moviePlayerController = 
 		//[[MPMoviePlayerViewController alloc]init];
+	
+
+	self.locationManager = [[CLLocationManager alloc] init];
 	
 	// system sound
 	NSString *recordStartPath = 
@@ -336,6 +343,8 @@
 			pthread_join(p, NULL);
 			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 		}];
+	} else {
+		[self.appDelegate showMessage:@"no network!"];
 	}
 
 	[self.textField setText:@""];
@@ -358,6 +367,7 @@
 			@"camera",
 			@"image/video",
 			@"contact",
+			@"geopoint",
 		nil];
 	[as showFromToolbar:self.navigationController.toolbar];
 }
@@ -747,6 +757,8 @@ static int messages_callback(void *d, const tg_message_t *m){
 			{
 				[self getDocumentForMessageChached:item
 					download:[update boolValue]];
+			} else if (m->media_type == id_messageMediaGeo){
+
 			}
 		});
 	} else {
@@ -838,6 +850,27 @@ static int messages_callback(void *d, const tg_message_t *m){
 							[NSString stringWithFormat:@"%lld", 
 								m->doc_size];
 				}
+
+			} else if (m->media_type == id_messageMediaGeo) {
+				UIView *view = [[UIView alloc]init];
+				view.frame = CGRectMake(
+						0, 0, 200, 120);
+				MKMapView *mv = [[MKMapView alloc]init]; 
+				mv.frame = CGRectMake(
+						10, 10, 180, 100);
+				[view addSubview:mv];
+				CLLocationCoordinate2D lc;
+				lc.latitude = item.message.geoLat;
+				lc.longitude = item.message.geoLong;
+				//[mv setCenterCoordinate:lc];
+
+				const UIEdgeInsets textInsetsMine = {1, 10, 11, 17};
+				const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
+
+				[item initWithView:view 
+							date:item.message.date 
+							type:type 
+							insets:item.message.mine?textInsetsMine:textInsetsSomeone];
 
 			} else {
 				[item initWithText:item.message.message
@@ -1141,12 +1174,31 @@ int get_document_progress(void *d, int size, int total){
 		}
 }
 
+
+-(void)getGeo:(NSBubbleData *)data{
+	TGMessage *m = data.message;
+	NSLog(@"LOCATION: %lf:%lf", m.geoLat, m.geoLong);
+	
+	//Create an MKMapItem to pass to the Maps app
+		CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake(
+				m.geoLat, m.geoLong);
+		MKPlacemark *placemark = 
+			[[MKPlacemark alloc] initWithCoordinate:coordinate
+																						addressDictionary:nil];
+		MKMapItem *mapItem = [[MKMapItem alloc] initWithPlacemark:placemark];
+		[mapItem setName:@"Geopoint"];
+		// Pass the map item to the Maps app
+		[mapItem openInMapsWithLaunchOptions:nil];
+}
+
 #pragma mark <UIBubbleTableView Delegate>
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectData:(NSBubbleData *)data 
 {
 	TGMessage *m = data.message;
 	if (m){
-		if (m.mediaType == id_messageMediaContact){
+		if (m.mediaType == id_messageMediaGeo){
+			[self getGeo:data];
+		} else if (m.mediaType == id_messageMediaContact){
 			[self getContact:data];
 		} else if (m.photoId){
 			[self getPhoto:data];
@@ -1350,6 +1402,12 @@ didScroll:(UIScrollView *)scrollView
 					picker.peoplePickerDelegate = self;
 					[self presentViewController:picker 
 														 animated:TRUE completion:nil];
+				}
+				break;
+			
+			case 4:
+				{
+					[self askSendGeopoint];
 				}
 				break;
 
@@ -1784,6 +1842,76 @@ int send_document_progress(void *d, int size, int total){
   return NO;
 }
 
+#pragma mark <MapView Functions>
+-(void)askSendGeopoint{
+	UIAlertView *alert = 
+			[[UIAlertView alloc]initWithTitle:@"Send geopoint" 
+			message:@"\n\n\n\n\n\n" 
+			delegate:self 
+			cancelButtonTitle:@"Cancel" 
+			otherButtonTitles:@"Send", nil];
+
+	[alert setAlertViewStyle:UIAlertViewStyleDefault]; 
+	[alert show];
+	
+	MKMapView *mv = [[MKMapView alloc]init]; 
+	mv.frame = CGRectMake(
+			10, 40, 264, 140);
+
+	[alert addSubview:mv];
+	self.mapView = mv;
+	self.locationManager.delegate = self;
+	[self.locationManager startUpdatingLocation];
+	mv.showsUserLocation = YES;
+}
+
+-(void)alertView:(UIAlertView *)alertView 
+	clickedButtonAtIndex:(NSInteger)buttonIndex
+{	
+	if (buttonIndex == 1){
+		// send location
+		NSLog(@"SEND LOCATION: %lf: %lf",
+						self.locationManager.location.coordinate.latitude, 
+						self.locationManager.location.coordinate.longitude);
+		
+		uint64_t lat = self.locationManager.location.coordinate.latitude;
+		uint64_t lon = self.locationManager.location.coordinate.longitude;
+		
+		NSLog(@"SEND LOCATION IN 64: %lld: %llld", lat, lon);
+		
+		if (self.appDelegate.isOnLineAndAuthorized){
+			[self.syncData addOperationWithBlock:^{
+				tg_peer_t peer = {
+						self.dialog.peerType, 
+						self.dialog.peerId, 
+						self.dialog.accessHash
+				};
+				tg_send_geopoint(
+						self.appDelegate.tg, 
+						&peer, 
+						lat, 
+						lon, 
+						NULL);
+
+				[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+			}];
+		} else {
+			[self.appDelegate showMessage:@"no network!"];
+		}
+	}
+
+	[self.locationManager stopUpdatingLocation];
+	self.locationManager.delegate = nil;
+	self.mapView = nil;
+}
+
+- (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation 
+{
+	if (self.mapView){
+		[self.mapView setCenterCoordinate:newLocation.coordinate 
+														 animated:YES];
+	}
+}
 
 @end
 // vim:ft=objc

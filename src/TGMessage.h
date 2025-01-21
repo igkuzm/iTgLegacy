@@ -38,6 +38,10 @@
 @property (strong) NSString *contactPhoneNumber;
 @property (strong) NSString *contactFirstName;
 @property (strong) NSString *contactLastName;
+@property uint64_t geoAccessHash;
+@property double geoLat;
+@property double geoLong;
+@property uint32_t geoRadius;
 @property uint64_t contactId;
 
 - (id)initWithMessage:(const tg_message_t *)m dialog:(const TGDialog *)d;

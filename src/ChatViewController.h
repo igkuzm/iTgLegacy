@@ -6,6 +6,10 @@
 #include "UIKit/UIKit.h"
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
+#import <AddressBook/ABAddressBook.h>
+#import <AddressBookUI/AddressBookUI.h>
+#import <CoreLocation/CoreLocation.h>
+#import <MapKit/MapKit.h>
 
 enum {
 	ActionSheetAttach,
@@ -17,7 +21,9 @@ enum {
 	UIImagePickerControllerDelegate, UITextFieldDelegate,
 	UIActionSheetDelegate, UINavigationControllerDelegate,
 	AppActivityDelegate, AuthorizationDelegate, 
-	FilePickerControllerDelegate, UITextViewDelegate>
+	FilePickerControllerDelegate, UITextViewDelegate,
+	ABPeoplePickerNavigationControllerDelegate,
+	CLLocationManagerDelegate>
 {
 }
 
@@ -76,6 +82,10 @@ enum {
 @property (strong) UIImage *peerPhoto;
 
 @property () int position;
+
+@property (strong) CLLocationManager *locationManager;
+@property (strong) MKMapView *mapView; 
+
 @end
 
 // vim:ft=objc

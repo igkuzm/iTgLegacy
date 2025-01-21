@@ -52,6 +52,11 @@
 			self.docFileName = 
 				[NSString stringWithUTF8String:m->doc_file_name];
 
+		// geopoint
+		self.geoAccessHash = m->geo_access_hash;
+		self.geoLat = m->geo_lat;
+		self.geoLong = m->geo_long;
+		self.geoRadius = m->geo_accuracy_radius;
 
 		// contact
 		if (m->contact_vcard)
