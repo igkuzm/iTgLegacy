@@ -831,8 +831,8 @@ static int messages_callback(void *d, const tg_message_t *m){
 						date:item.message.date 
 						type:type text:text];
 				
-				if ((m->doc_id && item.message.docFileName) ||
-					m->media_type == id_messageMediaContact)
+				if ((m->doc_id && item.message.docFileName) 
+						|| m->media_type == id_messageMediaContact)
 					item.titleLabel.text = item.message.docFileName;
 				
 				if (m->doc_id){

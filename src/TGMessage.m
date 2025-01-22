@@ -69,9 +69,10 @@
 			self.contactPhoneNumber = [NSString stringWithUTF8String:m->contact_phone_number];
 		self.contactId = m->contact_user_id;
 
-		self.docFileName = [NSString stringWithFormat:@"%@ %@\n%@",
-			self.contactFirstName, 
-			self.contactLastName, self.contactPhoneNumber];
+		if (self.mediaType == id_messageMediaContact) 
+			self.docFileName = [NSString stringWithFormat:@"%@ %@\n%@",
+				self.contactFirstName, 
+				self.contactLastName, self.contactPhoneNumber];
 
 		AppDelegate *appDelegate = 
 			UIApplication.sharedApplication.delegate;
