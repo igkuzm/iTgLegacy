@@ -1,4 +1,5 @@
 #import "DialogViewCell.h"
+#include "TGImageView.h"
 #include "AppDelegate.h"
 #include "Foundation/Foundation.h"
 #include "QuartzCore/QuartzCore.h"
@@ -7,6 +8,7 @@
 #import "../libtg/tg/peer.h"
 #import "../libtg/tg/files.h"
 #include "UIImage+Utils/UIImage+Utils.h"
+#import "Base64/Base64.h"
 
 @implementation DialogViewCell
 - (id)init
@@ -116,17 +118,14 @@
 	self.title.text = dialog.title;
 	self.message.text = dialog.top_message;
 
-	if (!dialog.hasPhoto)
-		[dialog setPeerPhoto];
+	// dialog photo
+	[self.imageView 
+		setImageWithSize:CGSizeMake(50,50) 
+					 placeholder:[UIImage imageNamed:@"missingAvatar.png"] 
+						 cachePath:dialog.photoPath 
+				 downloadBlock:dialog.photoDownloadBlock];
 	
-	self.imageView.image = [UIImage imageWithImage:dialog.photo 
-		scaledToSize:CGSizeMake(50, 50)];
-	[self.imageView addSubview:dialog.spinner];
-	dialog.spinner.center = CGPointMake(25, 25);
-	if (!dialog.hasPhoto){
-		[dialog setPeerPhoto];
-	}
-
+	// dialog last message data
 	NSDateComponents *now  = [self dateCompFromDate:[NSDate date]];
 	NSDateComponents *then = [self dateCompFromDate:dialog.date];
 	if (now.year == then.year && 
@@ -142,6 +141,7 @@
 		self.time.text = [dateFormatter stringFromDate:dialog.date];
 	}
 
+	// dialog delivered check and unread count
 	NSNumber *userId = [NSUserDefaults.standardUserDefaults 
 		valueForKey:@"userId"];
 

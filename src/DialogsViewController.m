@@ -191,15 +191,12 @@
 }
 
 -(void)reloadData{
-	//[self cancelAll];
+	[self.spinner stopAnimating];
+	[self cancelAll];
 
 	if (!self.appDelegate.tg)
 		return;
 	
-	// animate spinner
-	if (!self.refreshControl.refreshing)
-		[self.spinner startAnimating];
-
 	// get dialogs
 	[self getDialogsCached:YES];
 }
@@ -217,8 +214,6 @@
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			[self filterData];
 			[self.refreshControl endRefreshing];
-			[self.spinner stopAnimating];
-			//[self.appDelegate showMessage:@"getDialogsCached done!"];
 			if (update)
 				[self getDialogsFrom:[NSDate date]];
 		});
@@ -243,10 +238,10 @@
 						get_dialogs_cb);
 
 				dispatch_sync(dispatch_get_main_queue(), ^{
+					//[self.appDelegate showMessage:@"done"];
 					[self.refreshControl endRefreshing];
 					[self.spinner stopAnimating];
 					[self filterData];
-
 				});
 		}];
 	}

@@ -14,6 +14,7 @@
 #import "NSBubbleData.h"
 #import "UIBubbleHeaderTableViewCell.h"
 #import "UIBubbleTypingTableViewCell.h"
+#import "../TGActionTableView.h"
 
 @interface UIBubbleTableView ()
 
@@ -281,9 +282,16 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     
     cell.data = data;
     cell.showAvatar = self.showAvatars;
+
+		// swipe gesture
+		UISwipeGestureRecognizer *swipeToLeftRecognizer = 
+			[[UISwipeGestureRecognizer alloc] 
+			initWithTarget:self action:@selector(swipeToLeft:)];
+		swipeToLeftRecognizer.direction = UISwipeGestureRecognizerDirectionLeft;
+		[cell addGestureRecognizer:swipeToLeftRecognizer];
 		
-		if (!data.message.mine)
-			cell.accessoryType = UITableViewCellAccessoryDetailDisclosureButton;
+		//if (!data.message.mine)
+			//cell.accessoryType = UITableViewCellAccessoryDetailDisclosureButton;
 
 		//if ([cell.data.view isKindOfClass:[UITextView class]]){
 			//UITextView *tw = (UITextView *)cell.data.view;
@@ -293,6 +301,17 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 		//}
     
     return cell;
+}
+
+-(void)swipeToLeft:(UISwipeGestureRecognizer *)gestureRecognizer{
+	NSLog(@"SWIPED LEFT");
+	if (gestureRecognizer.state == UIGestureRecognizerStateEnded)
+	{
+		UIBubbleTableViewCell *cell = 
+			(UIBubbleTableViewCell *)gestureRecognizer.view;
+		if (self.bubbleDelegate)
+			[self.bubbleDelegate performSwipeToLeftAction:cell.data];
+	}
 }
 
 -(void)scrollViewDidScroll:(UIScrollView *)scrollView
@@ -402,7 +421,6 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 		[self.bubbleDelegate 
 			bubbleTableView:self accessoryButtonTappedForData:data];
 }
-
 
 #pragma mark - Public interface
 

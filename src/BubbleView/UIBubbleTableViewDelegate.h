@@ -33,4 +33,7 @@ didEndDecelerationgToBottom:(Boolean)bottom;
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 accessoryButtonTappedForData:(NSBubbleData *)data;
+
+- (void)performSwipeToLeftAction:(NSBubbleData *)data;
+- (void)performSwipeToRightAction:(NSBubbleData *)data;
 @end

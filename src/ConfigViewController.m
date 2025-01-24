@@ -63,7 +63,7 @@
 	if (section == 0)
 		rows = 1;
 	if (section == 1)
-		rows = 2;
+		rows = 3;
 	if (section == 2)
 		rows = 1;
 	
@@ -140,10 +140,17 @@
 					
 					case 1:
 						{
-							cell.textLabel.text = @"Show log file";
+							cell.textLabel.text = @"Current log";
 						}
 						break;
 					
+					case 2:
+						{
+							cell.textLabel.text = @"Last log";
+						}
+						break;
+					
+
 					default:
 						break;
 				}
@@ -209,8 +216,15 @@
 				{
 				 case 1:
 					 {
-						NSString *log = [NSTemporaryDirectory() 
-								stringByAppendingPathComponent:@"iTgLegacy.txt"];
+						NSString *cache = [NSSearchPathForDirectoriesInDomains(
+						NSCachesDirectory, 
+						NSUserDomainMask,
+						YES) objectAtIndex:0]; 
+	
+						NSString *log = [cache 
+								stringByAppendingPathComponent:@"log.txt"];
+						//NSString *log = [NSTemporaryDirectory() 
+								//stringByAppendingPathComponent:@"log.txt"];
 						 NSURL *url = [NSURL fileURLWithPath:log];
 						QuickLookController *qlc = [[QuickLookController alloc]
 							initQLPreviewControllerWithData:@[url]];	
@@ -218,6 +232,19 @@
 															 animated:TRUE completion:nil];
 					 }
 					 break;
+					
+				 case 2:
+					 {
+						NSString *log = [NSTemporaryDirectory() 
+								stringByAppendingPathComponent:@"lastlog.txt"];
+						 NSURL *url = [NSURL fileURLWithPath:log];
+						QuickLookController *qlc = [[QuickLookController alloc]
+							initQLPreviewControllerWithData:@[url]];	
+						[self presentViewController:qlc 
+															 animated:TRUE completion:nil];
+					 }
+					 break;
+
 
 					default:
 						break;

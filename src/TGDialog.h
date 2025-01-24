@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 #include <stdint.h>
 #include "../libtg/tg/dialogs.h"
+#import "TGImageView.h"
 
 @interface TGDialog : NSObject
 
@@ -25,6 +26,7 @@
 @property Boolean broadcast;
 @property Boolean hasPhoto;
 @property int readDate;
+@property (nonatomic, copy) NSData * (^photoDownloadBlock)();
 
 -(id)initWithDialog:(const tg_dialog_t *)dialog tg:(tg_t *)tg syncData:(NSOperationQueue *)syncData;
 -(void)setPeerPhoto;

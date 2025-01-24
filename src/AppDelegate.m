@@ -7,6 +7,7 @@
  */
 
 #import "AppDelegate.h"
+#include <stdlib.h>
 #include "TGDialog.h"
 #include "DialogsViewController.h"
 #include "ChatViewController.h"
@@ -29,11 +30,32 @@
 
 	// lock crush
 	UIApplication.sharedApplication.idleTimerDisabled = YES;
-	
 
+	// create cache
+	NSString *cache = [NSSearchPathForDirectoriesInDomains(
+			NSCachesDirectory, 
+			NSUserDomainMask,
+		 	YES) objectAtIndex:0]; 
+	
 	// logging
+	//NSString *log = 
+		//[NSTemporaryDirectory() stringByAppendingPathComponent:@"log.txt"];
 	NSString *log = 
-		[NSTemporaryDirectory() stringByAppendingPathComponent:@"iTgLegacy.txt"];
+		[cache stringByAppendingPathComponent:@"log.txt"];
+	NSString *lastlog = 
+		[NSTemporaryDirectory() stringByAppendingPathComponent:@"lastlog.txt"];
+	FILE *logp = fopen(log.UTF8String, "r");
+	FILE *lastlogp = fopen(lastlog.UTF8String, "w");
+	if (logp && lastlogp){
+		fseek(logp, -BUFSIZ, SEEK_END);
+		char buf[BUFSIZ];
+		fread(buf, BUFSIZ, 1, logp);
+		fwrite(buf, BUFSIZ, 1, lastlogp);
+		fclose(logp);
+		fclose(lastlogp);
+	}
+
+	// remove log file
 	[[NSFileManager defaultManager] removeItemAtPath:log error:nil];
 	self.log = freopen([log UTF8String], "a+", stderr);
 
@@ -45,13 +67,7 @@
 	// set badge number
 	application.applicationIconBadgeNumber = 0;
 
-	// create cache
-	NSString *cache = [NSSearchPathForDirectoriesInDomains(
-			NSCachesDirectory, 
-			NSUserDomainMask,
-		 	YES) objectAtIndex:0]; 
-	
-	self.smallPhotoCache = [cache 
+		self.smallPhotoCache = [cache 
 			stringByAppendingPathComponent:@"s"];
 	[NSFileManager.defaultManager 
 		createDirectoryAtPath:self.smallPhotoCache attributes:nil];
@@ -564,6 +580,7 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 			setBool:showNotifications forKey:@"showNotifications"];
 	self.showNotifications = showNotifications;
 }
+
 
 @end
 

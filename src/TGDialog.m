@@ -8,6 +8,7 @@
 #include "../libtg/tg/messages.h"
 #include "../libtg/tg/files.h"
 #import "UIImage+Utils/UIImage+Utils.h"
+#import "TGImageView.h"
 
 @implementation TGDialog
 
@@ -53,40 +54,21 @@
 		self.readDate = -1;
 		[self syncReadDate];
 		
-		//[self setPeerPhoto];
-		
 		self.broadcast = d->broadcast;
-	}
-	return self;
-}
 
--(void)setPeerPhoto{
-	AppDelegate *appDelegate = 
+		AppDelegate *appDelegate = 
 			UIApplication.sharedApplication.delegate;
-	self.photoPath = 
-		[NSString stringWithFormat:@"%@/%lld.%lld", 
-			appDelegate.peerPhotoCache, self.peerId, self.photoId]; 
-	if ([NSFileManager.defaultManager fileExistsAtPath:self.photoPath])
-	{
-		// set photo from local data
-		self.photo = [UIImage 
-			imageWithData:[NSData dataWithContentsOfFile:self.photoPath]];
-		self.hasPhoto = YES;
-	}
-	else {
-		if (self.photoId == 0){
-			self.hasPhoto = YES;
-			self.photo = [UIImage imageNamed:@"missingAvatar.png"];
-			return;
-		}
+		
+		self.photoPath = 
+			[NSString stringWithFormat:@"%@/%lld.%lld", 
+				appDelegate.peerPhotoCache, self.peerId, self.photoId];
 
-		self.hasPhoto = NO;
-		[self.spinner startAnimating];
-		// set default photo
-		self.photo = [UIImage imageNamed:@"missingAvatar.png"];
-		// download photo
-		if (appDelegate.isOnLineAndAuthorized){
-			[self.syncData addOperationWithBlock:^{
+		// downloadBlock
+		self.photoDownloadBlock = ^NSData *{
+				AppDelegate *appDelegate = 
+					UIApplication.sharedApplication.delegate;
+				if (!appDelegate.isOnLineAndAuthorized)
+					return nil;
 				tg_peer_t peer = {
 						self.peerType,
 						self.peerId,
@@ -96,26 +78,18 @@
 							appDelegate.tg, 
 							&peer, 
 							false, 
-							self.photoId); 
+							self.photoId);
 				if (photo){
 					NSData *data = [NSData 
 						dataFromBase64String:
 							[NSString stringWithUTF8String:photo]];
-					if (data){
-						// save photo
-						[data writeToFile:self.photoPath atomically:YES];
-						self.photo = [UIImage imageWithData:data];
-					}
-					self.photo = [UIImage imageWithData:data];
-					self.hasPhoto = YES;
-					free(photo);
-				} // end if (photo)
-				dispatch_sync(dispatch_get_main_queue(), ^{
-					[self.spinner stopAnimating];
-				});
-			}];
-		}
+					return data;
+				}
+				return nil;
+		};
+
 	}
+	return self;
 }
 
 -(void)syncReadDate{

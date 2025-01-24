@@ -16,6 +16,8 @@ iTgLegacy_SOURCES = \
 		Reachability.m \
 		TGDialog.m \
 		TGMessage.m \
+		TGImageView.m \
+		TGActionTableView.m \
 		BubbleView/NSBubbleData.m \
 		BubbleView/UIBubbleHeaderTableViewCell.m \
 		BubbleView/UIBubbleTableView.m \
@@ -97,6 +99,8 @@ iTgLegacy.ipa: iTgLegacy.app
 	mkdir -p app/Payload
 	cp -r iTgLegacy.app app/Payload/.
 	zsign -m telegram.mobileprovision -k ../certificates/app.key -p "ig.kuzm@gmail.com" -e iTgLegacy.xcent app -o iTgLegacy.ipa
+	rm -fr app
+	rm -fr iTgLegacy.app
 #${ZIP} -r iTgLegacy.ipa Payload iTunesArtwork iTunesMetadata.plist
 #rm -rf Payload
 

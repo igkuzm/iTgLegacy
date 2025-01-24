@@ -1254,16 +1254,58 @@ didScroll:(UIScrollView *)scrollView
 	accessoryButtonTappedForData:(NSBubbleData *)data 
 {
 	// create actionSheet
+	//self.actionSheetType = ActionSheetMessage;
+	//UIActionSheet *as = [[UIActionSheet alloc]
+		//initWithTitle:@"" 
+		//delegate:self 
+		//cancelButtonTitle:@"cancel" 
+		//destructiveButtonTitle:nil 
+		//otherButtonTitles:
+			//@"reply",
+		//nil];
+	//[as showFromToolbar:self.navigationController.toolbar];
+}
+
+- (void)performSwipeToLeftAction:(NSBubbleData *)data {
+	NSString *title = @"";
+	TGMessage *m = data.message;
+	if (m.message.length > 0){
+		if (m.message.length > 10)
+			title = [m.message substringToIndex:10];
+		else
+			title = m.message;
+	}
+	else if (m.mediaType == id_messageMediaContact)
+		title = @"*contact*";
+	else if (m.mediaType == id_messageMediaGeo)
+		title = @"*geopoint*";
+	else if (m.mediaType == id_messageMediaPhoto)
+		title = @"*photo*";
+	else if (m.mediaType == id_messageMediaDocument){
+		if (m.docFileName.length > 1)
+			title = m.docFileName;
+		else if (m.isVideo)
+			title = @"*video*";
+		else if (m.isVoice)
+			title = @"*voice message*";
+		else
+			title = @"*document*";
+	}
+
 	self.actionSheetType = ActionSheetMessage;
 	UIActionSheet *as = [[UIActionSheet alloc]
-		initWithTitle:@"" 
+		initWithTitle:title 
 		delegate:self 
 		cancelButtonTitle:@"cancel" 
-		destructiveButtonTitle:nil 
+		destructiveButtonTitle:@"remove" 
 		otherButtonTitles:
-			@"reply",
+			@"reply", @"cyte",
 		nil];
 	[as showFromToolbar:self.navigationController.toolbar];
+}
+
+- (void)performSwipeToRightAction:(NSBubbleData *)data{
+
 }
 
 #pragma mark <UIBubbleTableView DataSource>
