@@ -21,6 +21,28 @@
 #import "UIImage+Utils/UIImage+Utils.h"
 #import <AddressBook/ABAddressBook.h>
 #import <AddressBookUI/AddressBookUI.h>
+#import <QuartzCore/QuartzCore.h>
+
+@implementation UITableView (Animated)
+
+	- (void)reloadDataAnimated:(BOOL)animated
+	{
+			[self reloadData];
+
+			if (animated)
+			{
+					CATransition *animation = [CATransition animation];
+					[animation setType:kCATransitionFade];
+					[animation setSubtype:kCATransitionFromBottom];
+					[animation setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
+					[animation setFillMode:kCAFillModeBoth];
+					[animation setDuration:.3];
+					[[self layer] addAnimation:animation forKey:@"UITableViewReloadDataAnimationKey"];
+			}
+	}
+
+@end
+
 
 @interface  DialogsViewController()
 {
@@ -185,7 +207,7 @@
 			self.data = array;
 
 		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.tableView reloadData];
+			[self.tableView reloadDataAnimated:YES];
 		});
 	}];
 }

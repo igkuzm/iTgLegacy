@@ -382,7 +382,7 @@
 
 -(void)refresh:(id)sender{
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
+		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 	}];
 }
 
@@ -651,7 +651,7 @@
 		});
 
 		// update data
-		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
+		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 		
 	}];
 }
@@ -671,7 +671,7 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
-						[self.bubbleTableView scrollToBottomWithAnimation:YES];
+						//[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 
 			}
@@ -683,7 +683,7 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
-						[self.bubbleTableView scrollToBottomWithAnimation:YES];
+						//[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_RECORD_AUDIO:
@@ -695,7 +695,7 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
-						[self.bubbleTableView scrollToBottomWithAnimation:YES];
+						//[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_RECORD_ROUND:
@@ -707,7 +707,7 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
-						[self.bubbleTableView scrollToBottomWithAnimation:YES];
+						//[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_CANCEL:
@@ -1780,7 +1780,7 @@ int send_document_progress(void *d, int size, int total){
 -(void)tgLibLoaded{
 }
 -(void)authorizedAs:(tl_user_t *)user{
-	[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
+	[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 }
 
 #pragma mark <FilePickerController Delegate>
@@ -1843,7 +1843,10 @@ int send_document_progress(void *d, int size, int total){
 		initWithData:vCardData encoding:NSUTF8StringEncoding];
 
 	NSString *msg = [NSString stringWithFormat:
-		@"send contact: %@ %@ %@?", firstName, lastName, phone];
+		@"send contact: %@ %@ %@?", 
+		firstName?firstName:@"", 
+			lastName?lastName:@"", 
+						phone?phone:@""];
 	
 	[self.appDelegate askYesNo:msg onYes:^{
 		if (!self.appDelegate.isOnLineAndAuthorized){
@@ -1861,9 +1864,9 @@ int send_document_progress(void *d, int size, int total){
 			tg_contact_send(
 					self.appDelegate.tg, 
 					&peer, 
-					phone.UTF8String, 
-					firstName.UTF8String, 
-					lastName.UTF8String, 
+					phone?phone.UTF8String:"", 
+	        firstName?firstName.UTF8String:"", 
+		      lastName?lastName.UTF8String:"", 
 					vCard.UTF8String, 
 					NULL);
 			
