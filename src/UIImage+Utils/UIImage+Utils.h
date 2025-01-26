@@ -28,6 +28,12 @@
 + (UIImage *)imageWithImage:(UIImage *)image 
 							 scaledToSize:(CGSize)newSize;
 
++ (UIImage *)imageWithPlaceholder:(UIImage *)placeholder 
+				                cachePath:(NSString *)cachePath 
+											       view:(UIView *)view
+			              downloadBlock:(NSData * (^)())downloadBlock
+								         onUpdate:(void(^)(UIImage *image))onUpdate;
+
 + (UIImage *)imageWithSize:(CGSize)size
 	             placeholder:(UIImage *)placeholder 
 				         cachePath:(NSString *)cachePath 
@@ -39,6 +45,10 @@
 @interface UIImageView (Utils)
 - (void)setImageWithSize:(CGSize)size 
 	           placeholder:(UIImage *)placeholder 
+				       cachePath:(NSString *)cachePath 
+			     downloadBlock:(NSData * (^)())downloadBlock;
+
+- (void)setImageWithPlaceholder:(UIImage *)placeholder 
 				       cachePath:(NSString *)cachePath 
 			     downloadBlock:(NSData * (^)())downloadBlock;
 @end

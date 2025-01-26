@@ -26,6 +26,7 @@
 #include "UIKit/UIKit.h"
 
 @implementation UIImage (Utils)
+
 + (UIImage *)imageWithImage:(UIImage *)image 
 							 scaledToSize:(CGSize)newSize 
 {
@@ -42,6 +43,52 @@
     UIGraphicsEndImageContext();
     
 		return newImage;
+}
+
++ (UIImage *)imageWithPlaceholder:(UIImage *)placeholder 
+				                cachePath:(NSString *)cachePath 
+											       view:(UIView *)view
+			              downloadBlock:(NSData * (^)())downloadBlock
+								         onUpdate:(void(^)(UIImage *image))onUpdate
+{
+	__block UIActivityIndicatorView *spinner = 
+		[[UIActivityIndicatorView alloc]
+			initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+	[view addSubview:spinner];
+	spinner.center = CGPointMake(
+		placeholder.size.width/2, 
+		placeholder.size.height/2);
+	[spinner startAnimating];
+
+	NSOperationQueue *operationQueue = [[NSOperationQueue alloc]init];
+
+	UIImage *image = placeholder;
+
+	if ([NSFileManager.defaultManager fileExistsAtPath:cachePath]){
+		// load from cache
+		NSData *data = [NSData dataWithContentsOfFile:cachePath];
+		image = [UIImage imageWithData:data]; 
+		[spinner stopAnimating];
+		[spinner removeFromSuperview];
+	} else {
+		[operationQueue addOperationWithBlock:^{
+			NSData * data = downloadBlock();
+			if (data != nil){
+				UIImage *image = [UIImage imageWithData:data];
+				if (image != nil){
+					[data writeToFile:cachePath atomically:YES];
+					dispatch_sync(dispatch_get_main_queue(), ^{
+						onUpdate(image);
+					});
+				}
+			}
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[spinner stopAnimating];
+				[spinner removeFromSuperview];
+			});
+		}];
+	}
+	return image;
 }
 
 + (UIImage *)imageWithSize:(CGSize)size
@@ -104,6 +151,20 @@
 	self.image = [UIImage 
 		imageWithSize:size 
 		placeholder:placeholder 
+		cachePath:cachePath 
+		view:self 
+		downloadBlock:downloadBlock 
+		onUpdate:^(UIImage *image){
+			self.image = image; 
+		}];
+}
+
+- (void)setImageWithPlaceholder:(UIImage *)placeholder 
+				       cachePath:(NSString *)cachePath 
+			     downloadBlock:(NSData * (^)())downloadBlock
+{
+	self.image = [UIImage 
+		imageWithPlaceholder:placeholder 
 		cachePath:cachePath 
 		view:self 
 		downloadBlock:downloadBlock 

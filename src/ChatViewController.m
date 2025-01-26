@@ -232,13 +232,14 @@
 			[NSString stringWithFormat:@"%@/%lld.%lld", 
 				self.appDelegate.peerPhotoCache, 
 				self.dialog.peerId, self.dialog.photoId];
+	TGDialog *dialog = self.dialog;
 	[self.icon 
 		setImageWithSize:CGSizeMake(30, 30) 
 		placeholder:[UIImage imageNamed:@"missingAvatar.png"] 
 		cachePath:photoPath 
 		forState:UIControlStateNormal 
 		downloadBlock: ^NSData *{
-			return [TGDialog dialogPhotoDownloadBlock:self.dialog];
+			return [TGDialog dialogPhotoDownloadBlock:dialog];
 		}];
 
 	//UIImage *image;
@@ -401,17 +402,13 @@
 
 #pragma mark <Data Functions>
 -(void)getPhotoForMessageCached:(NSBubbleData *)d
-											 download:(Boolean)download{
-	if (!d.message.photo)
-		d.message.photo = [UIImage imageNamed:@"filetype_icon_png@2x.png"];
-	
-	if (!download)
-		return;
-	
-	if (self.appDelegate.isOnLineAndAuthorized)
-		{
-		// try to get image from database
-		[[[NSOperationQueue alloc]init]addOperationWithBlock:^{
+											 download:(Boolean)download
+{
+	d.message.photo = [UIImage 
+		imageWithPlaceholder:[UIImage imageNamed:@"filetype_icon_png@2x.png"] 
+		cachePath:d.message.photoPath 
+		view:d.imageView 
+		downloadBlock:^NSData *(void){
 			if (d.message.photoId && !d.message.photoData){
 				char *photo  = 
 					tg_get_photo_file(
@@ -422,18 +419,87 @@
 							"s");
 				if (photo){
 					// add photo to BubbleData
-					dispatch_sync(dispatch_get_main_queue(), ^{
+					//dispatch_sync(dispatch_get_main_queue(), ^{
 						d.message.photoData = [NSData dataFromBase64String:
 								[NSString stringWithUTF8String:photo]];
 						d.message.photo = [UIImage imageWithData:d.message.photoData];
-						[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
 						free(photo);
-						[self.bubbleTableView reloadData];
-					});
+						//[self.bubbleTableView reloadData];
+						return d.message.photoData;
+					//});
 				}
 			}
+			return NULL;
+		} 
+		onUpdate:^(UIImage *image){
+			 if (image){
+				 d.imageView.image = image;
+			 }
 		}];
-	}
+
+		//imageWithPlaceholder:[UIImage imageNamed:@"filetype_icon_png@2x.png"]
+		//cachePath:d.message.photoPath
+		//view:d.imageView
+		//downloadBlock:^NSData *(void){
+			//if (d.message.photoId && !d.message.photoData){
+				//char *photo  = 
+					//tg_get_photo_file(
+							//self.appDelegate.tg, 
+							//d.message.photoId, 
+							//d.message.photoAccessHash, 
+							//d.message.photoFileReference.UTF8String, 
+							//"s");
+				//if (photo){
+					//// add photo to BubbleData
+					////dispatch_sync(dispatch_get_main_queue(), ^{
+						//d.message.photoData = [NSData dataFromBase64String:
+								//[NSString stringWithUTF8String:photo]];
+						//d.message.photo = [UIImage imageWithData:d.message.photoData];
+						//free(photo);
+						////[self.bubbleTableView reloadData];
+						//return d.message.photoData;
+					////});
+				//}
+			//}
+			//return NULL;
+		//}
+//onUpdate:^{
+
+				 //}
+	//];
+
+	//if (!d.message.photo)
+		//d.message.photo = [UIImage imageNamed:@"filetype_icon_png@2x.png"];
+	
+	//if (!download)
+		//return;
+	
+	//if (self.appDelegate.isOnLineAndAuthorized)
+		//{
+		//// try to get image from database
+		//[[[NSOperationQueue alloc]init]addOperationWithBlock:^{
+			//if (d.message.photoId && !d.message.photoData){
+				//char *photo  = 
+					//tg_get_photo_file(
+							//self.appDelegate.tg, 
+							//d.message.photoId, 
+							//d.message.photoAccessHash, 
+							//d.message.photoFileReference.UTF8String, 
+							//"s");
+				//if (photo){
+					//// add photo to BubbleData
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//d.message.photoData = [NSData dataFromBase64String:
+								//[NSString stringWithUTF8String:photo]];
+						//d.message.photo = [UIImage imageWithData:d.message.photoData];
+						//[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
+						//free(photo);
+						//[self.bubbleTableView reloadData];
+					//});
+				//}
+			//}
+		//}];
+	//}
 }
 
 -(void)getDocumentForMessageChached:(NSBubbleData *)d
