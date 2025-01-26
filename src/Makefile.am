@@ -6,7 +6,6 @@ iTgLegacy_SOURCES = \
 		RootViewController.m \
 		DialogViewCell.m \
 		DialogsViewController.m \
-		ChatViewCell.m \
 		ChatViewController.m \
 		ContactsListViewController.m \
 		ConfigViewController.m \
@@ -16,8 +15,6 @@ iTgLegacy_SOURCES = \
 		Reachability.m \
 		TGDialog.m \
 		TGMessage.m \
-		TGImageView.m \
-		TGActionTableView.m \
 		BubbleView/NSBubbleData.m \
 		BubbleView/UIBubbleHeaderTableViewCell.m \
 		BubbleView/UIBubbleTableView.m \

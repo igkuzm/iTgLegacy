@@ -228,21 +228,34 @@
 	UIBarButtonItem *iconItem = [[UIBarButtonItem alloc]
 		initWithCustomView:self.icon];
 	self.navigationItem.rightBarButtonItem = iconItem;
-	UIImage *image;
 	NSString *photoPath = 
 			[NSString stringWithFormat:@"%@/%lld.%lld", 
 				self.appDelegate.peerPhotoCache, 
-				self.dialog.peerId, self.dialog.photoId]; 
-		if ([NSFileManager.defaultManager fileExistsAtPath:photoPath])
-			image = [UIImage 
-				imageWithData:[NSData dataWithContentsOfFile:photoPath]];
-		else
-			image = [UIImage imageNamed:@"missingAvatar.png"]; 
-	//self.icon.image = [UIImage imageWithImage:image 
-			//scaledToSize:CGSizeMake(30, 30)];
-	[self.icon setImage:[UIImage imageWithImage:image 
-			scaledToSize:CGSizeMake(30, 30)] 
-						 forState:UIControlStateNormal];
+				self.dialog.peerId, self.dialog.photoId];
+	[self.icon 
+		setImageWithSize:CGSizeMake(30, 30) 
+		placeholder:[UIImage imageNamed:@"missingAvatar.png"] 
+		cachePath:photoPath 
+		forState:UIControlStateNormal 
+		downloadBlock: ^NSData *{
+			return [TGDialog dialogPhotoDownloadBlock:self.dialog];
+		}];
+
+	//UIImage *image;
+	//NSString *photoPath = 
+			//[NSString stringWithFormat:@"%@/%lld.%lld", 
+				//self.appDelegate.peerPhotoCache, 
+				//self.dialog.peerId, self.dialog.photoId]; 
+		//if ([NSFileManager.defaultManager fileExistsAtPath:photoPath])
+			//image = [UIImage 
+				//imageWithData:[NSData dataWithContentsOfFile:photoPath]];
+		//else
+			//image = [UIImage imageNamed:@"missingAvatar.png"]; 
+	////self.icon.image = [UIImage imageWithImage:image 
+			////scaledToSize:CGSizeMake(30, 30)];
+	//[self.icon setImage:[UIImage imageWithImage:image 
+			//scaledToSize:CGSizeMake(30, 30)] 
+						 //forState:UIControlStateNormal];
 
 
 	// set updates handler
@@ -398,23 +411,28 @@
 	if (self.appDelegate.isOnLineAndAuthorized)
 		{
 		// try to get image from database
-		if (d.message.photoId && !d.message.photoData){
-			char *photo  = 
-				tg_get_photo_file(
-						self.appDelegate.tg, 
-						d.message.photoId, 
-						d.message.photoAccessHash, 
-						d.message.photoFileReference.UTF8String, 
-						"s");
-			if (photo){
-				// add photo to BubbleData
-				d.message.photoData = [NSData dataFromBase64String:
-						[NSString stringWithUTF8String:photo]];
-				d.message.photo = [UIImage imageWithData:d.message.photoData];
-				[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
-				free(photo);
+		[[[NSOperationQueue alloc]init]addOperationWithBlock:^{
+			if (d.message.photoId && !d.message.photoData){
+				char *photo  = 
+					tg_get_photo_file(
+							self.appDelegate.tg, 
+							d.message.photoId, 
+							d.message.photoAccessHash, 
+							d.message.photoFileReference.UTF8String, 
+							"s");
+				if (photo){
+					// add photo to BubbleData
+					dispatch_sync(dispatch_get_main_queue(), ^{
+						d.message.photoData = [NSData dataFromBase64String:
+								[NSString stringWithUTF8String:photo]];
+						d.message.photo = [UIImage imageWithData:d.message.photoData];
+						[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
+						free(photo);
+						[self.bubbleTableView reloadData];
+					});
+				}
 			}
-		}
+		}];
 	}
 }
 
@@ -614,6 +632,8 @@
 					peer, 
 					0);
 		}
+
+		self.dialog.unread_count = 0;
 	}
 }
 

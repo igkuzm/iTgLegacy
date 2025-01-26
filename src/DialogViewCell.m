@@ -1,5 +1,4 @@
 #import "DialogViewCell.h"
-#include "TGImageView.h"
 #include "AppDelegate.h"
 #include "Foundation/Foundation.h"
 #include "QuartzCore/QuartzCore.h"

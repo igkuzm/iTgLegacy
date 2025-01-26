@@ -105,7 +105,7 @@ const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 					0, 
 					self.name?20:0, 
 					size.width, 
-					size.height + 20)];
+					size.height+20)];
 
 		self.textView.editable = NO;
 		self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
@@ -199,7 +199,7 @@ const UIEdgeInsets imageInsetsSomeone = {11, 18, 16, 14};
 				0, 
 				size.height, 
 				textSize.width, 
-				textSize.height + 20)];
+				textSize.height +20)];
 	self.textView.editable = NO;
 	self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
 	self.textView.scrollEnabled = NO;

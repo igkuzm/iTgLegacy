@@ -6,12 +6,12 @@
 {
 }
 @property (strong) TGMessage *message;
-@property (strong) UITextView *text;
-@property (strong) UILabel *time;
 @property (strong) UIImageView *avatarView;
 @property (strong) UIImageView *photoView;
-@property float photoHeight;
-@property float textHeight;
+@property (strong) UITextView *textView;
+@property (strong) UILabel *fromLabael;
+@property (strong) UILabel *timeLabael;
+@property (strong) UILabel *deliveredLabael;
 
 -(void)setMessage:(TGMessage *)message;
 @end

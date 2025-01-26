@@ -2,7 +2,7 @@
 #import <UIKit/UIKit.h>
 #include <stdint.h>
 #include "../libtg/tg/dialogs.h"
-#import "TGImageView.h"
+#include "../libtg/tg/peer.h"
 
 @interface TGDialog : NSObject
 
@@ -31,7 +31,7 @@
 -(id)initWithDialog:(const tg_dialog_t *)dialog tg:(tg_t *)tg syncData:(NSOperationQueue *)syncData;
 -(void)setPeerPhoto;
 -(void)syncReadDate;
-
++(NSData *)dialogPhotoDownloadBlock:(TGDialog *)dialog;
 @end
 
 // vim:ft=objc

@@ -8,7 +8,6 @@
 #include "../libtg/tg/messages.h"
 #include "../libtg/tg/files.h"
 #import "UIImage+Utils/UIImage+Utils.h"
-#import "TGImageView.h"
 
 @implementation TGDialog
 
@@ -64,30 +63,10 @@
 				appDelegate.peerPhotoCache, self.peerId, self.photoId];
 
 		// downloadBlock
+		
 		self.photoDownloadBlock = ^NSData *{
-				AppDelegate *appDelegate = 
-					UIApplication.sharedApplication.delegate;
-				if (!appDelegate.isOnLineAndAuthorized)
-					return nil;
-				tg_peer_t peer = {
-						self.peerType,
-						self.peerId,
-						self.accessHash
-				};
-				char *photo = tg_get_peer_photo_file(
-							appDelegate.tg, 
-							&peer, 
-							false, 
-							self.photoId);
-				if (photo){
-					NSData *data = [NSData 
-						dataFromBase64String:
-							[NSString stringWithUTF8String:photo]];
-					return data;
-				}
-				return nil;
+			return [TGDialog dialogPhotoDownloadBlock:self];
 		};
-
 	}
 	return self;
 }
@@ -118,6 +97,31 @@
 			}];
 		}
 	}
+}
+
++(NSData *)dialogPhotoDownloadBlock:(TGDialog *)dialog
+{
+	tg_peer_t peer = {
+				dialog.peerType,
+				dialog.peerId,
+				dialog.accessHash
+		};
+	AppDelegate *appDelegate = 
+		UIApplication.sharedApplication.delegate;
+	if (!appDelegate.isOnLineAndAuthorized)
+		return nil;
+	char *photo = tg_get_peer_photo_file(
+				appDelegate.tg, 
+				&peer, 
+				false, 
+				dialog.photoId);
+	if (photo){
+		NSData *data = [NSData 
+			dataFromBase64String:
+				[NSString stringWithUTF8String:photo]];
+		return data;
+	}
+	return nil;
 }
 
 @end

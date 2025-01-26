@@ -342,11 +342,11 @@
 			}
 
 			// show allert
+			NSDictionary *aps = [userInfo valueForKey:@"aps"];
+			NSDictionary *alert = [aps valueForKey:@"alert"];
+			NSString *title = [alert valueForKey:@"title"];
+			NSString *body = [alert valueForKey:@"body"];
 			if (self.showNotifications){
-				NSDictionary *aps = [userInfo valueForKey:@"aps"];
-				NSDictionary *alert = [aps valueForKey:@"alert"];
-				NSString *title = [alert valueForKey:@"title"];
-				NSString *body = [alert valueForKey:@"body"];
 				UIAlertView *alertView = 
 					[[UIAlertView alloc] 
 						initWithTitle:title
@@ -355,6 +355,15 @@
 						otherButtonTitles:nil];
 				[alertView show];
 			}
+
+			NSNumber *from_id = [userInfo valueForKey:@"from_id"];
+			NSNumber *msg_id = [userInfo valueForKey:@"msg_id"];
+			if (from_id && msg_id)
+				tg_dialog_set_top_message(
+						self.tg, 
+						from_id.longLongValue, 
+						msg_id.intValue,
+						body?body.UTF8String:"");
   }
 }
 
