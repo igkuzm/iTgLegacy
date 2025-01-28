@@ -71,7 +71,7 @@
 
 	//self.moviePlayerController = 
 		//[[MPMoviePlayerViewController alloc]init];
-	self.videoPlayer = [[TGVideoPlayer alloc]initWithView:self.view];
+	//self.videoPlayer = [[TGVideoPlayer alloc]initWithView:self.view];
 	
 
 	self.locationManager = [[CLLocationManager alloc] init];
@@ -936,15 +936,15 @@ int get_document_cb(void *d, const tg_file_t *f){
 	self.progressCurrent += f->bytes_.size;
 
 	// video
-	NSUUID *uuid = [[NSUUID alloc]init];
-	NSString *tmp = [NSTemporaryDirectory() 
-		stringByAppendingPathComponent:uuid.UUIDString];
-	NSData *dd = [NSData dataWithBytes:f->bytes_.data 
-															length:f->bytes_.size];
-	[dd writeToFile:tmp atomically:YES];
-	dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.videoPlayer addUrl:[NSURL fileURLWithPath:tmp]];
-	});
+	//NSUUID *uuid = [[NSUUID alloc]init];
+	//NSString *tmp = [NSTemporaryDirectory() 
+		//stringByAppendingPathComponent:uuid.UUIDString];
+	//NSData *dd = [NSData dataWithBytes:f->bytes_.data 
+															//length:f->bytes_.size];
+	//[dd writeToFile:tmp atomically:YES];
+	//dispatch_sync(dispatch_get_main_queue(), ^{
+			//[self.videoPlayer addUrl:[NSURL fileURLWithPath:tmp]];
+	//});
 			
 	return 0;
 }
