@@ -96,6 +96,26 @@
 				<string>tg</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>org.telegram.TelegramHD.http</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>http://te.me</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>org.telegram.TelegramHD.https</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>https://te.me</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>PACKAGE_VERSION</string>
@@ -110,13 +130,13 @@
 		<string>MyriadPro-Regular.otf</string>
 		<string>MyriadPro-Bold.otf</string>
 	</array>
-	<!--<key>UIBackgroundModes</key>-->
-	<!--<array>-->
-		<!--<string>remote-notification</string>-->
-    <!--<string>audio</string>-->
-    <!--<string>location</string>-->
-    <!--<string>voip</string>-->
-	<!--</array>-->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>audio</string>
+		<string>location</string>
+		<string>voip</string>
+	</array>
 	<key>UIFileSharingEnabled</key>
 	<false/>
 	<key>UILaunchImages~ipad</key>

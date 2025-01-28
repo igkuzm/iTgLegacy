@@ -85,6 +85,10 @@
 		CGPointMake(
 				self.navigationController.navigationBar.bounds.size.width - 60, 
 				self.navigationController.navigationBar.bounds.size.height/2);
+	self.spinner.autoresizingMask = 
+		UIViewAutoresizingFlexibleLeftMargin|
+		UIViewAutoresizingFlexibleTopMargin |
+		UIViewAutoresizingFlexibleBottomMargin;
 	[self.navigationController.navigationBar addSubview:self.spinner]; 
 
 	// search bar

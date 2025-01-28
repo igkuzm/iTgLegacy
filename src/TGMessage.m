@@ -86,7 +86,7 @@
 		}
 
 		self.photoPath = 
-			[NSString stringWithFormat:@"%@/%lld", 
+			[NSString stringWithFormat:@"%@/%lld.x.png", 
 				appDelegate.smallPhotoCache, self.photoId]; 
 		if ([NSFileManager.defaultManager fileExistsAtPath:self.photoPath])
 		{

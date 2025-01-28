@@ -51,8 +51,8 @@ enum {
 //@property (strong) UIImageView *icon;
 @property (strong) UIButton *icon;
 @property (strong) NSTimer *timer;
-@property (strong) UITextField *textField;
-//@property (strong) UITextView *textField;
+//@property (strong) UITextField *textField;
+@property (strong) UITextView *textField;
 @property (strong, nonatomic) TGDialog *dialog;
 @property (strong, nonatomic) NSString *currentImage;
 @property (nonatomic, strong) NSMutableArray *bubbleDataArray;

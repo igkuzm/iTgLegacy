@@ -590,6 +590,32 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 	self.showNotifications = showNotifications;
 }
 
+- (BOOL)application:(UIApplication *)application 
+			handleOpenURL:(NSURL *)url 
+{
+	NSString *str = [NSString stringWithFormat:@"%@", url];
+	[self showMessage:str];
+	//if ([url.host isEqualToString:@"authorize"]){
+
+		//NSString *fragment = url.fragment;
+		//NSArray *array = [fragment componentsSeparatedByString:@"&"];
+		//for (NSString *item in array) {
+			//NSArray *pair = [item componentsSeparatedByString:@"="];
+			//NSString *key = [pair objectAtIndex:0];
+			//NSString *value = [pair objectAtIndex:1];
+			//[[NSUserDefaults standardUserDefaults]setValue:value forKey:key];
+		//}
+		//UIAlertView *alert = 
+					//[[UIAlertView alloc]initWithTitle:@"response" 
+					//message:fragment
+					//delegate:nil 
+					//cancelButtonTitle:@"Закрыть" 
+					//otherButtonTitles:nil];
+		//[alert show];
+	//}
+	return true;
+}
+
 
 @end
 

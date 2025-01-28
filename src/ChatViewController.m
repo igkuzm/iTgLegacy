@@ -1,4 +1,6 @@
 #import "ChatViewController.h"
+#include "TGVideoPlayer.h"
+#include "ChatBox.h"
 #include "CoreLocation/CoreLocation.h"
 #include "MapKit/MapKit.h"
 #include "AddressBook/AddressBook.h"
@@ -46,6 +48,9 @@
 {
 }
 @property float toolbarOrigY;
+@property int numLines;
+@property CGRect toolbarOrigFrame;
+@property TGVideoPlayer *videoPlayer;
 @end
 
 @implementation ChatViewController
@@ -66,6 +71,7 @@
 
 	//self.moviePlayerController = 
 		//[[MPMoviePlayerViewController alloc]init];
+	self.videoPlayer = [[TGVideoPlayer alloc]initWithView:self.view];
 	
 
 	self.locationManager = [[CLLocationManager alloc] init];
@@ -85,9 +91,12 @@
 			[UIImage imageNamed:@"wallpaper.jpg"]];
 
 	// bubble table view
+	//CGRect viewFrame = self.view.bounds;
+	//viewFrame.size.height -= 100;
 	self.bubbleTableView = 
 			[[UIBubbleTableView alloc]initWithFrame:
 			self.view.bounds
+			//viewFrame
 			style:UITableViewStylePlain];
 	self.bubbleTableView.autoresizingMask = 
 		UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -114,17 +123,21 @@
 	// ToolBar
 	self.navigationController.toolbar.tintColor = [UIColor lightGrayColor];
 	self.textFieldIsEditable = YES; // testing
-	self.textField = [[UITextField alloc]
-	//self.textField = [[UITextView alloc]
+	//self.textField = [[UITextField alloc]
+	self.textField = [[UITextView alloc]
 		initWithFrame:CGRectMake(
 				0,0,
 				self.navigationController.toolbar.frame.size.width - 110, 
-				29)];
-	self.textField.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-	[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
-	//[self.textField.layer setCornerRadius:14.0f];
+				34)];
+	self.textField.autoresizingMask = 
+		UIViewAutoresizingFlexibleWidth|
+		UIViewAutoresizingFlexibleHeight;
+	//[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
+	[self.textField.layer setCornerRadius:12.0f];
 	self.textField.delegate = self;
+	self.textField.font = [UIFont systemFontOfSize:14];
 	//self.textField.inputAccessoryView = self.navigationController.toolbar;
+	self.numLines = 1;
 	self.textFieldItem = [[UIBarButtonItem alloc] 
 		initWithCustomView:self.textField];
 	
@@ -141,6 +154,8 @@
 		initWithImage:[UIImage imageNamed:@"Send"]	
 		style:UIBarButtonItemStyleDone 
 		target:self action:@selector(onSend:)];
+	//self.send.customView.autoresizingMask = 
+		//UIViewAutoresizingFlexibleTopMargin;
 
 	//UISwitch *record = [[UISwitch alloc] initWithFrame:
 		//CGRectMake(0, 0, 30, 30)];
@@ -156,8 +171,7 @@
 		initWithImage:[UIImage imageNamed:@"ios-mic-32"] 
 						style:UIBarButtonItemStyleBordered
 					 target:self action:@selector(recordSwitch:)];
-	
-	//self.add = [[UIBarButtonItem alloc]
+		//self.add = [[UIBarButtonItem alloc]
 		//initWithImage:[UIImage imageNamed:@"UIButtonBarAction"] 
 						//style:UIBarButtonItemStylePlain
 						//target:self action:@selector(onAdd:)];
@@ -183,6 +197,13 @@
 
 	[self.navigationController setToolbarHidden:NO];
 	[self toolbarAsEntry];
+
+	//ChatBox *cb = [[ChatBox alloc]init];
+	//cb.frame = CGRectMake(
+			//0, self.view.bounds.size.height - 100, 
+			//self.view.bounds.size.width, 
+			//40);
+	//[self.view addSubview:cb];
 	
 	// keyboard
 	[[NSNotificationCenter defaultCenter] 
@@ -241,23 +262,6 @@
 		downloadBlock: ^NSData *{
 			return [TGDialog dialogPhotoDownloadBlock:dialog];
 		}];
-
-	//UIImage *image;
-	//NSString *photoPath = 
-			//[NSString stringWithFormat:@"%@/%lld.%lld", 
-				//self.appDelegate.peerPhotoCache, 
-				//self.dialog.peerId, self.dialog.photoId]; 
-		//if ([NSFileManager.defaultManager fileExistsAtPath:photoPath])
-			//image = [UIImage 
-				//imageWithData:[NSData dataWithContentsOfFile:photoPath]];
-		//else
-			//image = [UIImage imageNamed:@"missingAvatar.png"]; 
-	////self.icon.image = [UIImage imageWithImage:image 
-			////scaledToSize:CGSizeMake(30, 30)];
-	//[self.icon setImage:[UIImage imageWithImage:image 
-			//scaledToSize:CGSizeMake(30, 30)] 
-						 //forState:UIControlStateNormal];
-
 
 	// set updates handler
 	if (self.appDelegate.tg){
@@ -363,6 +367,7 @@
 
 	[self.textField setText:@""];
 	[self.textField resignFirstResponder];
+	[self textViewSetHeight:self.textField numLines:1];
 }
 
 - (void)onAdd:(id)sender{
@@ -404,6 +409,9 @@
 -(void)getPhotoForMessageCached:(NSBubbleData *)d
 											 download:(Boolean)download
 {
+	// get photo size delta
+	//float delta = d.message.	
+
 	d.message.photo = [UIImage 
 		imageWithPlaceholder:[UIImage imageNamed:@"filetype_icon_png@2x.png"] 
 		cachePath:d.message.photoPath 
@@ -416,17 +424,14 @@
 							d.message.photoId, 
 							d.message.photoAccessHash, 
 							d.message.photoFileReference.UTF8String, 
-							"s");
+							"x");
 				if (photo){
-					// add photo to BubbleData
-					//dispatch_sync(dispatch_get_main_queue(), ^{
-						d.message.photoData = [NSData dataFromBase64String:
-								[NSString stringWithUTF8String:photo]];
-						d.message.photo = [UIImage imageWithData:d.message.photoData];
-						free(photo);
-						//[self.bubbleTableView reloadData];
-						return d.message.photoData;
-					//});
+					d.message.photoData = [NSData dataFromBase64String:
+							[NSString stringWithUTF8String:photo]];
+					d.message.photo = [UIImage imageWithData:d.message.photoData];
+					free(photo);
+					//d.imageView.image = d.message.photo;
+					return d.message.photoData;
 				}
 			}
 			return NULL;
@@ -436,70 +441,6 @@
 				 d.imageView.image = image;
 			 }
 		}];
-
-		//imageWithPlaceholder:[UIImage imageNamed:@"filetype_icon_png@2x.png"]
-		//cachePath:d.message.photoPath
-		//view:d.imageView
-		//downloadBlock:^NSData *(void){
-			//if (d.message.photoId && !d.message.photoData){
-				//char *photo  = 
-					//tg_get_photo_file(
-							//self.appDelegate.tg, 
-							//d.message.photoId, 
-							//d.message.photoAccessHash, 
-							//d.message.photoFileReference.UTF8String, 
-							//"s");
-				//if (photo){
-					//// add photo to BubbleData
-					////dispatch_sync(dispatch_get_main_queue(), ^{
-						//d.message.photoData = [NSData dataFromBase64String:
-								//[NSString stringWithUTF8String:photo]];
-						//d.message.photo = [UIImage imageWithData:d.message.photoData];
-						//free(photo);
-						////[self.bubbleTableView reloadData];
-						//return d.message.photoData;
-					////});
-				//}
-			//}
-			//return NULL;
-		//}
-//onUpdate:^{
-
-				 //}
-	//];
-
-	//if (!d.message.photo)
-		//d.message.photo = [UIImage imageNamed:@"filetype_icon_png@2x.png"];
-	
-	//if (!download)
-		//return;
-	
-	//if (self.appDelegate.isOnLineAndAuthorized)
-		//{
-		//// try to get image from database
-		//[[[NSOperationQueue alloc]init]addOperationWithBlock:^{
-			//if (d.message.photoId && !d.message.photoData){
-				//char *photo  = 
-					//tg_get_photo_file(
-							//self.appDelegate.tg, 
-							//d.message.photoId, 
-							//d.message.photoAccessHash, 
-							//d.message.photoFileReference.UTF8String, 
-							//"s");
-				//if (photo){
-					//// add photo to BubbleData
-					//dispatch_sync(dispatch_get_main_queue(), ^{
-						//d.message.photoData = [NSData dataFromBase64String:
-								//[NSString stringWithUTF8String:photo]];
-						//d.message.photo = [UIImage imageWithData:d.message.photoData];
-						//[d.message.photoData writeToFile:d.message.photoPath atomically:YES];
-						//free(photo);
-						//[self.bubbleTableView reloadData];
-					//});
-				//}
-			//}
-		//}];
-	//}
 }
 
 -(void)getDocumentForMessageChached:(NSBubbleData *)d
@@ -522,7 +463,17 @@
 					d.message.isVideo = YES;
 					d.videoPlayButton.hidden = NO;
 				}
-				
+
+				else if ([d.message.mimeType isEqualToString:@"text/html"] ||
+					  [d.message.docFileName.pathExtension.lowercaseString 
+							isEqualToString:@"html"])
+				{
+					d.message.photo = 
+						[UIImage imageNamed:@"filetype_icon_txt@2x.png"];
+					d.message.isVideo = YES;
+					d.videoPlayButton.hidden = NO;
+				}
+
 				else if ([d.message.mimeType isEqualToString:@"video/mp4"] ||
 						     [d.message.docFileName.pathExtension.lowercaseString 
 									isEqualToString:@"mp4"])
@@ -983,6 +934,17 @@ int get_document_cb(void *d, const tg_file_t *f){
 	
 	// update progress view
 	self.progressCurrent += f->bytes_.size;
+
+	// video
+	NSUUID *uuid = [[NSUUID alloc]init];
+	NSString *tmp = [NSTemporaryDirectory() 
+		stringByAppendingPathComponent:uuid.UUIDString];
+	NSData *dd = [NSData dataWithBytes:f->bytes_.data 
+															length:f->bytes_.size];
+	[dd writeToFile:tmp atomically:YES];
+	dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.videoPlayer addUrl:[NSURL fileURLWithPath:tmp]];
+	});
 			
 	return 0;
 }
@@ -1204,60 +1166,61 @@ int get_document_progress(void *d, int size, int total){
 
 -(void)getPhoto:(NSBubbleData *)data{
 	TGMessage *m = data.message;
-	NSString *filepath = [self.appDelegate.imagesCache 
-				stringByAppendingPathComponent:
-					[NSString stringWithFormat:@"%lld.png", m.photoId]];
-		NSURL *url = [NSURL fileURLWithPath:filepath]; 
-		if ([NSFileManager.defaultManager fileExistsAtPath:filepath]){
-				QuickLookController *qlc = [[QuickLookController alloc]
-					initQLPreviewControllerWithData:@[url]];	
-				[self presentViewController:qlc animated:TRUE completion:nil];
-		} else {
-			if (!self.appDelegate.tg ||
-					!self.appDelegate.authorizedUser ||
-					!self.appDelegate.reach.isReachable)
-				return;
+	//NSString *filepath = [self.appDelegate.imagesCache 
+				//stringByAppendingPathComponent:
+					//[NSString stringWithFormat:@"%lld.png", m.photoId]];
+		//NSURL *url = [NSURL fileURLWithPath:filepath]; 
+		//if ([NSFileManager.defaultManager fileExistsAtPath:filepath]){
+				//QuickLookController *qlc = [[QuickLookController alloc]
+					//initQLPreviewControllerWithData:@[url]];	
+				//[self presentViewController:qlc animated:TRUE completion:nil];
+		//} else {
+			//if (!self.appDelegate.tg ||
+					//!self.appDelegate.authorizedUser ||
+					//!self.appDelegate.reach.isReachable)
+				//return;
 
-			// download photo
-			if (data.spinner)
-				[data.spinner startAnimating]; 
+			//// download photo
+			//if (data.spinner)
+				//[data.spinner startAnimating]; 
 
-			[self.syncData addOperationWithBlock:^{
-				char *photo = tg_get_photo_file(
-						self.appDelegate.tg, 
-						m.photoId, 
-						m.photoAccessHash, 
-						[m.photoFileReference UTF8String], 
-						"x"); 
+			//[self.syncData addOperationWithBlock:^{
+				//char *photo = tg_get_photo_file(
+						//self.appDelegate.tg, 
+						//m.photoId, 
+						//m.photoAccessHash, 
+						//[m.photoFileReference UTF8String], 
+						//"x"); 
 
-				// on done
-				if (data.spinner){
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						[data.spinner stopAnimating]; 
-					});
-				}
-				if (photo){
-					NSData *data = [NSData dataFromBase64String:
-						[NSString stringWithUTF8String:photo]];
-					if (data){
-						[data writeToFile:filepath atomically:YES];
-						dispatch_sync(dispatch_get_main_queue(), ^{
+				//// on done
+				//if (data.spinner){
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//[data.spinner stopAnimating]; 
+					//});
+				//}
+				//if (photo){
+					//NSData *data = [NSData dataFromBase64String:
+						//[NSString stringWithUTF8String:photo]];
+					//if (data){
+						//[data writeToFile:filepath atomically:YES];
+						//dispatch_sync(dispatch_get_main_queue(), ^{
+							NSURL *url = [NSURL fileURLWithPath:m.photoPath]; 
 							QuickLookController *qlc = [[QuickLookController alloc]
 								initQLPreviewControllerWithData:@[url]];	
 							[self presentViewController:qlc 
 																 animated:TRUE completion:nil];
-						});
-					}
-					free(photo);
+						//});
+					//}
+					//free(photo);
 
-				} else { // no photo
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						[self.appDelegate 
-							showMessage:@"can't download full-sized photo"];
-					});
-				}
-			}];
-		}
+				//} else { // no photo
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//[self.appDelegate 
+							//showMessage:@"can't download full-sized photo"];
+					//});
+				//}
+			//}];
+		//}
 }
 
 
@@ -1405,19 +1368,66 @@ didScroll:(UIScrollView *)scrollView
 }
 #pragma mark <UITextView Delegate>
 -(void)textViewDidBeginEditing:(UITextView *)textView {
-	//[self.navigationController.toolbar retain];
+	int numLines = 
+		textView.contentSize.height / textView.font.lineHeight;
+	[self textViewSetHeight:textView numLines:numLines];
+	
+	[self toolbarAsEntryTyping];
+	if (self.appDelegate.isOnLineAndAuthorized)
+	{
+		[self.syncData addOperationWithBlock:^{
+			tg_peer_t peer = {
+						self.dialog.peerType, 
+						self.dialog.peerId, 
+						self.dialog.accessHash
+			};
+			tg_messages_set_typing(
+					self.appDelegate.tg, 
+					peer, 
+					true);
+		}];
+	}
+
 }
 
 -(void)textViewDidEndEditing:(UITextView *)textView {
-	//[self.navigationController.toolbar retain];
-	//self.navigationController.toolbar.frame = CGRectMake(
-			//0, 
-			//self.view.bounds.size.height - 44, 
-			//self.view.bounds.size.width, 
-			//44);
-	//[self.navigationController.toolbar retain];
-	//[self.navigationController.view addSubview:self.navigationController.toolbar];
-	//[self.navigationController setToolbarHidden:NO];
+	[self toolbarAsEntry];
+	if (self.appDelegate.tg &&
+			self.appDelegate.authorizedUser && 
+			self.appDelegate.reach.isReachable)
+	{
+		[self.syncData addOperationWithBlock:^{
+			tg_peer_t peer = {
+						self.dialog.peerType, 
+						self.dialog.peerId, 
+						self.dialog.accessHash
+			};
+			tg_messages_set_typing(
+					self.appDelegate.tg, 
+					peer, 
+					false);
+		}];
+	}
+}
+
+-(void)textViewSetHeight:(UITextView *)textView numLines:(int)numLines{
+	CGRect frame = self.navigationController.toolbar.frame;
+	if (numLines < 8){
+		//CGFloat height = textView.contentSize.height;
+		frame.origin.y -= (numLines - self.numLines)*textView.font.lineHeight; 
+		frame.size.height += (numLines - self.numLines)*textView.font.lineHeight; 
+		self.navigationController.toolbar.frame = frame;
+		self.numLines = numLines;
+		textView.showsVerticalScrollIndicator = NO;
+	} else
+		textView.showsVerticalScrollIndicator = YES;
+}
+
+- (void)textViewDidChange:(UITextView *)textView {
+	// resize text view
+	int numLines = 
+		textView.contentSize.height / textView.font.lineHeight;
+	[self textViewSetHeight:textView numLines:numLines];
 }
 
 #pragma mark <UITextField Delegate>
@@ -1557,6 +1567,15 @@ didScroll:(UIScrollView *)scrollView
 	UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
 	NSLog(@"UIMAGE: %@", image);
 	if (image){
+		//NSMutableAttributedString *attributedString = 
+			//[[NSMutableAttributedString alloc] init];
+		//NSTextAttachment *textAttachment = [[NSTextAttachment alloc]init];
+		//textAttachment.image = image;
+		//NSAttributedString *attrStringWithImage = 
+			//[NSAttributedString attributedStringWithAttachment:textAttachment];
+		//[attributedString replaceCharactersInRange:NSMakeRange(2, 1) withAttributedString:attrStringWithImage];
+		//self.textField.attributedText = attributedString;
+
 		[self sendPhoto:image];
 		UIImageWriteToSavedPhotosAlbum(
 				image, self, 
@@ -1703,7 +1722,7 @@ didScroll:(UIScrollView *)scrollView
 		record.style = UIBarButtonItemStyleDone;
 		self.textFieldIsEditable = NO;
 		self.textField.text = @"";
-		self.textField.placeholder = @"Recording audio...";
+		//self.textField.placeholder = @"Recording audio...";
 		[self startRecording:nil];
 	}
 	else {
@@ -1711,7 +1730,7 @@ didScroll:(UIScrollView *)scrollView
 		[self stopRecording:nil];
 		self.textFieldIsEditable = YES;
 		self.textField.text = @"";
-		self.textField.placeholder = @"";
+		//self.textField.placeholder = @"";
 	}
 }
 

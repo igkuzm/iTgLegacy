@@ -15,6 +15,8 @@ iTgLegacy_SOURCES = \
 		Reachability.m \
 		TGDialog.m \
 		TGMessage.m \
+		TGVideoPlayer.m \
+		ChatBox.m \
 		BubbleView/NSBubbleData.m \
 		BubbleView/UIBubbleHeaderTableViewCell.m \
 		BubbleView/UIBubbleTableView.m \
