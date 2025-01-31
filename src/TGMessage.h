@@ -1,3 +1,4 @@
+#include "CoreGraphics/CoreGraphics.h"
 #include "Foundation/Foundation.h"
 #import <UIKit/UIKit.h>
 #include "../libtg/tg/peer.h"
@@ -20,6 +21,9 @@
 @property uint64_t photoAccessHash;
 @property (strong) NSString *photoFileReference;
 @property (strong) NSString *photoPath;
+@property (strong) NSMutableArray *photoSizes;
+@property CGSize photoCachedSize;
+@property (strong) UIImage *photoStripped;
 @property uint64_t docId;
 @property uint64_t docSize;
 @property uint64_t docAccessHash;

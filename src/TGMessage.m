@@ -1,7 +1,11 @@
 #import "TGMessage.h"
+#include "UIKit/UIKit.h"
+#include <string.h>
+#include "CoreGraphics/CoreGraphics.h"
 #import "AppDelegate.h"
 #import "AppDelegate.h"
 #include "Foundation/Foundation.h"
+#import "Base64/Base64.h"
 
 @implementation TGMessage
 - (id)initWithMessage:(const tg_message_t *)m dialog:(const TGDialog *)d{
@@ -85,6 +89,49 @@
 				self.mine = (m->from_id_ == 0);	
 		}
 
+		// photo
+		if (m->photo_id && m->photo_cached_size){
+			NSString *pcs = 
+				[NSString stringWithUTF8String:m->photo_cached_size];
+			//NSLog(@"PHOTO CACHED: %@", pcs); 
+			NSArray *psca = [pcs componentsSeparatedByString:@" "];
+			for (NSString *size in psca){
+				self.photoCachedSize = CGSizeFromString(size);
+				break;
+			}
+
+			//NSLog(@"PHOTO CACHED SIZE: %lfx%lf", 
+					//self.photoCachedSize.width, self.photoCachedSize.height);
+		}
+		if (m->photo_id && m->photo_sizes){
+			self.photoSizes = [NSMutableArray array];
+			NSString *ps = 
+				[NSString stringWithUTF8String:m->photo_sizes];
+			//NSLog(@"PHOTO: %@", ps); 
+			NSArray *psca = [ps componentsSeparatedByString:@" "];
+			for (NSString *size in psca){
+				NSArray *parts = [size componentsSeparatedByString:@"x"];
+				if (parts.count < 2)
+					continue;
+				CGSize s = CGSizeMake(
+						[[parts objectAtIndex:0] floatValue], 
+						[[parts objectAtIndex:1] floatValue]);
+				[self.photoSizes addObject:[NSValue valueWithCGSize:s]];
+				//NSLog(@"PHOTO SIZE IN MESSAGE: %lfx%lf", 
+						//s.width, s.height);
+			}
+			//NSLog(@"PHOTO SIZES ARRAY COUNT: %ld", self.photoSizes.count);
+		}
+		if (m->photo_id && m->photo_stripped){
+			NSData *thumbData = 
+				[NSData dataFromBase64String:[NSString 
+								stringWithUTF8String:m->photo_stripped]];
+				//[NSData dataWithBytes:b64.data length:b64.size];
+			if (thumbData.length > 0)
+				self.photoStripped = [UIImage imageWithData:thumbData];
+			//NSLog(@"PHOTO STRIPPED: %@", self.photoStripped);
+		}
+
 		self.photoPath = 
 			[NSString stringWithFormat:@"%@/%lld.x.png", 
 				appDelegate.smallPhotoCache, self.photoId]; 
@@ -94,15 +141,7 @@
 			self.photo = [UIImage imageWithData:self.photoData];
 		}
 
-		//self.docThumbPath = 
-			//[NSString stringWithFormat:@"%@/%lld", 
-				//appDelegate.thumbDocCache, self.docId]; 
-		//if ([NSFileManager.defaultManager fileExistsAtPath:self.docThumbPath])
-		//{
-			//self.photoData = [NSData dataWithContentsOfFile:self.docThumbPath];
-			//self.photo = [UIImage imageWithData:self.photoData];
-		//}
-
+		// video
 		if ([self.mimeType isEqualToString:@"video/mov"] ||
 		    [self.mimeType isEqualToString:@"video/mp4"] ||
 				[self.docFileName.pathExtension.lowercaseString 
@@ -114,6 +153,7 @@
 			self.isVideo = YES;
 		}
 
+		// voice
 		if ([self.mimeType isEqualToString:@"audio/ogg"] ||
 				[self.docFileName.pathExtension.lowercaseString 
 					isEqualToString:@"ogg"]

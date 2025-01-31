@@ -39,7 +39,7 @@
 
 #pragma mark <TableViewDelegate Meythods>
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-	return 3;
+	return 4;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
@@ -48,10 +48,13 @@
 			return @"Acounts";
 			break;						
 		case 1:
-			return @"Developing";
+			return @"Dialogs settings";
 			break;						
 		case 2:
-			return @"Dialogs settings";
+			return @"Donations";
+			break;						
+		case 3:
+			return @"Developing";
 			break;						
 
 	}
@@ -63,9 +66,11 @@
 	if (section == 0)
 		rows = 1;
 	if (section == 1)
-		rows = 3;
-	if (section == 2)
 		rows = 1;
+	if (section == 2)
+		rows = 2;
+	if (section == 3)
+		rows = 3;
 	
 	return rows;
 }
@@ -74,7 +79,7 @@
 	
 	UITableViewCell *cell; 
 	if ((indexPath.section == 1 && indexPath.row == 0) || 
-	    (indexPath.section == 2 && indexPath.row == 0)) 
+	    (indexPath.section == 3 && indexPath.row == 0)) 
 	{
 		cell = [self.tableView 
 			dequeueReusableCellWithIdentifier:@"cell"];
@@ -118,7 +123,57 @@
 
 				break;
 			}
+			
 		case 1: 
+			{
+				switch (indexPath.row) {
+					case 0:
+						{
+							cell.textLabel.text = @"Show notifications in dialogs";
+							cell.detailTextLabel.text = @"";
+							cell.selectionStyle = UITableViewCellSelectionStyleNone;
+							UISwitch *sw = [[UISwitch alloc] 
+								initWithFrame:CGRectZero];
+							cell.accessoryView = sw;
+							if ([NSUserDefaults.standardUserDefaults 
+								boolForKey:@"showNotifications"])
+								[sw setOn:YES animated:NO];
+							[sw addTarget:self 
+									action:@selector(showNotificationsSwitch:) 
+									forControlEvents:UIControlEventValueChanged];
+						}
+						break;
+					
+					default:
+						break;
+				}
+			}
+			break;
+
+		case 2: 
+			{
+				switch (indexPath.row) {
+					case 0:
+						{
+							cell.textLabel.text = @"Make a donation";
+							cell.detailTextLabel.text = @"https://www.donationalerts.com/r/igkuzm";
+						}
+						break;
+					case 1:
+						{
+							cell.textLabel.text = @"QR-code";
+						}
+						break;
+					
+
+					default:
+						break;
+				}
+			}
+			break;
+
+
+		case 3: 
 			{
 				switch (indexPath.row) {
 					case 0:
@@ -150,38 +205,13 @@
 						}
 						break;
 					
-
 					default:
 						break;
 				}
 			}
 			break;
 	
-		case 2: 
-			{
-				switch (indexPath.row) {
-					case 0:
-						{
-							cell.textLabel.text = @"Show notifications in dialogs";
-							cell.detailTextLabel.text = @"";
-							cell.selectionStyle = UITableViewCellSelectionStyleNone;
-							UISwitch *sw = [[UISwitch alloc] 
-								initWithFrame:CGRectZero];
-							cell.accessoryView = sw;
-							if ([NSUserDefaults.standardUserDefaults 
-								boolForKey:@"showNotifications"])
-								[sw setOn:YES animated:NO];
-							[sw addTarget:self 
-									action:@selector(showNotificationsSwitch:) 
-									forControlEvents:UIControlEventValueChanged];
-						}
-						break;
-					
-					default:
-						break;
-				}
-			}
-			break;
+
 
 		default:
 			break;
@@ -210,7 +240,41 @@
 
 				break;
 			}
-		case 1: 
+
+		case 2: 
+			{
+				switch (indexPath.row) 
+				{
+				 case 0:
+					 {
+						 // open donation URL
+						 UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+						 NSURL *url = [NSURL URLWithString:cell.detailTextLabel.text];
+						 [UIApplication.sharedApplication openURL:url];
+					 }
+					 break;
+					case 1:
+					 {
+						 // show QR-code
+						 NSString *qrcodePath = [[NSBundle mainBundle] 
+							 pathForResource:@"qrcode" ofType:@"jpg"];	 
+						 NSURL *url = [NSURL fileURLWithPath:qrcodePath];
+						QuickLookController *qlc = [[QuickLookController alloc]
+							initQLPreviewControllerWithData:@[url]];	
+						[self presentViewController:qlc 
+															 animated:TRUE completion:nil];
+					 }
+					 break;
+
+
+					default:
+						break;
+				}
+
+				break;
+			}
+
+		case 3: 
 			{
 				switch (indexPath.row) 
 				{

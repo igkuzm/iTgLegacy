@@ -258,7 +258,8 @@
 						self.appDelegate.tg, 
 						20, 
 						[date timeIntervalSince1970], 
-						&_hash, 
+						//&_hash, 
+						0, 
 						NULL, 
 						(__bridge void *)self, 
 						get_dialogs_cb);

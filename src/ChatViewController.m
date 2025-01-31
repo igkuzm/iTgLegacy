@@ -409,11 +409,15 @@
 -(void)getPhotoForMessageCached:(NSBubbleData *)d
 											 download:(Boolean)download
 {
-	// get photo size delta
-	//float delta = d.message.	
+	UIImage *placeholder = 
+		[UIImage imageNamed:@"filetype_icon_png@2x.png"];
+	if (d.message.photoStripped){
+		placeholder = [UIImage imageWithImage:d.message.photoStripped 
+															scaledToSize:placeholder.size];
+	}
 
 	d.message.photo = [UIImage 
-		imageWithPlaceholder:[UIImage imageNamed:@"filetype_icon_png@2x.png"] 
+		imageWithPlaceholder:placeholder 
 		cachePath:d.message.photoPath 
 		view:d.imageView 
 		downloadBlock:^NSData *(void){
@@ -438,7 +442,11 @@
 		} 
 		onUpdate:^(UIImage *image){
 			 if (image){
-				 d.imageView.image = image;
+				 [d initWithImage:image 
+					           date:d.date 
+					           type:d.type
+					           text:d.message.message];
+				 [self.bubbleTableView reloadData];
 			 }
 		}];
 }
