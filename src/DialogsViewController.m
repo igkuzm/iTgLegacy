@@ -159,6 +159,8 @@
 }
 
 -(void)refresh:(id)sender{
+	if (self.appDelegate.tg)
+		tg_new_session(self.appDelegate.tg);
 	[self cancelAll];
 	[self reloadData];
 }

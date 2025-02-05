@@ -135,7 +135,7 @@
 		<!--<string>remote-notification</string>-->
 		<!--<string>audio</string>-->
 		<!--<string>location</string>-->
-		<!--<string>voip</string>-->
+		<string>voip</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<false/>

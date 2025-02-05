@@ -121,21 +121,22 @@
 	[self.bubbleTableView addSubview:self.refreshControl];
 
 	// ToolBar
-	self.navigationController.toolbar.tintColor = [UIColor lightGrayColor];
+	//self.navigationController.toolbar.tintColor = [UIColor lightGrayColor];
 	self.textFieldIsEditable = YES; // testing
-	//self.textField = [[UITextField alloc]
-	self.textField = [[UITextView alloc]
+	self.textField = [[UITextField alloc]
+	//self.textField = [[UITextView alloc]
 		initWithFrame:CGRectMake(
 				0,0,
 				self.navigationController.toolbar.frame.size.width - 110, 
-				34)];
+				//34)];
+				30)];
 	self.textField.autoresizingMask = 
 		UIViewAutoresizingFlexibleWidth|
 		UIViewAutoresizingFlexibleHeight;
-	//[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
-	[self.textField.layer setCornerRadius:12.0f];
+	[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
+	//[self.textField.layer setCornerRadius:12.0f];
 	self.textField.delegate = self;
-	self.textField.font = [UIFont systemFontOfSize:14];
+	//self.textField.font = [UIFont systemFontOfSize:14];
 	//self.textField.inputAccessoryView = self.navigationController.toolbar;
 	self.numLines = 1;
 	self.textFieldItem = [[UIBarButtonItem alloc] 
@@ -225,6 +226,14 @@
 
 - (void)viewWillAppear:(BOOL)animated {
 	[super viewWillAppear:animated];
+
+	// set updates handler
+	if (self.appDelegate.tg){
+		self.appDelegate.tg->on_update_data = (__bridge void *)self;
+		self.appDelegate.tg->on_update = on_update;
+		tg_new_session(self.appDelegate.tg);
+	}
+
 	// add timer
 	self.timer = [NSTimer 
 		scheduledTimerWithTimeInterval:60 
@@ -262,13 +271,7 @@
 		downloadBlock: ^NSData *{
 			return [TGDialog dialogPhotoDownloadBlock:dialog];
 		}];
-
-	// set updates handler
-	if (self.appDelegate.tg){
-		self.appDelegate.tg->on_update_data = (__bridge void *)self;
-		self.appDelegate.tg->on_update = on_update;
 	}
-}
 
 - (void)viewWillDisappear:(BOOL)animated {
 	[self.textField endEditing:YES];
@@ -276,8 +279,10 @@
 	//[self cancelAll];
 	[self.icon removeFromSuperview];
 	// remove updates handler
-	if (self.appDelegate.tg)
+	if (self.appDelegate.tg){
 		self.appDelegate.tg->on_update = NULL;
+		tg_new_session(self.appDelegate.tg);
+	}
 	
 	[super viewWillDisappear:animated];
 }
@@ -353,10 +358,16 @@
 					self.dialog.peerId, 
 					self.dialog.accessHash
 			};
-			tg_message_send(
+			if (tg_message_send(
 					self.appDelegate.tg, 
-					peer, text.UTF8String);
-			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+					peer, text.UTF8String))
+			{
+				dispatch_sync(dispatch_get_main_queue(), ^{
+					[self.appDelegate showMessage:@"can't send message"];
+				});
+			} else {
+				[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+			}
 		}];
 	} else {
 		[self.appDelegate showMessage:@"no network!"];
@@ -364,7 +375,7 @@
 
 	[self.textField setText:@""];
 	[self.textField resignFirstResponder];
-	[self textViewSetHeight:self.textField numLines:1];
+	//[self textViewSetHeight:self.textField numLines:1];
 }
 
 - (void)onAdd:(id)sender{
@@ -979,7 +990,7 @@ int get_document_cb(void *d, const tg_file_t *f){
 	return 0;
 }
 
-int get_document_progress(void *d, int size, int total){
+void transfer_progress(void *d, int size, int total){
 	ChatViewController *self = (__bridge ChatViewController *)d;
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		int downloaded = self.progressCurrent + size;
@@ -989,7 +1000,6 @@ int get_document_progress(void *d, int size, int total){
 			[NSString stringWithFormat:@"%d /\n%d",
 				downloaded, self.progressTotal];
 	});
-	return 0;
 }
 
 -(void)openUrl:(NSURL *)url data:(NSBubbleData *)bubbleData{
@@ -1044,9 +1054,10 @@ int get_document_progress(void *d, int size, int total){
 			int totalSize = 36 + DataSize;
 			short audioFormat = 1;
 
-			NSString *tmpFile = 
-				[NSTemporaryDirectory() stringByAppendingPathComponent:@"tmp.wav"];
-			[NSFileManager.defaultManager removeItemAtPath:tmpFile error:nil];
+			NSUUID *uuid = [[NSUUID alloc]init];
+			NSString *tmpFile = [NSTemporaryDirectory() 
+				stringByAppendingPathComponent:
+				[NSString stringWithFormat: @"%@.wav", uuid.UUIDString]];
 
 			FILE *fout;
 			if((fout = fopen(tmpFile.UTF8String, "w")) == NULL)
@@ -1165,7 +1176,7 @@ int get_document_progress(void *d, int size, int total){
 					(__bridge void *)dict, 
 					get_document_cb,
 					(__bridge void *)self,
-					get_document_progress);
+					transfer_progress);
 			
 			// on done
 			[d writeToFile:filepath atomically:YES];
@@ -1752,7 +1763,7 @@ didScroll:(UIScrollView *)scrollView
 		record.style = UIBarButtonItemStyleDone;
 		self.textFieldIsEditable = NO;
 		self.textField.text = @"";
-		//self.textField.placeholder = @"Recording audio...";
+		self.textField.placeholder = @"Recording audio...";
 		[self startRecording:nil];
 	}
 	else {
@@ -1760,7 +1771,7 @@ didScroll:(UIScrollView *)scrollView
 		[self stopRecording:nil];
 		self.textFieldIsEditable = YES;
 		self.textField.text = @"";
-		//self.textField.placeholder = @"";
+		self.textField.placeholder = @"";
 	}
 }
 
@@ -1826,31 +1837,40 @@ didScroll:(UIScrollView *)scrollView
 	[self sendDocument:vm];	
 }
 
-int send_document_progress(void *d, int size, int total){
-	ChatViewController *self = (__bridge ChatViewController *)d;
-	dispatch_sync(dispatch_get_main_queue(), ^{
-		float fl = (float)size / total;
-		[self.progressView setProgress:fl];
-		self.progressLabel.text = 
-			[NSString stringWithFormat:@"%d /\n%d",
-				size, total];
-	});
-	return 0;
-}
-
 - (void)sendDocument:(tg_document_t *)document {
-	if (!self.appDelegate.isOnLineAndAuthorized)
-	{
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.appDelegate showMessage:@"no network"];
-		});
-		return;
-	}
-
-	[self toolbarAsProgress];
-		
-	// send
 	[self.download addOperationWithBlock:^{
+		if (!self.appDelegate.isOnLineAndAuthorized)
+		{
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[self.appDelegate showMessage:@"no network"];
+			});
+			return;
+		}
+
+		// get document size
+		FILE *fp = fopen(document->filepath, "r");
+		if (fp == NULL){
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[self.appDelegate showMessage:@"open file error"];
+			});
+			return;
+		}
+		fseek(fp, 0, SEEK_END);
+		int size = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self toolbarAsProgress];
+			[self.progressView setProgress:0.0];
+			[self.progressLabel 
+					setText:[NSString stringWithFormat:@"%d /\n%lld",
+					0, size]];
+		});
+
+		self.progressTotal = size;
+		self.progressCurrent = 0;
+		
+		// send
 		
 		tg_peer_t peer = {
 			self.dialog.peerType, 
@@ -1864,7 +1884,7 @@ int send_document_progress(void *d, int size, int total){
 				document,
 				NULL,
 				(__bridge void *)self,
-				send_document_progress);
+				transfer_progress);
 		
 		free(document);
 		
