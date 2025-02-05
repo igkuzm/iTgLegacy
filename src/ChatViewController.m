@@ -286,10 +286,8 @@
 	[self.spinner stopAnimating];
 	if (self.refreshControl)
 		[self.refreshControl endRefreshing];
-	if (self.appDelegate.tg)
-		tg_queue_cancell_all(self.appDelegate.tg);
-	[self.syncData cancelAllOperations];
-	[self.download cancelAllOperations];
+	//[self.syncData cancelAllOperations];
+	//[self.download cancelAllOperations];
 }
 
 -(void)toolbarForChannel{
@@ -355,10 +353,9 @@
 					self.dialog.peerId, 
 					self.dialog.accessHash
 			};
-			pthread_t p = tg_message_send(
+			tg_message_send(
 					self.appDelegate.tg, 
 					peer, text.UTF8String);
-			pthread_join(p, NULL);
 			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
 		}];
 	} else {
@@ -409,11 +406,32 @@
 -(void)getPhotoForMessageCached:(NSBubbleData *)d
 											 download:(Boolean)download
 {
+	// get photo size
+	CGSize size = {0,0};
+	if (d.message.photoSizes){
+		// find size with name "x"
+		for (NSDictionary *dict in d.message.photoSizes){
+			if ([[dict valueForKey:@"type"] isEqualToString:@"x"])
+			 size = [[dict valueForKey:@"size"]CGSizeValue];
+		}
+	}
+	
 	UIImage *placeholder = 
 		[UIImage imageNamed:@"filetype_icon_png@2x.png"];
 	if (d.message.photoStripped){
 		placeholder = [UIImage imageWithImage:d.message.photoStripped 
 															scaledToSize:placeholder.size];
+	}
+	
+	// resize placeholder
+	if (size.height > 0 && size.width > 0){
+		if (size.width > d.width)
+		{
+				size.height /= (size.width / d.width);
+				size.width = d.width;
+		}
+		placeholder = [UIImage imageWithImage:placeholder 
+														 scaledToSize:size];
 	}
 
 	d.message.photo = [UIImage 
@@ -601,65 +619,69 @@
 		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
 		return;
 	}
-
-	if (self.appDelegate.isOnLineAndAuthorized)
-	{
+	
+	if (!self.appDelegate.isOnLineAndAuthorized){
 		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self.spinner startAnimating];
+			[self.appDelegate showMessage:@"no network!"];
 		});
+		return;
+	}
 
-		tg_peer_t peer = {
-			self.dialog.peerType,
-			self.dialog.peerId,
-			self.dialog.accessHash
-		};
+	Boolean scrollAnimated = self.bubbleDataArray.count?YES:NO;
 
-		int limit = 
-			peer.type == TG_PEER_TYPE_CHANNEL?6:8;
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		[self.spinner startAnimating];
+	});
 
-		NSDictionary *dict = 
-			@{@"self":self, @"update": @1, @"scroll": [NSNumber numberWithBool:scrollToBottom]};
+	tg_peer_t peer = {
+		self.dialog.peerType,
+		self.dialog.peerId,
+		self.dialog.accessHash
+	};
 
-		pthread_t p = tg_messages_get_history_async(
+	int limit = 
+		peer.type == TG_PEER_TYPE_CHANNEL?10:10;
+
+	NSDictionary *dict = 
+		@{@"self":self, @"update": @1, @"scroll": [NSNumber numberWithBool:scrollToBottom]};
+
+	tg_messages_get_history(
+			self.appDelegate.tg, 
+			peer, 
+			offset, 
+			[date timeIntervalSince1970], 
+			0, 
+			limit, 
+			0, 
+			0, 
+			NULL, 
+			(__bridge void*)dict, 
+			messages_callback);
+
+	// on done
+	dispatch_sync(dispatch_get_main_queue(), ^{
+				[self.refreshControl endRefreshing];
+				[self.spinner stopAnimating];
+				[self.bubbleTableView reloadData];
+				if (scrollToBottom)
+					[self.bubbleTableView 
+						scrollBubbleViewToBottomAnimated:scrollAnimated];
+	});
+
+	// set read history
+	if (peer.type == TG_PEER_TYPE_CHANNEL){
+		tg_channel_set_read(
 				self.appDelegate.tg, 
 				peer, 
-				offset, 
-				[date timeIntervalSince1970], 
-				0, 
-				limit, 
-				0, 
-				0, 
-				NULL, 
-				(__bridge void*)dict, 
-				messages_callback,
-				NULL);
-
-		pthread_join(p, NULL);
-		
-		// on done
-		dispatch_sync(dispatch_get_main_queue(), ^{
-					[self.refreshControl endRefreshing];
-					[self.spinner stopAnimating];
-					[self.bubbleTableView reloadData];
-					if (scrollToBottom)
-						[self.bubbleTableView scrollBubbleViewToBottomAnimated:YES];
-		});
-
-		// set read history
-		if (peer.type == TG_PEER_TYPE_CHANNEL){
-			tg_channel_set_read(
-					self.appDelegate.tg, 
-					peer, 
-					0);
-		} else {
-			tg_messages_set_read(
-					self.appDelegate.tg, 
-					peer, 
-					0);
-		}
-
-		self.dialog.unread_count = 0;
+				0);
+	} else {
+		tg_messages_set_read(
+				self.appDelegate.tg, 
+				peer, 
+				0);
 	}
+
+	self.dialog.unread_count = 0;
 }
 
 - (void)reloadData {
@@ -681,19 +703,19 @@
 
 	[self.syncData addOperationWithBlock:^{
 		
-		NSDictionary *dict = @{@"self":self, @"update": @0, @"scroll": @0};
+		//NSDictionary *dict = @{@"self":self, @"update": @0, @"scroll": @0};
 		
-		tg_get_messages_from_database(
-			self.appDelegate.tg, 
-			peer, 
-			(__bridge void *)dict, 
-			messages_callback);
+		//tg_get_messages_from_database(
+			//self.appDelegate.tg, 
+			//peer, 
+			//(__bridge void *)dict, 
+			//messages_callback);
 
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			//[self.spinner stopAnimating];
-			[self.bubbleTableView reloadData];
-			[self.bubbleTableView scrollToBottomWithAnimation:YES];
-		});
+		//dispatch_sync(dispatch_get_main_queue(), ^{
+			////[self.spinner stopAnimating];
+			//[self.bubbleTableView reloadData];
+			//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+		//});
 
 		// update data
 		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
@@ -1883,7 +1905,7 @@ int send_document_progress(void *d, int size, int total){
 
 #pragma mark <AppActivity Delegate>
 -(void)willResignActive {
-	//[self cancelAll];
+	[self cancelAll];
 	if (self.timer)
 		[self.timer fire];
   //[[NSNotificationCenter defaultCenter] removeObserver:self];

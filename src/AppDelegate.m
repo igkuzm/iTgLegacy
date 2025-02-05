@@ -29,7 +29,7 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
 	// lock crush
-	UIApplication.sharedApplication.idleTimerDisabled = YES;
+	//UIApplication.sharedApplication.idleTimerDisabled = YES;
 
 	// create cache
 	NSString *cache = [NSSearchPathForDirectoriesInDomains(
@@ -533,9 +533,9 @@ static void on_log(void *d, const char *msg)
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
-	if (self.appActivityDelegate)
-		[self.appActivityDelegate willResignActive];
-	[self.syncData cancelAllOperations];
+	//if (self.appActivityDelegate)
+		//[self.appActivityDelegate willResignActive];
+	//[self.syncData cancelAllOperations];
 }
 
 static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg_colors_t *dark_colors)

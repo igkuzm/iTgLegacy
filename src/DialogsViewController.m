@@ -179,9 +179,13 @@
 	[self.spinner stopAnimating];
 	if (self.refreshControl)
 		[self.refreshControl endRefreshing];
-	if (self.appDelegate.tg)
-		tg_queue_cancell_all(self.appDelegate.tg);
 	[self.syncData cancelAllOperations];
+	for (TGDialog *dialog in self.loadedData){
+		[dialog.syncData cancelAllOperations];
+	}
+	// unlock mutex
+	if (self.appDelegate.tg)
+		pthread_mutex_unlock(&self.appDelegate.tg->send_query);
 }
 
 #pragma mark <Data functions>
@@ -357,7 +361,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 
 	[self.searchBar resignFirstResponder];
-	//[self cancelAll];
+	[self cancelAll];
 	
 	TGDialog *dialog = [self.data objectAtIndex:indexPath.item];
 	self.selected = dialog;
@@ -478,7 +482,7 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 -(void)willResignActive {
 	if (self.timer)
 		[self.timer fire];
-	//[self cancelAll];
+	[self cancelAll];
 }
 
 #pragma mark <>ABPeoplePickerNavigationController Delegate>

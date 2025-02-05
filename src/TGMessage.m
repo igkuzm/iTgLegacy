@@ -108,15 +108,22 @@
 			NSString *ps = 
 				[NSString stringWithUTF8String:m->photo_sizes];
 			//NSLog(@"PHOTO: %@", ps); 
-			NSArray *psca = [ps componentsSeparatedByString:@" "];
-			for (NSString *size in psca){
-				NSArray *parts = [size componentsSeparatedByString:@"x"];
+			NSArray *photoSizesWithTypes = 
+				[ps componentsSeparatedByString:@" "];
+			for (NSString *sizeWithType in photoSizesWithTypes){
+				NSArray *parts = [sizeWithType componentsSeparatedByString:@"="];
 				if (parts.count < 2)
 					continue;
+				NSString *type = [parts objectAtIndex:0];
+				NSString *size = [parts objectAtIndex:1];
+				NSArray *wh = [size componentsSeparatedByString:@"x"];
+				if (wh.count < 2)
+					continue;
 				CGSize s = CGSizeMake(
-						[[parts objectAtIndex:0] floatValue], 
-						[[parts objectAtIndex:1] floatValue]);
-				[self.photoSizes addObject:[NSValue valueWithCGSize:s]];
+						[[wh objectAtIndex:0] floatValue], 
+						[[wh objectAtIndex:1] floatValue]);
+				NSDictionary *dict = @{@"type":type, @"size":[NSValue valueWithCGSize:s]};
+				[self.photoSizes addObject:dict];
 				//NSLog(@"PHOTO SIZE IN MESSAGE: %lfx%lf", 
 						//s.width, s.height);
 			}
