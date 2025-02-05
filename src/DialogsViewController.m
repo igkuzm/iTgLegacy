@@ -182,12 +182,14 @@
 	if (self.refreshControl)
 		[self.refreshControl endRefreshing];
 	[self.syncData cancelAllOperations];
-	for (TGDialog *dialog in self.loadedData){
-		[dialog.syncData cancelAllOperations];
-	}
+	//for (TGDialog *dialog in self.loadedData){
+		//[dialog.syncData cancelAllOperations];
+	//}
 	// unlock mutex
-	if (self.appDelegate.tg)
+	if (self.appDelegate.tg){
 		pthread_mutex_unlock(&self.appDelegate.tg->send_query);
+		tg_new_session(self.appDelegate.tg);
+	}
 }
 
 #pragma mark <Data functions>

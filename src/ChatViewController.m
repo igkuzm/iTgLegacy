@@ -231,7 +231,7 @@
 	if (self.appDelegate.tg){
 		self.appDelegate.tg->on_update_data = (__bridge void *)self;
 		self.appDelegate.tg->on_update = on_update;
-		tg_new_session(self.appDelegate.tg);
+		//tg_new_session(self.appDelegate.tg);
 	}
 
 	// add timer
@@ -358,16 +358,18 @@
 					self.dialog.peerId, 
 					self.dialog.accessHash
 			};
-			if (tg_message_send(
+			//if (
+					tg_message_send(
 					self.appDelegate.tg, 
-					peer, text.UTF8String))
-			{
-				dispatch_sync(dispatch_get_main_queue(), ^{
-					[self.appDelegate showMessage:@"can't send message"];
-				});
-			} else {
+					peer, text.UTF8String);
+				//)
+			//{
+				//dispatch_sync(dispatch_get_main_queue(), ^{
+					//[self.appDelegate showMessage:@"can't send message"];
+				//});
+			//} else {
 				[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
-			}
+			//}
 		}];
 	} else {
 		[self.appDelegate showMessage:@"no network!"];
@@ -990,7 +992,7 @@ int get_document_cb(void *d, const tg_file_t *f){
 	return 0;
 }
 
-void transfer_progress(void *d, int size, int total){
+void download_progress(void *d, int size, int total){
 	ChatViewController *self = (__bridge ChatViewController *)d;
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		int downloaded = self.progressCurrent + size;
@@ -1001,6 +1003,20 @@ void transfer_progress(void *d, int size, int total){
 				downloaded, self.progressTotal];
 	});
 }
+
+void upload_progress(void *d, int size, int total){
+	ChatViewController *self = (__bridge ChatViewController *)d;
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		self.progressCurrent += size;
+		float fl = (float)self.progressCurrent / total;
+		[self.progressView setProgress:fl];
+		self.progressLabel.text = 
+			[NSString stringWithFormat:@"%d /\n%d",
+				self.progressCurrent, total];
+	});
+}
+
+
 
 -(void)openUrl:(NSURL *)url data:(NSBubbleData *)bubbleData{
 	
@@ -1176,7 +1192,7 @@ void transfer_progress(void *d, int size, int total){
 					(__bridge void *)dict, 
 					get_document_cb,
 					(__bridge void *)self,
-					transfer_progress);
+					download_progress);
 			
 			// on done
 			[d writeToFile:filepath atomically:YES];
@@ -1847,27 +1863,15 @@ didScroll:(UIScrollView *)scrollView
 			return;
 		}
 
-		// get document size
-		FILE *fp = fopen(document->filepath, "r");
-		if (fp == NULL){
-			dispatch_sync(dispatch_get_main_queue(), ^{
-				[self.appDelegate showMessage:@"open file error"];
-			});
-			return;
-		}
-		fseek(fp, 0, SEEK_END);
-		int size = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			[self toolbarAsProgress];
 			[self.progressView setProgress:0.0];
 			[self.progressLabel 
 					setText:[NSString stringWithFormat:@"%d /\n%lld",
-					0, size]];
+					0, 0]];
 		});
 
-		self.progressTotal = size;
+		self.progressTotal = 0;
 		self.progressCurrent = 0;
 		
 		// send
@@ -1884,21 +1888,21 @@ didScroll:(UIScrollView *)scrollView
 				document,
 				NULL,
 				(__bridge void *)self,
-				transfer_progress);
+				upload_progress);
 		
 		free(document);
 		
-		if (err){
-			dispatch_sync(dispatch_get_main_queue(), ^{
-				if (self.dialog.broadcast)
-					[self toolbarForChannel];
-				else
-					[self toolbarAsEntry];
+		//if (err){
+			//dispatch_sync(dispatch_get_main_queue(), ^{
+				//if (self.dialog.broadcast)
+					//[self toolbarForChannel];
+				//else
+					//[self toolbarAsEntry];
 				
-				[self.appDelegate showMessage:@"error to send"];
-			});
-			return;
-		}
+				//[self.appDelegate showMessage:@"error to send"];
+			//});
+			//return;
+		//}
 		
 		// on done
 		dispatch_sync(dispatch_get_main_queue(), ^{
