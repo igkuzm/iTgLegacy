@@ -366,6 +366,12 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 
 	[self.searchBar resignFirstResponder];
 	[self cancelAll];
+
+	if (!self.appDelegate.isOnLineAndAuthorized){
+		[self.appDelegate showMessage:@"no network"];
+		[tableView deselectRowAtIndexPath:indexPath animated:true];
+		return;
+	}
 	
 	TGDialog *dialog = [self.data objectAtIndex:indexPath.item];
 	self.selected = dialog;

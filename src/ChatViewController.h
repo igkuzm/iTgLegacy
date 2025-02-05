@@ -14,6 +14,7 @@
 enum {
 	ActionSheetAttach,
 	ActionSheetMessage,
+	ActionSheetProgress,
 };
 
 @interface ChatViewController : UIViewController
@@ -40,6 +41,8 @@ enum {
 @property SystemSoundID recordStart;
 
 @property Boolean textFieldIsEditable;
+
+@property Boolean stopTransfer;
 
 @property int actionSheetType;
 

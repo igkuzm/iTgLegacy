@@ -402,12 +402,32 @@
 }
 
 - (void)onCancel:(id)sender{
-	[self.download cancelAllOperations];
+	// create actionSheet
+	self.actionSheetType = ActionSheetProgress;
+	UIActionSheet *as = [[UIActionSheet alloc]
+		initWithTitle:@"Send" 
+		delegate:self 
+		cancelButtonTitle:@"cancel" 
+		destructiveButtonTitle:@"stop transfer" 
+		otherButtonTitles:
+			@"hide transfer",
+		nil];
+	[as showFromToolbar:self.navigationController.toolbar];
+}
+
+- (void)cancelTransfer:(Boolean)drop{
+	if (drop){
+		[self.download cancelAllOperations];
+		self.stopTransfer = YES;
+	}
+
 	if (self.dialog.broadcast)
 		[self toolbarForChannel];
 	else
 		[self toolbarAsEntry];
 }
+
+
 
 -(void)refresh:(id)sender{
 	[self.syncData addOperationWithBlock:^{
@@ -652,8 +672,8 @@
 		self.dialog.accessHash
 	};
 
-	int limit = 
-		peer.type == TG_PEER_TYPE_CHANNEL?10:10;
+	int limit = self.dialog.broadcast?5:10;
+		//peer.type == TG_PEER_TYPE_CHANNEL?10:10;
 
 	NSDictionary *dict = 
 		@{@"self":self, @"update": @1, @"scroll": [NSNumber numberWithBool:scrollToBottom]};
@@ -695,6 +715,7 @@
 	}
 
 	self.dialog.unread_count = 0;
+	[self.appDelegate removeUnredId:self.dialog.peerId];
 }
 
 - (void)reloadData {
@@ -992,7 +1013,7 @@ int get_document_cb(void *d, const tg_file_t *f){
 	return 0;
 }
 
-void download_progress(void *d, int size, int total){
+int download_progress(void *d, int size, int total){
 	ChatViewController *self = (__bridge ChatViewController *)d;
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		int downloaded = self.progressCurrent + size;
@@ -1002,9 +1023,10 @@ void download_progress(void *d, int size, int total){
 			[NSString stringWithFormat:@"%d /\n%d",
 				downloaded, self.progressTotal];
 	});
+	return self.stopTransfer;
 }
 
-void upload_progress(void *d, int size, int total){
+int upload_progress(void *d, int size, int total){
 	ChatViewController *self = (__bridge ChatViewController *)d;
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		self.progressCurrent += size;
@@ -1014,6 +1036,7 @@ void upload_progress(void *d, int size, int total){
 			[NSString stringWithFormat:@"%d /\n%d",
 				self.progressCurrent, total];
 	});
+	return self.stopTransfer;
 }
 
 
@@ -1183,6 +1206,7 @@ void upload_progress(void *d, int size, int total){
 
 			self.progressTotal = m.docSize;
 			self.progressCurrent = 0;
+			self.stopTransfer = NO;
 			tg_get_document(
 					self.appDelegate.tg, 
 					m.docId,
@@ -1540,7 +1564,26 @@ didScroll:(UIScrollView *)scrollView
 #pragma mark <ACTION SHEET DELEGATE>
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
 	// get selected item
-	if (self.actionSheetType == ActionSheetAttach)
+	if (self.actionSheetType == ActionSheetProgress)
+	{
+		switch (buttonIndex){
+			case 0:
+				{
+					[self cancelTransfer:YES];
+				}
+				break;
+			case 1:
+				{
+					[self cancelTransfer:NO];
+				}
+				break;
+			
+
+			default:
+				break;
+		}
+	}
+	else if (self.actionSheetType == ActionSheetAttach)
 	{
 		switch (buttonIndex){
 			case 0:
@@ -1613,31 +1656,32 @@ didScroll:(UIScrollView *)scrollView
 }	
 
 #pragma mark <UIImagePickerController Delegate>
-- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
+- (void)imagePickerController:(UIImagePickerController *)picker 
+				didFinishPickingMediaWithInfo:(NSDictionary *)info 
+{
 	
  [self dismissViewControllerAnimated:YES completion:nil];
 	 
  // UIImagePickerControllerMediaType
- if([info[UIImagePickerControllerMediaType] isEqualToString:(__bridge NSString *)(kUTTypeImage)]){
-    
+ if([info[UIImagePickerControllerMediaType] 
+		 isEqualToString:(__bridge NSString *)(kUTTypeImage)])
+ {
 	//image
-	UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
-	NSLog(@"UIMAGE: %@", image);
-	if (image){
-		//NSMutableAttributedString *attributedString = 
-			//[[NSMutableAttributedString alloc] init];
-		//NSTextAttachment *textAttachment = [[NSTextAttachment alloc]init];
-		//textAttachment.image = image;
-		//NSAttributedString *attrStringWithImage = 
-			//[NSAttributedString attributedStringWithAttachment:textAttachment];
-		//[attributedString replaceCharactersInRange:NSMakeRange(2, 1) withAttributedString:attrStringWithImage];
-		//self.textField.attributedText = attributedString;
+	UIImage *image = 
+		[info objectForKey:UIImagePickerControllerOriginalImage];
+	
+	//NSLog(@"UIMAGE: %@", image);
 
-		[self sendPhoto:image];
-		UIImageWriteToSavedPhotosAlbum(
-				image, self, 
-				@selector(image:didFinishSavingWithError:contextInfo:), 
-				(__bridge void *)image);
+	// send image
+	if (image){
+		// save image in album
+		if (picker.sourceType == UIImagePickerControllerSourceTypeCamera)
+			UIImageWriteToSavedPhotosAlbum(
+					image, self, 
+					@selector(image:didFinishSavingWithError:contextInfo:), 
+					(__bridge void *)image);
+		else
+			[self sendPhoto:image];
 	}
 
  } else {
@@ -1657,12 +1701,14 @@ didScroll:(UIScrollView *)scrollView
  }
 }
 
--(void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo{
+-(void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error 
+ contextInfo:(void *)contextInfo
+{
 	if (error){
 		[self.appDelegate showMessage:error.localizedDescription];
 		return;
 	}
-	//[self sendPhoto:image];
+	[self sendPhoto:image];
 } 
 
 #pragma mark <Keyboard Functions>
@@ -1866,13 +1912,12 @@ didScroll:(UIScrollView *)scrollView
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			[self toolbarAsProgress];
 			[self.progressView setProgress:0.0];
-			[self.progressLabel 
-					setText:[NSString stringWithFormat:@"%d /\n%lld",
-					0, 0]];
+			[self.progressLabel setText:@"0 /\n0"];
 		});
 
 		self.progressTotal = 0;
 		self.progressCurrent = 0;
+		self.stopTransfer = NO;
 		
 		// send
 		

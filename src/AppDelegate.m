@@ -30,6 +30,13 @@
 
 	// lock crush
 	//UIApplication.sharedApplication.idleTimerDisabled = YES;
+	
+	self.unread = [NSMutableArray array];
+	NSArray *unread = 
+		[NSUserDefaults.standardUserDefaults objectForKey:@"unread"];
+	if (unread){
+		[self.unread addObjectsFromArray:unread];
+	}
 
 	// create cache
 	NSString *cache = [NSSearchPathForDirectoriesInDomains(
@@ -297,7 +304,16 @@
 
 -(void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo{
 	//[self showMessage:[NSString stringWithFormat:@"%@", userInfo]];
-	UIApplication.sharedApplication.applicationIconBadgeNumber++;
+	NSNumber *from_id = [userInfo valueForKey:@"from_id"];
+	NSNumber *msg_id = [userInfo valueForKey:@"msg_id"];
+	if (from_id && msg_id){
+		[self.unread addObject:from_id];
+		UIApplication.sharedApplication.applicationIconBadgeNumber = 
+			self.unread.count;
+
+		[NSUserDefaults.standardUserDefaults setObject:self.unread 
+																						 forKey:@"unread"];
+	}
 
 	if(application.applicationState == UIApplicationStateInactive) {
 
@@ -330,10 +346,10 @@
 			UINavigationController *nc =
 				[((RootViewController *)self.rootViewController).viewControllers objectAtIndex:1]; 
 			if (nc){
-				int badge = nc.tabBarItem.badgeValue.intValue;
-				badge++;
+				//int badge = nc.tabBarItem.badgeValue.intValue;
+				//badge++;
 				nc.tabBarItem.badgeValue = 
-					[NSString stringWithFormat:@"%d", badge];
+					[NSString stringWithFormat:@"%ld", self.unread.count];
 			}
 
 			// reload data
@@ -358,12 +374,13 @@
 
 			NSNumber *from_id = [userInfo valueForKey:@"from_id"];
 			NSNumber *msg_id = [userInfo valueForKey:@"msg_id"];
-			if (from_id && msg_id)
+			if (from_id && msg_id){
 				tg_dialog_set_top_message(
 						self.tg, 
 						from_id.longLongValue, 
 						msg_id.intValue,
 						body?body.UTF8String:"");
+			}
   }
 }
 
@@ -616,6 +633,24 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 	return true;
 }
 
+-(void)removeUnredId:(uint64_t)fromId{
+	for (NSNumber *n in self.unread){
+		if (n.longLongValue == fromId){
+			[self.unread removeObject:n];
+			[NSUserDefaults.standardUserDefaults setObject:self.unread 
+																						 forKey:@"unread"];
+			UIApplication.sharedApplication.applicationIconBadgeNumber = 
+				self.unread.count;
+			UINavigationController *nc =
+				[((RootViewController *)self.rootViewController).viewControllers objectAtIndex:1]; 
+			if (nc){
+				nc.tabBarItem.badgeValue = 
+					[NSString stringWithFormat:@"%ld", self.unread.count];
+			}
+			return;
+		}
+	}
+}
 
 @end
 

@@ -59,6 +59,8 @@ enum {
 @property (strong) id dialogsViewController;
 
 @property (strong) NSMutableArray *colorset;
+@property (strong) NSMutableArray *unread;
+-(void)removeUnredId:(uint64_t)fromId;
 
 @property Boolean showNotifications;
 
