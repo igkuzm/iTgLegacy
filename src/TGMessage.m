@@ -10,6 +10,7 @@
 @implementation TGMessage
 - (id)initWithMessage:(const tg_message_t *)m dialog:(const TGDialog *)d{
 	if (self = [super init]) {
+		self.isBroadcast = d.broadcast;
 		self.silent = m->silent_;
 		self.pinned = m->pinned_;
 		self.id = m->id_;
@@ -103,7 +104,7 @@
 			//NSLog(@"PHOTO CACHED SIZE: %lfx%lf", 
 					//self.photoCachedSize.width, self.photoCachedSize.height);
 		}
-		if (m->photo_id && m->photo_sizes){
+		if (m->photo_sizes){
 			self.photoSizes = [NSMutableArray array];
 			NSString *ps = 
 				[NSString stringWithUTF8String:m->photo_sizes];
@@ -158,6 +159,44 @@
 				)
 		{
 			self.isVideo = YES;
+		}
+		if (m->video_sizes){
+			self.videoSizes = [NSMutableArray array];
+			NSString *ps = 
+				[NSString stringWithUTF8String:m->video_sizes];
+			NSArray *videoSizesWithTypes = 
+				[ps componentsSeparatedByString:@" "];
+			for (NSString *sizeWithType in videoSizesWithTypes){
+				NSArray *parts = [sizeWithType componentsSeparatedByString:@"="];
+				if (parts.count < 4)
+					continue;
+				NSString *type = [parts objectAtIndex:0];
+				NSString *size = [parts objectAtIndex:1];
+				NSString *len  = [parts objectAtIndex:2];
+				NSString *sec  = [parts objectAtIndex:3];
+				NSArray *wh = [size componentsSeparatedByString:@"x"];
+				if (wh.count < 2)
+					continue;
+				CGSize s = CGSizeMake(
+						[[wh objectAtIndex:0] floatValue], 
+						[[wh objectAtIndex:1] floatValue]);
+				NSDictionary *dict = @{
+					@"type":type, 
+					@"size":[NSValue valueWithCGSize:s],
+					@"len" :[NSNumber numberWithInt:len.intValue],
+					@"sec" :[NSNumber numberWithDouble:sec.doubleValue]
+				};
+				[self.videoSizes addObject:dict];
+			}
+		}
+		if (m->photo_id && m->photo_stripped){
+			NSData *thumbData = 
+				[NSData dataFromBase64String:[NSString 
+								stringWithUTF8String:m->photo_stripped]];
+				//[NSData dataWithBytes:b64.data length:b64.size];
+			if (thumbData.length > 0)
+				self.photoStripped = [UIImage imageWithData:thumbData];
+			//NSLog(@"PHOTO STRIPPED: %@", self.photoStripped);
 		}
 
 		// voice

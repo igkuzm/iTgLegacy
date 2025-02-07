@@ -15,6 +15,7 @@
 @property Boolean isVideo;
 @property Boolean isSticker;
 @property Boolean isService;
+@property Boolean isBroadcast;
 @property uint32_t id;
 @property uint32_t mediaType;
 @property uint64_t photoId;
@@ -22,6 +23,7 @@
 @property (strong) NSString *photoFileReference;
 @property (strong) NSString *photoPath;
 @property (strong) NSMutableArray *photoSizes;
+@property (strong) NSMutableArray *videoSizes;
 @property CGSize photoCachedSize;
 @property (strong) UIImage *photoStripped;
 @property uint64_t docId;

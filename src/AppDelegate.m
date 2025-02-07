@@ -7,6 +7,7 @@
  */
 
 #import "AppDelegate.h"
+#include "AVFoundation/AVFoundation.h"
 #include <stdlib.h>
 #include "TGDialog.h"
 #include "DialogsViewController.h"
@@ -23,6 +24,7 @@
 #include "../libtg/api_id.h"
 #include "../libtg/tg/user.h"
 #include "../libtg/tg/peer.h"
+#include "AVFoundation/AVAudioSession.h"
 
 @implementation AppDelegate
 
@@ -37,6 +39,12 @@
 	if (unread){
 		[self.unread addObjectsFromArray:unread];
 	}
+
+	// colorset
+	self.colorset = [NSUserDefaults.standardUserDefaults 
+			objectForKey:@"colorset"];
+	if (!self.colorset)
+		self.colorset = [NSArray array];
 
 	// create cache
 	NSString *cache = [NSSearchPathForDirectoriesInDomains(
@@ -315,8 +323,8 @@
 																						 forKey:@"unread"];
 	}
 
-	if(application.applicationState == UIApplicationStateInactive) {
-
+	if(application.applicationState == UIApplicationStateInactive) 
+	{
      NSLog(@"Inactive - the user has tapped in the notification when app was closed or in background");
      //do some tasks
     //[self manageRemoteNotification:userInfo];
@@ -353,9 +361,11 @@
 			}
 
 			// reload data
-			if (self.dialogsViewController){
-				[(DialogsViewController *)self.dialogsViewController getDialogsFrom:[NSDate date]];
-			}
+			if (self.reachabilityDelegate)
+				[self.reachabilityDelegate isOnLine];
+			//if (self.dialogsViewController){
+				//[(DialogsViewController *)self.dialogsViewController getDialogsFrom:[NSDate date]];
+			//}
 
 			// show allert
 			NSDictionary *aps = [userInfo valueForKey:@"aps"];
@@ -474,7 +484,7 @@ static void on_log(void *d, const char *msg)
 		}];
 	}
 	// get colors
-	//[self getPeerColorset];
+	[self getPeerColorset];
 	
 	/* TODO: updates.getState - to have unread messages count <15-01-25, yourname> */
 }
@@ -557,27 +567,44 @@ static void on_log(void *d, const char *msg)
 
 static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg_colors_t *dark_colors)
 {
-	AppDelegate *self = (__bridge AppDelegate *)d;
+	NSMutableArray *array = (__bridge NSMutableArray *)d;
 	NSDictionary *c = @{
 		@"color_id":[NSNumber numberWithInt:color_id],
-		@"0":[NSNumber numberWithInt:colors->rgb0],
-		@"1":[NSNumber numberWithInt:colors->rgb1],
-		@"2":[NSNumber numberWithInt:colors->rgb2],
-		@"3":[NSNumber numberWithInt:dark_colors->rgb0],
-		@"4":[NSNumber numberWithInt:dark_colors->rgb1],
-		@"5":[NSNumber numberWithInt:dark_colors->rgb2],
+		@"rgb0":[NSNumber numberWithInt:colors->rgb0],
+		@"rgb1":[NSNumber numberWithInt:colors->rgb1],
+		@"rgb2":[NSNumber numberWithInt:colors->rgb2],
+		@"darkRgb0":[NSNumber numberWithInt:dark_colors->rgb0],
+		@"darkRgb1":[NSNumber numberWithInt:dark_colors->rgb1],
+		@"darkRgb2":[NSNumber numberWithInt:dark_colors->rgb2],
 	};
 
-	[self.colorset addObject:c];
+	[array addObject:c];
+	return 0;
 }
 
 - (void) getPeerColorset{
-	self.colorset = [NSMutableArray array];
+	NSMutableArray *array = [NSMutableArray array];
 	[self.syncData addOperationWithBlock:^{
-		tg_get_peer_profile_colors(
+		NSInteger hash = 
+			[NSUserDefaults.standardUserDefaults integerForKey:@"colorsetHash"];
+		
+		hash = tg_get_peer_colors(
 				self.tg, 
-				0, 
-				(__bridge void *)self, getPeerColorsetCb);
+				hash, 
+				(__bridge void *)array, getPeerColorsetCb);
+
+		//dispatch_sync(dispatch_get_main_queue(), ^{
+			//NSString *str = 
+				//[NSString stringWithFormat:@"%@", array];
+			//[self showMessage:str];
+		//});
+
+		[NSUserDefaults.standardUserDefaults 
+			setInteger:hash forKey:@"colorsetHash"];
+
+		[NSUserDefaults.standardUserDefaults 
+			setObject:array forKey:@"colorset"];
+		self.colorset = array;
 	}];
 }
 
@@ -652,6 +679,59 @@ static int getPeerColorsetCb(void *d, uint32_t color_id, tg_colors_t *colors, tg
 	}
 }
 
+- (void)setupPlayAndRecordAudioSession
+{
+	AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+	//if (audioSession.category != AVAudioSessionCategoryPlayback) {
+	if (audioSession.category != AVAudioSessionCategoryPlayAndRecord) {
+		UIDevice *device = [UIDevice currentDevice];
+		if ([device respondsToSelector:@selector(isMultitaskingSupported)]) {
+			if (device.multitaskingSupported) {										                
+				
+				NSError *setCategoryError = nil;
+				//[audioSession setCategory:AVAudioSessionCategoryPlayback
+				[audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
+											withOptions: 
+					AVAudioSessionCategoryOptionAllowBluetooth|
+					AVAudioSessionCategoryOptionDefaultToSpeaker|
+					AVAudioSessionCategoryOptionDuckOthers 
+											error:&setCategoryError];
+				if (setCategoryError)
+					NSLog(@"%@", setCategoryError.description);
+				
+				NSError *activationError = nil;
+				[audioSession setActive:YES error:&activationError];
+				if (activationError)
+					NSLog(@"%@", activationError.description);
+			}
+		}									    
+	}				
+}
+- (void)setupSoloAmbientAudioSession
+{
+	AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+	//if (audioSession.category != AVAudioSessionCategoryPlayback) {
+	if (audioSession.category != AVAudioSessionCategorySoloAmbient) {
+		UIDevice *device = [UIDevice currentDevice];
+		if ([device respondsToSelector:@selector(isMultitaskingSupported)]) {
+			if (device.multitaskingSupported) {										                
+				
+				NSError *setCategoryError = nil;
+				//[audioSession setCategory:AVAudioSessionCategoryPlayback
+				[audioSession setCategory:AVAudioSessionCategorySoloAmbient
+											withOptions:0 
+											error:&setCategoryError];
+				if (setCategoryError)
+					NSLog(@"%@", setCategoryError.description);
+				
+				NSError *activationError = nil;
+				[audioSession setActive:YES error:&activationError];
+				if (activationError)
+					NSLog(@"%@", activationError.description);
+			}
+		}									    
+	}				
+}
 @end
 
 // vim:ft=objc

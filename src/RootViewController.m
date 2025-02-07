@@ -35,6 +35,7 @@
 		[[UINavigationController alloc]initWithRootViewController:dvc];
 	UITabBarItem *dvctbi = [[UITabBarItem alloc]
 		initWithTabBarSystemItem:UITabBarSystemItemRecents tag:1];
+	dvctbi.title = @"Dialogs";
 	[dvcnc setTabBarItem:dvctbi];
 
 	// config view

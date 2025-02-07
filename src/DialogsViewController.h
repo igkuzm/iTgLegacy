@@ -27,6 +27,7 @@
 @property NSInteger currentIndex;
 @property Boolean updatePhotos;
 @property Boolean showNavigationBar;
+@property Boolean isHidden;
 
 -(void)getDialogsFrom:(NSDate *)date;
 @end

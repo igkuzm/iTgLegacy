@@ -22,8 +22,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "Foundation/Foundation.h"
 #import "UIImage+Utils.h"
 #include "UIKit/UIKit.h"
+#include "CoreGraphics/CoreGraphics.h"
+#import <QuartzCore/QuartzCore.h>
+
+@implementation UIColor (Utils)
++ (UIColor *)colorFromHex:(NSInteger)hex {
+	// &  binary AND operator to zero out other color values
+	// >>  bitwise right shift operator
+	// Divide by 0xFF because UIColor takes CGFloats between 0.0 and 1.0
+
+ 	CGFloat red   = (CGFloat)((hex & 0xFF0000) >> 16) / 0xFF;
+  CGFloat green = (CGFloat)((hex & 0x00FF00) >> 8) / 0xFF;
+  CGFloat blue  = (CGFloat)(hex & 0x0000FF) / 0xFF;
+  CGFloat alpha = (CGFloat)(1.0);
+
+	return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+}
+
+@end
 
 @implementation UIImage (Utils)
 
@@ -54,7 +73,8 @@
 	__block UIActivityIndicatorView *spinner = 
 		[[UIActivityIndicatorView alloc]
 			initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-	[view addSubview:spinner];
+	if (view)
+		[view addSubview:spinner];
 	spinner.center = CGPointMake(
 		placeholder.size.width/2, 
 		placeholder.size.height/2);
@@ -69,7 +89,8 @@
 		NSData *data = [NSData dataWithContentsOfFile:cachePath];
 		image = [UIImage imageWithData:data]; 
 		[spinner stopAnimating];
-		[spinner removeFromSuperview];
+		if (view)
+			[spinner removeFromSuperview];
 	} else {
 		[operationQueue addOperationWithBlock:^{
 			NSData * data = downloadBlock();
@@ -84,7 +105,8 @@
 			}
 			dispatch_sync(dispatch_get_main_queue(), ^{
 				[spinner stopAnimating];
-				[spinner removeFromSuperview];
+				if (view)
+					[spinner removeFromSuperview];
 			});
 		}];
 	}
@@ -101,7 +123,8 @@
 	__block UIActivityIndicatorView *spinner = 
 		[[UIActivityIndicatorView alloc]
 			initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-	[view addSubview:spinner];
+	if (view)
+		[view addSubview:spinner];
 	spinner.center = CGPointMake(
 		size.width/2, 
 		size.height/2);
@@ -117,7 +140,8 @@
 		image = [UIImage imageWithImage:[UIImage imageWithData:data] 
 													scaledToSize:size]; 
 		[spinner stopAnimating];
-		[spinner removeFromSuperview];
+		if (view)
+			[spinner removeFromSuperview];
 	} else {
 		[operationQueue addOperationWithBlock:^{
 			NSData * data = downloadBlock();
@@ -134,7 +158,8 @@
 			}
 			dispatch_sync(dispatch_get_main_queue(), ^{
 				[spinner stopAnimating];
-				[spinner removeFromSuperview];
+				if (view)
+					[spinner removeFromSuperview];
 			});
 		}];
 	}
@@ -192,5 +217,25 @@
 	 }] 
 	 forState:state];
 }
+@end
+
+@implementation UITableView (Animated)
+
+	- (void)reloadDataAnimated:(BOOL)animated
+	{
+			[self reloadData];
+
+			if (animated)
+			{
+					CATransition *animation = [CATransition animation];
+					[animation setType:kCATransitionFade];
+					[animation setSubtype:kCATransitionFromBottom];
+					[animation setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
+					[animation setFillMode:kCAFillModeBoth];
+					[animation setDuration:.3];
+					[[self layer] addAnimation:animation forKey:@"UITableViewReloadDataAnimationKey"];
+			}
+	}
+
 @end
 // vim:ft=objc

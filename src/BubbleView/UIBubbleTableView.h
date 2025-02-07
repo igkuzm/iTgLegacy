@@ -34,6 +34,11 @@ typedef enum _NSBubbleTypingType
 @property (nonatomic, assign) id<UIBubbleTableViewDelegate> bubbleDelegate;
 @property (strong, nonatomic) UIImageView *backgroundImageView;
 
+- (void)prepareData;
 - (void) scrollBubbleViewToBottomAnimated:(BOOL)animated;
 - (BOOL) scrollToBottomWithAnimation:(BOOL)animatedBool;
+
+- (void)scrollBubbleViewToData:(NSBubbleData *)data 
+											 animated:(BOOL)animated;
+
 @end

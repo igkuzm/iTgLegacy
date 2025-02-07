@@ -36,12 +36,13 @@
 	[self.title setFrame: 
 		CGRectMake(
 				60, 
-				0, 
+				4, 
 				frame.size.width - 120, 
 				16)];
 	self.title.font = [UIFont boldSystemFontOfSize:13];
 	self.title.backgroundColor = [UIColor clearColor];
 
+	// message
 	[self.message setFrame: 
 		CGRectMake(
 				60, 
@@ -57,11 +58,11 @@
 	[self.time setFrame:
 			CGRectMake(
 				frame.size.width - 60, 
-				0, 
-				50, 
+				4, 
+				80, 
 				14)];
 	self.time.numberOfLines = 1;
-	self.time.font = [UIFont systemFontOfSize:8];
+	self.time.font = [UIFont systemFontOfSize:10];
 	self.time.textColor = [UIColor blueColor];
 	self.time.backgroundColor = [UIColor clearColor];
 
@@ -69,7 +70,7 @@
 	[self.checkView setFrame:
 			CGRectMake(
 				frame.size.width - 60, 
-				16, 
+				20, 
 				18, 
 				10)];
 	self.checkView.backgroundColor = [UIColor clearColor];
@@ -78,7 +79,7 @@
 	[self.unreadView setFrame:
 			CGRectMake(
 				frame.size.width - 60, 
-				16, 
+				20, 
 				30, 
 				18)];
 	self.unreadView.layer.cornerRadius = 9.0;
@@ -123,7 +124,13 @@
 					 placeholder:[UIImage imageNamed:@"missingAvatar.png"] 
 						 cachePath:dialog.photoPath 
 				 downloadBlock:dialog.photoDownloadBlock];
-	
+	self.imageView.layer.cornerRadius = 9.0;
+  self.imageView.layer.masksToBounds = YES;
+  self.imageView.layer.borderColor = [UIColor 
+					colorWithWhite:0.0 alpha:0.2].CGColor;
+  self.imageView.layer.borderWidth = 1.0;
+        
+
 	// dialog last message data
 	NSDateComponents *now  = [self dateCompFromDate:[NSDate date]];
 	NSDateComponents *then = [self dateCompFromDate:dialog.date];

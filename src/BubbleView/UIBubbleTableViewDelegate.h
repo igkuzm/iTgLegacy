@@ -26,9 +26,6 @@ didScroll:(UIScrollView *)scrollView;
 didEndDecelerationgToTop:(Boolean)top;
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
-didEndDecelerationgTo:(NSBubbleData *)data;
-
-- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 didEndDecelerationgToBottom:(Boolean)bottom;
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
@@ -36,4 +33,6 @@ accessoryButtonTappedForData:(NSBubbleData *)data;
 
 - (void)performSwipeToLeftAction:(NSBubbleData *)data;
 - (void)performSwipeToRightAction:(NSBubbleData *)data;
+
+
 @end

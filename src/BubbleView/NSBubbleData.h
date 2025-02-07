@@ -8,17 +8,24 @@
 //  To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/
 //
 
+@protocol NSBubbleDataDelegate
+-(void)bubbleDataDidTapImage:(id)bubbleData;
+-(void)bubbleDataDidTapText:(id)bubbleData;
+@end
+
 #include "Foundation/Foundation.h"
 #include "UIKit/UIKit.h"
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import "../TGMessage.h"
+#import "MediaPlayer/MediaPlayer.h"
 
 typedef enum _NSBubbleType
 {
     BubbleTypeMine = 0,
     BubbleTypeSomeoneElse = 1
 } NSBubbleType;
+
 
 @interface NSBubbleData : NSObject
 
@@ -30,7 +37,7 @@ typedef enum _NSBubbleType
 @property (nonatomic, strong) UIColor *nameColor;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *sizeLabel;
-@property (nonatomic, strong) UITextView *textView;
+@property (nonatomic, strong) UILabel *text;
 @property (nonatomic, strong) UIImageView *imageView;
 @property (nonatomic, strong) UIImageView *videoPlayButton;
 @property (strong) UIActivityIndicatorView *spinner;
@@ -40,13 +47,18 @@ typedef enum _NSBubbleType
 @property Boolean isImage;
 @property (strong) TGMessage *message;
 @property float width;
+@property (strong) MPMoviePlayerController *mpc;
+@property (weak) id <NSBubbleDataDelegate> delegate;
+
+@property UIEdgeInsets textInsetsMine;
+@property UIEdgeInsets textInsetsSomeone;
 
 
-- (id)initWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type;
-+ (id)dataWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type;
+
 - (id)initWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type text:(NSString *)text;
-+ (id)dataWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type text:(NSString *)text;
-- (id)initWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type insets:(UIEdgeInsets)insets;
-+ (id)dataWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type insets:(UIEdgeInsets)insets;
+
+- (id)initWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type insets:(UIEdgeInsets)insets; 
 
 @end
+
+// vim:ft=objc

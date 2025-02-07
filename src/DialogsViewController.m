@@ -23,27 +23,6 @@
 #import <AddressBookUI/AddressBookUI.h>
 #import <QuartzCore/QuartzCore.h>
 
-@implementation UITableView (Animated)
-
-	- (void)reloadDataAnimated:(BOOL)animated
-	{
-			[self reloadData];
-
-			if (animated)
-			{
-					CATransition *animation = [CATransition animation];
-					[animation setType:kCATransitionFade];
-					[animation setSubtype:kCATransitionFromBottom];
-					[animation setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
-					[animation setFillMode:kCAFillModeBoth];
-					[animation setDuration:.3];
-					[[self layer] addAnimation:animation forKey:@"UITableViewReloadDataAnimationKey"];
-			}
-	}
-
-@end
-
-
 @interface  DialogsViewController()
 {
 }
@@ -109,7 +88,15 @@
 		forControlEvents:UIControlEventValueChanged];
 
 	// edit button
-	self.navigationItem.leftBarButtonItem = self.editButtonItem;
+	//self.navigationItem.leftBarButtonItem = self.editButtonItem;
+	
+	// hidden button
+	UIBarButtonItem *hidden = [[UIBarButtonItem alloc]
+		initWithTitle:@"Archive" 
+		style:UIBarButtonItemStyleBordered 
+	  target:self 
+		action:@selector(onHidden:)]; 
+	self.navigationItem.leftBarButtonItem = hidden;
 
 	// compose button
 	UIBarButtonItem *compose = [[UIBarButtonItem alloc]
@@ -119,17 +106,22 @@
 
 	// hide searchbar
   [self.tableView setContentOffset:CGPointMake(0, 44)];
-	
-
-	// timer
-	self.timer = [NSTimer scheduledTimerWithTimeInterval:60 
-			target:self selector:@selector(timer:) 
-				userInfo:nil repeats:YES];
 }
 
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
 		[self.navigationController setToolbarHidden: YES];
+
+
+		// timer
+		NSInteger sec = [NSUserDefaults.standardUserDefaults 
+			integerForKey:@"chatUpdateInterval"];
+		if (sec < 5 || sec > 120)
+			sec = 120;
+		self.timer = [NSTimer scheduledTimerWithTimeInterval:sec 
+				target:self selector:@selector(timer:) 
+					userInfo:nil repeats:YES];
+
 		
 		// load data
 		[self reloadData];
@@ -158,9 +150,17 @@
 	[self setEditing:editing];
 }
 
+-(void)onHidden:(id)sender{
+	UIBarButtonItem *hidden = sender;
+	self.isHidden = !self.isHidden;
+	if (self.isHidden)
+		hidden.style = UIBarButtonItemStyleDone;
+	else 
+		hidden.style = UIBarButtonItemStyleBordered;
+	[self filterData];
+}
+
 -(void)refresh:(id)sender{
-	if (self.appDelegate.tg)
-		tg_new_session(self.appDelegate.tg);
 	[self cancelAll];
 	[self reloadData];
 }
@@ -195,9 +195,30 @@
 #pragma mark <Data functions>
 -(void)filterData{
 	[self.filterQueue cancelAllOperations];
-	
+
 	[self.filterQueue addOperationWithBlock:^{
-		NSArray *array = [self.loadedData sortedArrayUsingComparator:
+		NSPredicate *predicate = [NSPredicate predicateWithBlock:
+				^BOOL(id evaluatedObject, NSDictionary *bindings)
+		{
+			TGDialog *dialog = evaluatedObject;
+			if (self.isHidden){
+				if (dialog.hidden)
+					return YES;
+				else
+					return NO;
+
+			} else {
+				if (dialog.hidden)
+					return NO;
+				else
+					return YES;
+			}
+		}];
+
+		NSArray *src = 
+			[self.loadedData filteredArrayUsingPredicate:predicate];
+
+		NSArray *array = [src sortedArrayUsingComparator:
 			^NSComparisonResult(id obj1, id obj2)
 		{
 			TGDialog *d1 = (TGDialog *)obj1;
@@ -285,14 +306,11 @@
 #pragma mark <LibTG functions> 
 static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 {
+	DialogsViewController *self = (__bridge DialogsViewController *)d;
+	
 	if (!dialog)
 		return 0;
 
-	// drop hidden dialogs
-	if (dialog->folder_id == 1)
-		return 0;
-		
-	DialogsViewController *self = (__bridge DialogsViewController *)d;
 	//[self.appDelegate showMessage:@"ADD DIALOG!"];
 	TGDialog *current = NULL;
 	for (TGDialog *item in self.loadedData){

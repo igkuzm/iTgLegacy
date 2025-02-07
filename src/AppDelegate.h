@@ -58,7 +58,7 @@ enum {
 @property (strong) id rootViewController;
 @property (strong) id dialogsViewController;
 
-@property (strong) NSMutableArray *colorset;
+@property (strong) NSArray *colorset;
 @property (strong) NSMutableArray *unread;
 -(void)removeUnredId:(uint64_t)fromId;
 
@@ -73,6 +73,9 @@ enum {
 
 -(void)setDebug:(Boolean)debug;
 -(void)toggleShowNotifications:(Boolean)showNotifications;
+
+- (void)setupPlayAndRecordAudioSession;
+- (void)setupSoloAmbientAudioSession;
 @end
 
 // vim:ft=objc

@@ -24,68 +24,29 @@
 @synthesize insets = _insets;
 @synthesize avatar = _avatar;
 
-#pragma mark - Lifecycle
-
-#if !__has_feature(objc_arc)
-- (void)dealloc
+- (id)initWithImage:(UIImage *)image 
+							 date:(NSDate *)date 
+							 type:(NSBubbleType)type 
+							 text:(NSString *)text
 {
-    [_date release];
-	_date = nil;
-    [_view release];
-    _view = nil;
-    
-    self.avatar = nil;
+	self.textInsetsMine = UIEdgeInsetsMake(
+			1, 10, 11, 17);
+	self.textInsetsSomeone = UIEdgeInsetsMake(
+			1, 15, 11, 10);
 
-    [super dealloc];
-}
-#endif
-
-#pragma mark - Text bubble
-
-const UIEdgeInsets textInsetsMine = {1, 10, 11, 17};
-const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
-
-+ (id)dataWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type
-{
-//#if !__has_feature(objc_arc)
-	//return [[[NSBubbleData alloc] initWithText:text date:date type:type] autorelease];
-//#else
-	return [[NSBubbleData alloc] initWithText:text date:date type:type];
-//#endif    
-}
-
-- (id)initWithText:(NSString *)text date:(NSDate *)date type:(NSBubbleType)type
-{
 	if (!self.width)
 		self.width = 220;
 	
 	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
-
-	// add spaces for small text
-	NSMutableString *str = [NSMutableString string];
-	[str appendString:(text?text:@"")];
-	int i;
-	for (i=text.length; i<20; ++i){
-		[str appendString:@" "];
-	} 
-	text = str;
-
-	CGSize size = [text 
-		sizeWithFont:font
-    constrainedToSize:CGSizeMake(self.width, 9999) 
-		lineBreakMode:NSLineBreakByWordWrapping];
- 
-	int addHeight = 0;
-	if (self.name)
-		addHeight = 20;
-
-	UIView *view = [[UIView alloc] initWithFrame:CGRectMake(
-					0, 
-					0, 
-					size.width, 
-					size.height + 20 + addHeight)];
-
+    
+	// username Label
+	CGSize nameSize = {0,0};
 	if (self.name){
+		nameSize = [self.name 
+			sizeWithFont:font 
+			constrainedToSize:CGSizeMake(self.width, 9999) 
+			lineBreakMode:NSLineBreakByWordWrapping];
+
 		self.nameLabel = [[UILabel alloc] initWithFrame:CGRectMake(
 				8, 8, self.width, 20)];
 		self.nameLabel.backgroundColor = [UIColor clearColor];
@@ -96,187 +57,165 @@ const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 			self.nameLabel.textColor = [UIColor lightGrayColor];
 		}
 		self.nameLabel.font = 
-			[UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
-		[view addSubview:self.nameLabel];
+			[UIFont systemFontOfSize:[UIFont systemFontSize]];
 	}
 
-    self.textView = [[UITextView alloc] 
-			initWithFrame:CGRectMake(
-					0, 
-					self.name?20:0, 
-					size.width, 
-					size.height+20)];
-
-		self.textView.editable = NO;
-		self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
-		self.textView.scrollEnabled = NO;
-    self.textView.text = text;
-		self.textView.font =  
-			[UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
-    self.textView.backgroundColor = [UIColor clearColor];
-		[view addSubview:self.textView];
-
-//#if !__has_feature(objc_arc)
-    //[label autorelease];
-//#endif
-    
-    UIEdgeInsets insets = (type == BubbleTypeMine ? textInsetsMine : textInsetsSomeone);
-    return [self initWithView:view date:date type:type insets:insets];
-}
-
-#pragma mark - Image bubble
-
-const UIEdgeInsets imageInsetsMine = {11, 13, 16, 22};
-const UIEdgeInsets imageInsetsSomeone = {11, 18, 16, 14};
-
-+ (id)dataWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type text:(NSString *)text
-{
-//#if !__has_feature(objc_arc)
-    //return [[[NSBubbleData alloc] initWithImage:image date:date type:type] autorelease];
-//#else
-	return [[NSBubbleData alloc] initWithImage:image date:date type:type text:text];
-//#endif    
-}
-
-- (id)initWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type text:(NSString *)text
-{
-	if (!self.width)
-		self.width = 220;
-    
-	CGSize size = image.size;
-	if (size.width > self.width)
-	{
-			size.height /= (size.width / self.width);
-			size.width = self.width;
+	// imageView
+	CGSize imageSize = {0,0};
+	if (image){
+		imageSize	= image.size;
+		if (imageSize.width > self.width)
+		{
+				imageSize.height /= (imageSize.width / self.width);
+				imageSize.width = self.width;
+		}
 	}
-	
+
 	self.imageView = [[UIImageView alloc] 
 		initWithFrame:CGRectMake(
-				0, 0,
-			 	size.width, size.height)];
+      	0, self.name?28:8,
+			 	imageSize.width, imageSize.height)];
 	self.imageView.image = image;
 	self.imageView.layer.cornerRadius = 5.0;
 	self.imageView.layer.masksToBounds = YES;
 	self.isImage = YES;
 
+	UITapGestureRecognizer *tapOnImage = [[UITapGestureRecognizer alloc] 
+		initWithTarget:self action:@selector(onImageTap:)];
+	tapOnImage.numberOfTapsRequired = 1;
+	[self.imageView addGestureRecognizer:tapOnImage];
+	self.imageView.userInteractionEnabled = YES;
+
 	self.videoPlayButton = [[UIImageView alloc]
 		initWithFrame:CGRectMake(
-				size.width/2 - 20,
-			 	size.height/2 - 20, 
+				imageSize.width/2 - 20,
+			 	imageSize.height/2 - 20, 
 				40, 40)];
 	self.videoPlayButton.image = [UIImage imageNamed:@"Video-play-button"];
 	self.videoPlayButton.hidden = YES;
 	[self.imageView addSubview:self.videoPlayButton];
 	
-	self.spinner = 
-				[[UIActivityIndicatorView alloc] 
-				initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+	self.spinner = [[UIActivityIndicatorView alloc] 
+	initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
 	self.spinner.center = 
 		CGPointMake(
 				self.imageView.bounds.size.width/2, 
 				self.imageView.bounds.size.height/2);
 	[self.imageView addSubview:self.spinner];
 
-	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
 
-	// add spaces for small text
-	NSMutableString *str = [NSMutableString string];
-	[str appendString:(text?text:@"")];
-	int i;
-	for (i=text.length; i<20; ++i){
-		[str appendString:@" "];
-	} 
-	text = str;
-
+	// text view
+	//if (text.length < 2 && !image){
+		//font = [UIFont systemFontOfSize:125];
+	//}
 
 	CGSize textSize = [text 
 		sizeWithFont:font 
 		constrainedToSize:CGSizeMake(self.width, 9999) 
 		lineBreakMode:NSLineBreakByWordWrapping];
 
-	self.textView = [[UITextView alloc] 
+	self.text = [[UILabel alloc] 
 		initWithFrame:CGRectMake(
 				0, 
-				size.height, 
+				self.name?imageSize.height + 28:imageSize.height +8, 
 				textSize.width, 
-				textSize.height +20)];
-	self.textView.editable = NO;
-	self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
-	self.textView.scrollEnabled = NO;
-	self.textView.text = text;
-	self.textView.font =  
-		[UIFont systemFontOfSize:[UIFont systemFontSize]-0.5];
-	self.textView.backgroundColor = [UIColor clearColor];
+				textSize.height)];
+	//self.textView.editable = NO;
+	//self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
+	//self.textView.scrollEnabled = NO;
+	self.text.text = text;
+	self.text.font = font; 
+	self.text.backgroundColor = [UIColor clearColor];
+	self.text.numberOfLines = 0;
+	self.text.lineBreakMode = NSLineBreakByWordWrapping;
+	
+	UITapGestureRecognizer *tapOnText = [[UITapGestureRecognizer alloc] 
+		initWithTarget:self action:@selector(onTextTap:)];
+	tapOnText.numberOfTapsRequired = 1;
+	[self.text addGestureRecognizer:tapOnText];
+	self.text.userInteractionEnabled = YES;
 
-	CGFloat height = size.height;
+	// view
+	CGFloat viewH = imageSize.height + 8;
 	if (text)
-		height += textSize.height;
+		viewH += textSize.height + 8;
+	if (self.name)
+		viewH += 28;
+
+	CGFloat viewW = self.width;
+	if (textSize.width < self.width)
+		viewW = textSize.width;
+	if (imageSize.width > viewW)
+		viewW = imageSize.width;
+	if (nameSize.width > viewW)
+		viewW = nameSize.width;
 
 	UIView *view = [[UIView alloc]
 		initWithFrame:CGRectMake(
 				0, 
 				0, 
-				self.width, 
-				height)];
-	[view addSubview:self.imageView];
+				viewW, 
+				viewH)];
+	
+	// add subviews
+	if (self.name)
+		[view addSubview:self.nameLabel];
+	if (image)	
+		[view addSubview:self.imageView];
+	
 	if (text)
-		[view addSubview:self.textView];
+		[view addSubview:self.text];
 
+	// titleLabel
 	self.titleLabel = [[UILabel alloc] 
 		initWithFrame:CGRectMake(
-				size.width + 2,
+				imageSize.width + 10,
 			 	0, 
-				self.width - size.width - 4, 20)];
+				self.width - imageSize.width - 4, 20)];
   self.titleLabel.backgroundColor = [UIColor clearColor];
 	self.titleLabel.font = [UIFont systemFontOfSize:10];
 	[view addSubview:self.titleLabel];
 
+	// sizeLabel
 	self.sizeLabel = [[UILabel alloc] 
 		initWithFrame:CGRectMake(
-				size.width + 2,
+				imageSize.width + 10,
 			 	22, 
-				self.width - size.width - 4, 20)];
+				self.width - imageSize.width - 4, 20)];
   self.sizeLabel.backgroundColor = [UIColor clearColor];
 	self.sizeLabel.font = [UIFont systemFontOfSize:8];
 	[view addSubview:self.sizeLabel];
 
-//#if !__has_feature(objc_arc)
-    //[imageView autorelease];
-//#endif
-    
-    UIEdgeInsets insets = (type == BubbleTypeMine ? imageInsetsMine : imageInsetsSomeone);
-    return [self initWithView:view date:date type:type insets:insets];       
+  UIEdgeInsets insets = (type == BubbleTypeMine ? 
+			self.textInsetsMine : self.textInsetsSomeone);
+    return [self initWithView:view 
+												 date:date type:type insets:insets];       
 }
 
 #pragma mark - Custom view bubble
-
-+ (id)dataWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type insets:(UIEdgeInsets)insets
-{
-//#if !__has_feature(objc_arc)
-    //return [[[NSBubbleData alloc] initWithView:view date:date type:type insets:insets] autorelease];
-//#else
-		return [[NSBubbleData alloc] initWithView:view date:date type:type insets:insets];
-//#endif    
-}
 
 - (id)initWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type insets:(UIEdgeInsets)insets  
 {
     self = [super init];
     if (self)
     {
-#if !__has_feature(objc_arc)
-        _view = [view retain];
-        _date = [date retain];
-#else
-        _view = view;
-        _date = date;
-#endif
-        _type = type;
-        _insets = insets;
-				
-				
+			_view = view;
+			_date = date;
+			_type = type;
+			_insets = insets;
     }
     return self;
+}
+
+#pragma mark - On tap
+-(void)onTextTap:(id)sender{
+	if (self.delegate)
+		[self.delegate bubbleDataDidTapText:self];
+}
+
+-(void)onImageTap:(id)sender{
+	if (self.delegate)
+		[self.delegate bubbleDataDidTapImage:self];
 }
 
 @end

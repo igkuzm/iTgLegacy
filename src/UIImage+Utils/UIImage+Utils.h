@@ -22,7 +22,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "UIKit/UIKit.h"
 #import <UIKit/UIKit.h>
+@interface UIColor (Utils)
++ (UIColor *)colorFromHex:(NSInteger)hex;
+@end
 
 @interface UIImage (Utils)
 + (UIImage *)imageWithImage:(UIImage *)image 
@@ -61,5 +65,8 @@
 			     downloadBlock:(NSData * (^)())downloadBlock;
 @end
 
+@interface UITableView (Animated)
+- (void)reloadDataAnimated:(BOOL)animated;
+@end
 
 // vim:ft=objc

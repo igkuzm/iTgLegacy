@@ -6,20 +6,20 @@
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>Telegram</string>
-	<key>CFBundleDocumentTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeIconFiles</key>
-			<array/>
-			<key>CFBundleTypeName</key>
-			<string>All Files</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>public.data</string>
-				<string>public.content</string>
-			</array>
-		</dict>
-	</array>
+	<!--<key>CFBundleDocumentTypes</key>-->
+	<!--<array>-->
+		<!--<dict>-->
+			<!--<key>CFBundleTypeIconFiles</key>-->
+			<!--<array/>-->
+			<!--<key>CFBundleTypeName</key>-->
+			<!--<string>All Files</string>-->
+			<!--<key>LSItemContentTypes</key>-->
+			<!--<array>-->
+				<!--<string>public.data</string>-->
+				<!--<string>public.content</string>-->
+			<!--</array>-->
+		<!--</dict>-->
+	<!--</array>-->
 	<key>CFBundleExecutable</key>
 	<string>EXECUTABLE_NAME</string>
 	<key>CFBundleIconFiles</key>
@@ -133,7 +133,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<!--<string>remote-notification</string>-->
-		<!--<string>audio</string>-->
+		<string>audio</string>
 		<!--<string>location</string>-->
 		<string>voip</string>
 	</array>

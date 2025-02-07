@@ -14,6 +14,10 @@
 
 @implementation ConfigViewController
 
+enum {
+	STEPPER_CHAT_INTERVAL,
+};
+
 - (void)viewDidLoad {
 	self.appDelegate = [[UIApplication sharedApplication]delegate];
 	
@@ -66,7 +70,7 @@
 	if (section == 0)
 		rows = 1;
 	if (section == 1)
-		rows = 1;
+		rows = 2;
 	if (section == 2)
 		rows = 2;
 	if (section == 3)
@@ -79,6 +83,7 @@
 	
 	UITableViewCell *cell; 
 	if ((indexPath.section == 1 && indexPath.row == 0) || 
+			(indexPath.section == 1 && indexPath.row == 1) || 
 	    (indexPath.section == 3 && indexPath.row == 0)) 
 	{
 		cell = [self.tableView 
@@ -132,8 +137,7 @@
 							cell.textLabel.text = @"Show notifications in dialogs";
 							cell.detailTextLabel.text = @"";
 							cell.selectionStyle = UITableViewCellSelectionStyleNone;
-							UISwitch *sw = [[UISwitch alloc] 
-								initWithFrame:CGRectZero];
+							UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectZero];
 							cell.accessoryView = sw;
 							if ([NSUserDefaults.standardUserDefaults 
 								boolForKey:@"showNotifications"])
@@ -141,6 +145,31 @@
 							[sw addTarget:self 
 									action:@selector(showNotificationsSwitch:) 
 									forControlEvents:UIControlEventValueChanged];
+						}
+						break;
+					case 1:
+						{
+							cell.selectionStyle = UITableViewCellSelectionStyleNone;
+							UIStepper *st = [[UIStepper alloc]initWithFrame:CGRectZero];
+							cell.accessoryView = st;
+							st.tag = STEPPER_CHAT_INTERVAL;
+							st.minimumValue = 5;
+							st.maximumValue = 120;
+							st.stepValue = 5; 
+							NSInteger sec = [NSUserDefaults.standardUserDefaults 
+								integerForKey:@"chatUpdateInterval"];
+							if (sec < 5 || sec > 120)
+								sec = 120;
+							st.value = sec;
+							cell.textLabel.text = 
+								[NSString stringWithFormat:@"Update interval %lds", sec];
+							cell.detailTextLabel.text = @"";
+							//cell.detailTextLabel.text = 
+								//[NSString stringWithFormat:@"%ld sec", sec];
+							//cell.textLabel.text = @"Chat update interval";
+							[st addTarget:self 
+									action:@selector(stepperChanged:) 
+					        forControlEvents:UIControlEventValueChanged];
 						}
 						break;
 					
@@ -348,6 +377,21 @@
 -(void)textEditViewControllerSaveText:(NSString *)text{
 	[[NSUserDefaults standardUserDefaults]setValue:text forKey:self.selectedKey];
 	[self reloadData];
+}
+#pragma mark <UITextField DELEGATE FUNCTIONS>
+- (void)textFieldDidEndEditing:(UITextField *)textField {
+	[NSUserDefaults.standardUserDefaults 
+		setInteger:textField.text.intValue 
+				forKey:@"chatUpdateInterval"];	
+}
+#pragma mark <UIStepper FUNCTIONS>
+-(void)stepperChanged:(UIStepper *)stepper{
+	[NSUserDefaults.standardUserDefaults
+	 setInteger:stepper.value forKey:@"chatUpdateInterval"];
+	NSIndexPath* indexPath = 
+		[NSIndexPath indexPathForRow:1 inSection:1];
+	[self.tableView reloadRowsAtIndexPaths:@[indexPath] 
+									withRowAnimation:UITableViewRowAnimationNone];
 }
 @end
 // vim:ft=objc

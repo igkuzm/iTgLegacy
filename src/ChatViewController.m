@@ -55,6 +55,12 @@
 
 @implementation ChatViewController
 
+
+const UIEdgeInsets 
+Mine = {1, 10, 11, 17};
+const UIEdgeInsets 
+Someone = {1, 15, 11, 10};
+
 - (void)viewDidLoad {
 	[super viewDidLoad];
 
@@ -69,8 +75,8 @@
 	self.download = [[NSOperationQueue alloc]init];
 	//self.download.maxConcurrentOperationCount = 1;
 
-	//self.moviePlayerController = 
-		//[[MPMoviePlayerViewController alloc]init];
+	self.mpc = 
+		[[MPMoviePlayerController alloc]init];
 	//self.videoPlayer = [[TGVideoPlayer alloc]initWithView:self.view];
 	
 
@@ -106,19 +112,33 @@
 	self.bubbleTableView.watchingInRealTime = YES;
 	self.bubbleTableView.snapInterval = 2800;
 	self.bubbleDataArray = [NSMutableArray array];
-	if (self.dialog.peerType == TG_PEER_TYPE_CHAT)
+	if (self.dialog.peerType == TG_PEER_TYPE_CHAT ||
+			(self.dialog.peerType == TG_PEER_TYPE_CHANNEL &&
+			 !self.dialog.broadcast))
+	{
 		self.bubbleTableView.showAvatars = YES; 
+	}
 	
 	// refresh control
 	self.refreshControl= [[UIRefreshControl alloc]init];
 	[self.refreshControl 
 		setAttributedTitle:[[NSAttributedString alloc] 
 				initWithString:@"more messages..."]];
-	[self.refreshControl 
-		addTarget:self 
-		action:@selector(refresh:) 
-    forControlEvents:UIControlEventValueChanged];
-	[self.bubbleTableView addSubview:self.refreshControl];
+	//[self.refreshControl 
+		//addTarget:self 
+		//action:@selector(refresh:) 
+    //forControlEvents:UIControlEventValueChanged];
+	//[self.bubbleTableView addSubview:self.refreshControl];
+
+	// footer
+	UIView* footerView = 
+		[[UIView alloc] initWithFrame:CGRectMake(
+				0, 0, 320, 50)];
+	[footerView setBackgroundColor:[UIColor 
+					 colorWithPatternImage:[UIImage 
+											imageNamed:@"refreshImage.png"]]];
+	//self.bubbleTableView.tableFooterView = footerView;
+	//self.bubbleTableView.tableFooterView.hidden = YES;
 
 	// ToolBar
 	//self.navigationController.toolbar.tintColor = [UIColor lightGrayColor];
@@ -231,12 +251,15 @@
 	if (self.appDelegate.tg){
 		self.appDelegate.tg->on_update_data = (__bridge void *)self;
 		self.appDelegate.tg->on_update = on_update;
-		//tg_new_session(self.appDelegate.tg);
 	}
 
 	// add timer
+	NSInteger sec = [NSUserDefaults.standardUserDefaults 
+		integerForKey:@"chatUpdateInterval"];
+	if (sec < 5 || sec > 120)
+		sec = 120;
 	self.timer = [NSTimer 
-		scheduledTimerWithTimeInterval:60 
+		scheduledTimerWithTimeInterval:sec 
 		target:self selector:@selector(timer:) 
 		userInfo:nil repeats:YES];
 
@@ -281,8 +304,10 @@
 	// remove updates handler
 	if (self.appDelegate.tg){
 		self.appDelegate.tg->on_update = NULL;
-		tg_new_session(self.appDelegate.tg);
 	}
+
+	if (self.timer)
+		[self.timer fire];
 	
 	[super viewWillDisappear:animated];
 }
@@ -343,7 +368,8 @@
 	if (self.appDelegate.isOnLineAndAuthorized)
 	{
 		[self.syncData addOperationWithBlock:^{
-			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
+			[self appendDataFrom:0 date:[NSDate date] 
+						scrollToBottom:NO];
 		}];
 	}
 }
@@ -368,7 +394,8 @@
 					//[self.appDelegate showMessage:@"can't send message"];
 				//});
 			//} else {
-				[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+				[self appendDataFrom:0 date:[NSDate date] 
+							scrollToBottom:YES];
 			//}
 		}];
 	} else {
@@ -431,7 +458,8 @@
 
 -(void)refresh:(id)sender{
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+		[self appendDataFrom:0 date:[NSDate date] 
+					scrollToBottom:YES];
 	}];
 }
 
@@ -617,6 +645,57 @@
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_unknown@2x.png"];
 
+
+				// now try to load default photo
+				if (d.message.photoSizes.count){
+					CGSize size = {0,0};
+					// find size with name "x"
+					for (NSDictionary *dict in d.message.photoSizes){
+						if ([[dict valueForKey:@"type"] isEqualToString:@"x"])
+						 size = [[dict valueForKey:@"size"]CGSizeValue];
+					}
+					
+					UIImage *placeholder = d.message.photo;
+					if (d.message.photoStripped){
+							placeholder = [UIImage 
+								imageWithImage:d.message.photoStripped 
+								scaledToSize:placeholder.size];
+					}
+
+					d.message.photo = [UIImage 
+						imageWithPlaceholder:placeholder 
+						cachePath:d.message.photoPath 
+						view:d.imageView 
+						downloadBlock:^NSData *(void){
+							if (d.message.photoId && !d.message.photoData){
+								char *photo  = 
+									tg_get_photo_file(
+											self.appDelegate.tg, 
+											d.message.photoId, 
+											d.message.photoAccessHash, 
+											d.message.photoFileReference.UTF8String, 
+											"x");
+								if (photo){
+									d.message.photoData = [NSData dataFromBase64String:
+											[NSString stringWithUTF8String:photo]];
+									d.message.photo = [UIImage imageWithData:d.message.photoData];
+									free(photo);
+									//d.imageView.image = d.message.photo;
+									return d.message.photoData;
+								}
+							}
+							return NULL;
+						} 
+						onUpdate:^(UIImage *image){
+							 if (image){
+								 [d initWithImage:image 
+														 date:d.date 
+														 type:d.type
+														 text:d.message.message];
+								 [self.bubbleTableView reloadData];
+							 }
+						}];
+				}
 			}
 			break;
 		case id_messageMediaGeo:
@@ -643,7 +722,7 @@
 	} // end switch (d.message.mediaType)
 }
 
-- (void)appendDataFrom:(int)offset date:(NSDate *)date 
+- (void)appendMessagesFrom:(int)offset date:(NSDate *)date 
 		scrollToBottom:(Boolean)scrollToBottom
 {
 	//[self.syncData cancelAllOperations];
@@ -659,8 +738,8 @@
 		});
 		return;
 	}
-
-	Boolean scrollAnimated = self.bubbleDataArray.count?YES:NO;
+	
+	tg_new_session(self.appDelegate.tg);
 
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		[self.spinner startAnimating];
@@ -681,9 +760,9 @@
 	tg_messages_get_history(
 			self.appDelegate.tg, 
 			peer, 
-			offset, 
-			[date timeIntervalSince1970], 
 			0, 
+			date?[date timeIntervalSince1970]:0, 
+			offset, 
 			limit, 
 			0, 
 			0, 
@@ -695,10 +774,6 @@
 	dispatch_sync(dispatch_get_main_queue(), ^{
 				[self.refreshControl endRefreshing];
 				[self.spinner stopAnimating];
-				[self.bubbleTableView reloadData];
-				if (scrollToBottom)
-					[self.bubbleTableView 
-						scrollBubbleViewToBottomAnimated:scrollAnimated];
 	});
 
 	// set read history
@@ -717,6 +792,23 @@
 	self.dialog.unread_count = 0;
 	[self.appDelegate removeUnredId:self.dialog.peerId];
 }
+
+- (void)appendDataFrom:(int)offset date:(NSDate *)date 
+		scrollToBottom:(Boolean)scrollToBottom
+{
+	Boolean scrollAnimated = self.bubbleDataArray.count?YES:NO;
+
+	[self appendMessagesFrom:offset 
+											date:date scrollToBottom:scrollToBottom];
+	
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		[self.bubbleTableView reloadData];
+		if (scrollToBottom)
+			[self.bubbleTableView 
+				scrollBubbleViewToBottomAnimated:scrollAnimated];
+	});
+}
+
 
 - (void)reloadData {
 	if (!self.appDelegate.tg)
@@ -752,7 +844,8 @@
 		//});
 
 		// update data
-		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+		[self appendDataFrom:0 date:[NSDate date] 
+					scrollToBottom:YES];
 		
 	}];
 }
@@ -864,7 +957,10 @@ static int messages_callback(void *d, const tg_message_t *m){
 		});
 	} else {
 		item = [NSBubbleData alloc]; 
-		if (self.dialog.peerType == TG_PEER_TYPE_CHANNEL)
+
+		item.delegate = self;
+
+		if (self.dialog.broadcast)
 			item.width = 280;
 
 		// init TGMessage
@@ -874,10 +970,9 @@ static int messages_callback(void *d, const tg_message_t *m){
 		NSBubbleType type = 
 			item.message.mine?BubbleTypeMine:BubbleTypeSomeoneElse; 
 		
-		dispatch_sync(dispatch_get_main_queue(), ^{
 			
 			if (self.dialog.peerType != TG_PEER_TYPE_USER && 
-					!item.message.mine)
+					!item.message.mine && !item.message.isBroadcast)
 			{
 				// add sender name
 				tg_user_t *user = tg_user_get(
@@ -894,26 +989,73 @@ static int messages_callback(void *d, const tg_message_t *m){
 							[NSString stringWithFormat:@"id%lld", m->from_id_];
 
 					// set color
-					//for	(NSDictionary *c in self.appDelegate.colorset){
-						//NSNumber *color_id = [c valueForKey:@"color_id"];
-						//if (color_id.intValue == user->color){
-							//NSNumber *color = [c valueForKey:@"0"];
-							//int rgb = color.intValue;
+					if (self.appDelegate.colorset.count){
+						for	(NSDictionary *c in self.appDelegate.colorset){
+							NSNumber *color_id = [c valueForKey:@"color_id"];
+							if (color_id.intValue == user->color){
+								NSNumber *color = [c valueForKey:@"rgb0"];
+								int rgb = color.intValue;
 
-							//item.nameColor = [UIColor 
-								//colorWithRed:rgb & 0xff 
-											 //green:(rgb >> 8) & 0xff 
-												//blue:(rgb >> 16) & 0xff 
-											 //alpha:(rgb >> 24) * 0xff];
-							//break;
-						//}
-					//}
+								item.nameColor = [UIColor colorFromHex:rgb];
+
+								break;
+							}
+						}
+					}
+
+					// add avatar
+					if (self.bubbleTableView.showAvatars){
+
+							NSString *photoPath = 
+							[NSString stringWithFormat:@"%@/%lld.%lld", 
+								self.appDelegate.peerPhotoCache, 
+								user->id_, user->photo_id];
+						
+								tg_peer_t peer = {
+										TG_PEER_TYPE_USER,
+										user->id_,
+										user->access_hash_
+								};
+
+							item.avatar = [UIImage 
+								imageWithPlaceholder:
+								 [UIImage imageNamed:@"missingAvatar.png"] 
+								cachePath:photoPath 
+								view:nil 
+								downloadBlock:^NSData *(void){
+									if (!self.appDelegate.isOnLineAndAuthorized)
+											return nil;
+									char *photo = tg_get_peer_photo_file(
+												self.appDelegate.tg, 
+												&peer, 
+												false, 
+												user->photo_id);
+									if (photo){
+										NSData *data = [NSData 
+											dataFromBase64String:
+												[NSString stringWithUTF8String:photo]];
+										return data;
+									}
+									return nil;
+								} 
+								onUpdate:^(UIImage *image){
+					 
+								}];
+							
+
+						}
+						
+					// free user
+					tg_user_free(user);	
+					}
 				}
-			}	
 
 			if (m->photo_id){
 				[self getPhotoForMessageCached:item 
 					download:[update boolValue]];
+			//} else if (item.message.isVoice) { 
+				// do not add photo to voice	
+				
 			} else if (m->doc_id || 
 					m->media_type == id_messageMediaContact)
 			{
@@ -921,6 +1063,8 @@ static int messages_callback(void *d, const tg_message_t *m){
 					download:[update boolValue]];
 			}
 				
+		dispatch_sync(dispatch_get_main_queue(), ^{
+
 			if (item.message.photo &&
 					!item.message.isSticker)
 			{
@@ -952,6 +1096,32 @@ static int messages_callback(void *d, const tg_message_t *m){
 								m->doc_size];
 				}
 
+			//} else if (item.message.isVoice) { 
+				//// setup voice
+				//NSString *filepath = [self.appDelegate.filesCache 
+					//stringByAppendingPathComponent:
+						//[NSString stringWithFormat:@"%lld.ogg", item.message.docId]];
+				//item.mpc = 
+					//[[MPMoviePlayerController alloc]init];
+				//[item.mpc setControlStyle:MPMovieControlStyleEmbedded];
+				//[item.mpc setScalingMode:MPMovieScalingModeFill];
+				//item.mpc.view.frame = CGRectMake(
+						//0, 0, 220, 60);
+
+				//[item initWithView:item.mpc.view 
+							//date:item.message.date 
+							//type:type 
+							//insets:item.message.mine?Mine:Someone];
+				
+				//item.mpc.view.hidden = YES;
+				
+				//if ([NSFileManager.defaultManager fileExistsAtPath:filepath])
+				//{
+					//item.mpc.contentURL = [NSURL fileURLWithPath:filepath];
+					//[item.mpc prepareToPlay];
+					//item.mpc.view.hidden = NO;
+				//}
+
 			} else if (m->media_type == id_messageMediaGeo) {
 				UIView *view = [[UIView alloc]init];
 				view.frame = CGRectMake(
@@ -965,18 +1135,17 @@ static int messages_callback(void *d, const tg_message_t *m){
 				lc.longitude = item.message.geoLong;
 				//[mv setCenterCoordinate:lc];
 
-				const UIEdgeInsets textInsetsMine = {1, 10, 11, 17};
-				const UIEdgeInsets textInsetsSomeone = {1, 15, 11, 10};
 
 				[item initWithView:view 
 							date:item.message.date 
 							type:type 
-							insets:item.message.mine?textInsetsMine:textInsetsSomeone];
+							insets:item.message.mine?Mine:Someone];
 
 			} else {
-				[item initWithText:item.message.message
-						date:item.message.date 
-						type:type];
+				[item initWithImage:nil 
+											 date:item.message.date 
+											 type:type 
+											 text:item.message.message];
 			}
 
 			// add to array
@@ -1125,11 +1294,42 @@ int upload_progress(void *d, int size, int total){
 
 			url = [NSURL fileURLWithPath:tmpFile];
 
+			[self.appDelegate setupPlayAndRecordAudioSession];
 			MPMoviePlayerViewController *mpc = 
 				[[MPMoviePlayerViewController alloc]initWithContentURL:url];
 			[self presentMoviePlayerViewControllerAnimated:mpc];
 			[mpc.moviePlayer prepareToPlay];
 			[mpc.moviePlayer play];
+
+			//[self.mpc.view removeFromSuperview];
+
+			//self.mpc = 
+				//[[MPMoviePlayerController alloc]init];
+			//[self.mpc setControlStyle:MPMovieControlStyleDefault];
+			//[self.mpc setScalingMode:MPMovieScalingModeFill];
+			//CGRect frame = bubbleData.view.bounds;
+			//frame.origin.y = frame.size.height - 50;
+			//self.mpc.view.frame = frame;
+			//self.mpc.view.backgroundColor = [UIColor clearColor];
+			//self.mpc.backgroundView.backgroundColor = 
+				//[UIColor clearColor];
+			//for(UIView* subV in self.mpc.view.subviews) {
+				//subV.backgroundColor = [UIColor clearColor];
+			//}
+			//for(UIView* subV in self.mpc.backgroundView.subviews) {
+				//subV.backgroundColor = [UIColor clearColor];
+			//}
+			//[bubbleData.view addSubview:self.mpc.view];
+			//self.mpc.contentURL = url;
+			//[self.mpc prepareToPlay];
+			//[self.mpc play];
+
+			//[item initWithView:item.mpc.view 
+						//date:item.message.date 
+						//type:type 
+						//insets:item.message.mine?Mine:Someone];
+				
+
 			
 			return;
 		}
@@ -1322,8 +1522,26 @@ int upload_progress(void *d, int size, int total){
 }
 
 #pragma mark <UIBubbleTableView Delegate>
-- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectData:(NSBubbleData *)data 
-{
+-(void)bubbleDataDidTapText:(id)bubbleData{
+	NSBubbleData *data = bubbleData;
+	TGMessage *m = data.message;
+	TextEditViewController *vc = [[TextEditViewController alloc]init];
+	vc.text = m.message; 
+	vc.title = @"Message";
+	[self.navigationController pushViewController:vc animated:YES];
+	vc.textView.dataDetectorTypes = UIDataDetectorTypeAll;
+	
+	// remove save button
+	if (!m.mine){
+		vc.navigationItem.rightBarButtonItems = nil;
+		vc.textView.editable = NO;
+	} else {
+		vc.delegate = self;
+	}
+}
+
+-(void)bubbleDataDidTapImage:(id)bubbleData{
+	NSBubbleData *data = bubbleData;
 	TGMessage *m = data.message;
 	if (m){
 		if (m.mediaType == id_messageMediaGeo){
@@ -1337,10 +1555,30 @@ int upload_progress(void *d, int size, int total){
 		}
 	}
 }
+- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectData:(NSBubbleData *)data 
+{
+	//TGMessage *m = data.message;
+	//if (m){
+		//if (m.mediaType == id_messageMediaGeo){
+			//[self getGeo:data];
+		//} else if (m.mediaType == id_messageMediaContact){
+			//[self getContact:data];
+		//} else if (m.photoId){
+			//[self getPhoto:data];
+		//}	else if (m.docId){
+			//[self getDoc:data];
+		//}
+	//}
+}
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 didScroll:(UIScrollView *)scrollView
 {
+	 if ((scrollView.contentOffset.y + scrollView.frame.size.height) >= scrollView.contentSize.height)
+    {
+      bubbleTableView.tableFooterView.hidden = NO;
+			// call method to add data to tableView
+    }
 }
 
 - (void)bubbleTableViewDidBeginDragging:(UIBubbleTableView *)bubbleTableView 
@@ -1357,26 +1595,55 @@ didScroll:(UIScrollView *)scrollView
 }
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
-				didEndDecelerationgTo:(NSBubbleData *)data
-{
-	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:0 date:data.date scrollToBottom:NO];
-	}];
-}
-
-- (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 				didEndDecelerationgToBottom:(Boolean)bottom
 {
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:NO];
+		[self appendDataFrom:0 date:[NSDate date] 
+					scrollToBottom:NO];
 	}];
 }
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 				didEndDecelerationgToTop:(Boolean)top
 {
+	// get top data
+	//NSBubbleData *data = nil;
+	//NSArray *section = [self.bubbleTableView.bubbleSection 
+		//objectAtIndex:0];
+	//if (section){
+		//data = [section objectAtIndex:1];
+	//}
+	NSInteger count = self.bubbleDataArray.count;
+	// load more messages
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:self.bubbleDataArray.count-1 date:[NSDate date] scrollToBottom:NO];
+		[self appendMessagesFrom:count date:[NSDate date] scrollToBottom:NO];
+		[self.bubbleTableView reloadData];
+		NSInteger delta = self.bubbleDataArray.count - count;
+		// now scroll delta messages from top
+			int i = 0;
+			NSInteger section = 0;
+			for (NSArray *s in self.bubbleTableView.bubbleSection)
+			{
+				NSInteger row = 0;
+				for (NSBubbleData *d in s){
+					i++;
+					if (i == delta){
+						NSIndexPath *indexPath = 
+							[NSIndexPath indexPathForRow:row inSection:section]; 
+						dispatch_sync(dispatch_get_main_queue(), ^{
+							[self.bubbleTableView scrollToRowAtIndexPath:indexPath
+								atScrollPosition:UITableViewScrollPositionTop 
+								animated:NO];
+						});
+
+						break;;
+					}
+					
+					row++;
+				}
+
+				section++;
+			}
 	}];
 }
 
@@ -1956,7 +2223,8 @@ didScroll:(UIScrollView *)scrollView
 			else
 				[self toolbarAsEntry];
 		});
-		[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+		[self appendDataFrom:0 date:[NSDate date] 
+					scrollToBottom:YES];
 	}];
 }
 
@@ -1975,8 +2243,6 @@ didScroll:(UIScrollView *)scrollView
 #pragma mark <AppActivity Delegate>
 -(void)willResignActive {
 	[self cancelAll];
-	if (self.timer)
-		[self.timer fire];
   //[[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -1984,7 +2250,8 @@ didScroll:(UIScrollView *)scrollView
 -(void)tgLibLoaded{
 }
 -(void)authorizedAs:(tl_user_t *)user{
-	[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+	[self appendDataFrom:0 date:[NSDate date] 
+				scrollToBottom:YES];
 }
 
 #pragma mark <FilePickerController Delegate>
@@ -2074,7 +2341,8 @@ didScroll:(UIScrollView *)scrollView
 					vCard.UTF8String, 
 					NULL);
 			
-			[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+			[self appendDataFrom:0 date:[NSDate date] 
+						scrollToBottom:YES];
 		}];
 		[peoplePicker dismissViewControllerAnimated:true completion:nil];
 	}];
@@ -2142,7 +2410,8 @@ didScroll:(UIScrollView *)scrollView
 						lon, 
 						NULL);
 
-				[self appendDataFrom:0 date:[NSDate date] scrollToBottom:YES];
+				[self appendDataFrom:0 date:[NSDate date] 
+							scrollToBottom:YES];
 			}];
 		} else {
 			[self.appDelegate showMessage:@"no network!"];
@@ -2160,6 +2429,9 @@ didScroll:(UIScrollView *)scrollView
 		[self.mapView setCenterCoordinate:newLocation.coordinate 
 														 animated:YES];
 	}
+}
+#pragma mark <TextEditViewController DELEGATE FUNCTIONS>
+-(void)textEditViewControllerSaveText:(NSString *)text{
 }
 
 @end

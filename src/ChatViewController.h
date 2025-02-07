@@ -10,6 +10,7 @@
 #import <AddressBookUI/AddressBookUI.h>
 #import <CoreLocation/CoreLocation.h>
 #import <MapKit/MapKit.h>
+#import "TextEditViewController.h"
 
 enum {
 	ActionSheetAttach,
@@ -24,7 +25,8 @@ enum {
 	AppActivityDelegate, AuthorizationDelegate, 
 	FilePickerControllerDelegate, UITextViewDelegate,
 	ABPeoplePickerNavigationControllerDelegate,
-	CLLocationManagerDelegate>
+	CLLocationManagerDelegate, NSBubbleDataDelegate,
+	TextEditViewControllerDelegate>
 {
 }
 
@@ -32,7 +34,7 @@ enum {
 
 @property (strong) UIBubbleTableView *bubbleTableView;
 
-//@property (strong) MPMoviePlayerController *moviePlayerController;
+@property (strong) MPMoviePlayerController *mpc;
 //@property (strong) MPMoviePlayerViewController *moviePlayerController;
 
 @property (strong) AVAudioRecorder *audioRecorder;

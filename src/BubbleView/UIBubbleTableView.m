@@ -15,6 +15,7 @@
 #import "UIBubbleHeaderTableViewCell.h"
 #import "UIBubbleTypingTableViewCell.h"
 #import "../TGActionTableView.h"
+#import "../UIImage+Utils/UIImage+Utils.h"
 
 @interface UIBubbleTableView ()
 
@@ -101,7 +102,12 @@
 		[self.bubbleDelegate bubbleTableViewOnTap:self];
 }
 
-- (void)reloadData
+-(void)reloadData{
+	[self prepareData];
+  [super reloadData];
+}
+
+- (void)prepareData
 {
     self.showsVerticalScrollIndicator = NO;
     self.showsHorizontalScrollIndicator = NO;
@@ -163,7 +169,6 @@
         }
     }
     
-    [super reloadData];
     //[self scrollToBottomWithAnimation:YES];
 }
 
@@ -225,7 +230,7 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
   return [[self.bubbleSection objectAtIndex:section] count] + 1;
 }
 
-- (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
   // Now typing
 	if (indexPath.section >= [self.bubbleSection count])
@@ -336,65 +341,63 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
 	float bottomEdge = 
 		scrollView.contentOffset.y + scrollView.frame.size.height;
+	
 	if (bottomEdge >= scrollView.contentSize.height) {
 		// BOTTOM
-		NSInteger lastSectionIdx = [self numberOfSections] - 1;
-		if (lastSectionIdx >= [self.bubbleSection count])
-			return;
+		//NSInteger lastSectionIdx = [self numberOfSections] - 1;
+		//if (lastSectionIdx >= [self.bubbleSection count])
+			//return;
 		
-		NSArray *section = 
-			[self.bubbleSection objectAtIndex:lastSectionIdx];
-		NSBubbleData *data = 
-			[section objectAtIndex:section.count - 1];
+		//NSArray *section = 
+			//[self.bubbleSection objectAtIndex:lastSectionIdx];
+		//NSBubbleData *data = 
+			//[section objectAtIndex:section.count - 1];
 		
-		if (data)
-			if (self.bubbleDelegate)
-				[self.bubbleDelegate 
-					bubbleTableView:self didEndDecelerationgToBottom:YES];
+		//if (data)
+		if (self.bubbleDelegate)
+			[self.bubbleDelegate 
+				bubbleTableView:self didEndDecelerationgToBottom:YES];
 
-		return;
 	} else if (scrollView.contentOffset.y == 0){
 			if (self.bubbleDelegate)
 				[self.bubbleDelegate 
 					bubbleTableView:self didEndDecelerationgToTop:YES];
-
-		return;
 	}
 	
-	NSIndexPath *indexPath = 
-			[[self indexPathsForVisibleRows]objectAtIndex:0];
+	//NSIndexPath *indexPath = 
+			//[[self indexPathsForVisibleRows]objectAtIndex:0];
 
-	// Now typing
-	if (indexPath.section >= [self.bubbleSection count])
-	{
-			return;
-	}
+	//// Now typing
+	//if (indexPath.section >= [self.bubbleSection count])
+	//{
+			//return;
+	//}
 	
-	// Header
-	if (indexPath.row == 0)
-	{
-		NSBubbleData *data = 
-		[[self.bubbleSection objectAtIndex:indexPath.section] 
-												 objectAtIndex:indexPath.row];
+	//// Header
+	//if (indexPath.row == 0)
+	//{
+		//NSBubbleData *data = 
+		//[[self.bubbleSection objectAtIndex:indexPath.section] 
+												 //objectAtIndex:indexPath.row];
 
-		if (data)
-			if (self.bubbleDelegate)
-				[self.bubbleDelegate 
-					bubbleTableView:self didEndDecelerationgTo:data];
+		//if (data)
+			//if (self.bubbleDelegate)
+				//[self.bubbleDelegate 
+					//bubbleTableView:self didEndDecelerationgTo:data];
 
-		return;
-	}
+		//return;
+	//}
 	
-	NSBubbleData *data = 
-		[[self.bubbleSection objectAtIndex:indexPath.section] 
-												 objectAtIndex:indexPath.row - 1];
+	//NSBubbleData *data = 
+		//[[self.bubbleSection objectAtIndex:indexPath.section] 
+												 //objectAtIndex:indexPath.row - 1];
 
-	if (data)
-		if (self.bubbleDelegate)
-			[self.bubbleDelegate 
-				bubbleTableView:self didEndDecelerationgTo:data];
+	//if (data)
+		//if (self.bubbleDelegate)
+			//[self.bubbleDelegate 
+				//bubbleTableView:self didEndDecelerationgTo:data];
 
-	return;
+	//return;
 }
 
 - (void)tableView:(UITableView *)tableView 
@@ -430,9 +433,40 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     
     if (lastSectionIdx >= 0)
     {
-    	[self scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:([self numberOfRowsInSection:lastSectionIdx] - 1) inSection:lastSectionIdx] atScrollPosition:UITableViewScrollPositionBottom animated:animated];
+    	[self scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:([self numberOfRowsInSection:lastSectionIdx] - 1) inSection:lastSectionIdx] atScrollPosition:UITableViewScrollPositionTop animated:animated];
     }
 }
 
+- (void) scrollBubbleViewToData:(NSBubbleData *)data 
+											 animated:(BOOL)animated
+{
+	NSInteger section = 0;
+	for (NSArray *s in self.bubbleSection){
+		NSInteger row = 0;
+		for (NSBubbleData *d in s){
+			if (row == 0) // skip header
+				continue;
+			if (d.message.id == data.message.id){
+				[self scrollToRowAtIndexPath:
+					[NSIndexPath indexPathForRow:row inSection:section] 
+					atScrollPosition:UITableViewScrollPositionTop 
+					animated:animated];
+
+				return;
+			}
+			
+			row++;
+		}
+
+		section++;
+	}
+
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+	//if (section == 0)
+		//return @"top messages";
+	return @"";
+}
 
 @end
