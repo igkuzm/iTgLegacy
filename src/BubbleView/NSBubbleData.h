@@ -59,6 +59,8 @@ typedef enum _NSBubbleType
 
 - (id)initWithView:(UIView *)view date:(NSDate *)date type:(NSBubbleType)type insets:(UIEdgeInsets)insets; 
 
+- (id)initWithServiceMessage:(NSString *)text date:(NSDate *)date;
+
 @end
 
 // vim:ft=objc

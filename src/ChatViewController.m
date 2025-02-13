@@ -44,9 +44,15 @@
 #import <CoreLocation/CoreLocation.h>
 #import <MapKit/MapKit.h>
 
+#define kStatusBarHeight 20
+#define kDefaultToolbarHeight 40
+#define kKeyboardHeightPortrait 216
+#define kKeyboardHeightLandscape 140
+
 @interface  ChatViewController()
 {
 }
+@property (strong) UIColor *defaultBarColor;
 @property float toolbarOrigY;
 @property int numLines;
 @property CGRect toolbarOrigFrame;
@@ -102,7 +108,6 @@ Someone = {1, 15, 11, 10};
 	self.bubbleTableView = 
 			[[UIBubbleTableView alloc]initWithFrame:
 			self.view.bounds
-			//viewFrame
 			style:UITableViewStylePlain];
 	self.bubbleTableView.autoresizingMask = 
 		UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -121,60 +126,65 @@ Someone = {1, 15, 11, 10};
 	
 	// refresh control
 	self.refreshControl= [[UIRefreshControl alloc]init];
+	//self.refreshControl.tintColor = [UIColor blackColor];
+	NSString *s = @"more messages...";
+	NSMutableAttributedString *str = [[NSMutableAttributedString alloc] 
+		initWithString:s];
+	[str addAttribute:NSForegroundColorAttributeName 
+							value:[UIColor whiteColor] range:[s rangeOfString:s]];
+	self.refreshControl.attributedTitle = str;
+
 	[self.refreshControl 
-		setAttributedTitle:[[NSAttributedString alloc] 
-				initWithString:@"more messages..."]];
-	//[self.refreshControl 
-		//addTarget:self 
-		//action:@selector(refresh:) 
-    //forControlEvents:UIControlEventValueChanged];
-	//[self.bubbleTableView addSubview:self.refreshControl];
+		addTarget:self 
+		action:@selector(loadMoreMessages:) 
+		forControlEvents:UIControlEventValueChanged];
+	[self.bubbleTableView addSubview:self.refreshControl];
 
 	// footer
-	UIView* footerView = 
-		[[UIView alloc] initWithFrame:CGRectMake(
-				0, 0, 320, 50)];
-	[footerView setBackgroundColor:[UIColor 
-					 colorWithPatternImage:[UIImage 
-											imageNamed:@"refreshImage.png"]]];
+	//UIView* footerView = 
+		//[[UIView alloc] initWithFrame:CGRectMake(
+				//0, 0, 320, 50)];
+	//[footerView setBackgroundColor:[UIColor 
+					 //colorWithPatternImage:[UIImage 
+											//imageNamed:@"refreshImage.png"]]];
 	//self.bubbleTableView.tableFooterView = footerView;
 	//self.bubbleTableView.tableFooterView.hidden = YES;
 
 	// ToolBar
 	//self.navigationController.toolbar.tintColor = [UIColor lightGrayColor];
-	self.textFieldIsEditable = YES; // testing
-	self.textField = [[UITextField alloc]
-	//self.textField = [[UITextView alloc]
-		initWithFrame:CGRectMake(
-				0,0,
-				self.navigationController.toolbar.frame.size.width - 110, 
-				//34)];
-				30)];
-	self.textField.autoresizingMask = 
-		UIViewAutoresizingFlexibleWidth|
-		UIViewAutoresizingFlexibleHeight;
-	[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
-	//[self.textField.layer setCornerRadius:12.0f];
-	self.textField.delegate = self;
-	//self.textField.font = [UIFont systemFontOfSize:14];
-	//self.textField.inputAccessoryView = self.navigationController.toolbar;
-	self.numLines = 1;
-	self.textFieldItem = [[UIBarButtonItem alloc] 
-		initWithCustomView:self.textField];
+	//self.textFieldIsEditable = YES; // testing
+	//self.textField = [[UITextField alloc]
+	////self.textField = [[UITextView alloc]
+		//initWithFrame:CGRectMake(
+				//0,0,
+				//self.navigationController.toolbar.frame.size.width - 110, 
+				////34)];
+				//30)];
+	//self.textField.autoresizingMask = 
+		//UIViewAutoresizingFlexibleWidth|
+		//UIViewAutoresizingFlexibleHeight;
+	//[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
+	////[self.textField.layer setCornerRadius:12.0f];
+	//self.textField.delegate = self;
+	////self.textField.font = [UIFont systemFontOfSize:14];
+	////self.textField.inputAccessoryView = self.navigationController.toolbar;
+	//self.numLines = 1;
+	//self.textFieldItem = [[UIBarButtonItem alloc] 
+		//initWithCustomView:self.textField];
 	
-	self.flexibleSpace = [[UIBarButtonItem alloc] 
-		initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
-		target:nil action:nil];
+	//self.flexibleSpace = [[UIBarButtonItem alloc] 
+		//initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+		//target:nil action:nil];
 		
-	self.attach = [[UIBarButtonItem alloc]
-		initWithImage:[UIImage imageNamed:@"InputAttachmentsSeparatorAttachments"]	
-		style:UIBarButtonItemStylePlain 
-		target:self action:@selector(onAdd:)];
+	//self.attach = [[UIBarButtonItem alloc]
+		//initWithImage:[UIImage imageNamed:@"InputAttachmentsSeparatorAttachments"]	
+		//style:UIBarButtonItemStylePlain 
+		//target:self action:@selector(onAdd:)];
 
-	self.send = [[UIBarButtonItem alloc]
-		initWithImage:[UIImage imageNamed:@"Send"]	
-		style:UIBarButtonItemStyleDone 
-		target:self action:@selector(onSend:)];
+	//self.send = [[UIBarButtonItem alloc]
+		//initWithImage:[UIImage imageNamed:@"Send"]	
+		//style:UIBarButtonItemStyleDone 
+		//target:self action:@selector(onSend:)];
 	//self.send.customView.autoresizingMask = 
 		//UIViewAutoresizingFlexibleTopMargin;
 
@@ -188,36 +198,62 @@ Someone = {1, 15, 11, 10};
 	//self.record = [[UIBarButtonItem alloc]
 		//initWithCustomView:record];
 	
-	self.record = [[UIBarButtonItem alloc]
-		initWithImage:[UIImage imageNamed:@"ios-mic-32"] 
-						style:UIBarButtonItemStyleBordered
-					 target:self action:@selector(recordSwitch:)];
+	//self.record = [[UIBarButtonItem alloc]
+		//initWithImage:[UIImage imageNamed:@"ios-mic-32"] 
+						//style:UIBarButtonItemStyleBordered
+					 //target:self action:@selector(recordSwitch:)];
 		//self.add = [[UIBarButtonItem alloc]
 		//initWithImage:[UIImage imageNamed:@"UIButtonBarAction"] 
 						//style:UIBarButtonItemStylePlain
 						//target:self action:@selector(onAdd:)];
 	
-	self.cancel = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem:UIBarButtonSystemItemCancel 
-		target:self action:@selector(onCancel:)];
+	//self.cancel = [[UIBarButtonItem alloc]
+		//initWithBarButtonSystemItem:UIBarButtonSystemItemCancel 
+		//target:self action:@selector(onCancel:)];
 
-	self.progressLabel = [[UILabel alloc]
-		initWithFrame:CGRectMake(0, 0, 60, 40)];
-	self.progressLabel.numberOfLines = 2;
-	self.progressLabel.lineBreakMode = NSLineBreakByCharWrapping;
-	self.progressLabel.backgroundColor = [UIColor clearColor];
-	self.progressLabel.font = [UIFont systemFontOfSize:8];
-	self.label = [[UIBarButtonItem alloc]
-		initWithCustomView:self.progressLabel];
+	//self.progressLabel = [[UILabel alloc]
+		//initWithFrame:CGRectMake(0, 0, 60, 40)];
+	//self.progressLabel.numberOfLines = 2;
+	//self.progressLabel.lineBreakMode = NSLineBreakByCharWrapping;
+	//self.progressLabel.backgroundColor = [UIColor clearColor];
+	//self.progressLabel.font = [UIFont systemFontOfSize:8];
+	//self.label = [[UIBarButtonItem alloc]
+		//initWithCustomView:self.progressLabel];
 
-	self.progressView = [[UIProgressView alloc]
-		initWithProgressViewStyle:UIProgressViewStyleBar];
-	self.progressView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-	self.progress = [[UIBarButtonItem alloc]
-		initWithCustomView:self.progressView];
+	//self.progressView = [[UIProgressView alloc]
+		//initWithProgressViewStyle:UIProgressViewStyleBar];
+	//self.progressView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	//self.progress = [[UIBarButtonItem alloc]
+		//initWithCustomView:self.progressView];
 
-	[self.navigationController setToolbarHidden:NO];
-	[self toolbarAsEntry];
+	////[self.navigationController setToolbarHidden:NO];
+	//[self toolbarAsEntry];
+    
+		// resize bubbleview
+		CGRect frame = self.bubbleTableView.frame;
+		frame.size.height -= kDefaultToolbarHeight;
+		self.bubbleTableView.frame = frame;
+
+		keyboardIsVisible = NO;
+		/* Calculate screen size */
+		//CGRect screenFrame = [[UIScreen mainScreen] applicationFrame];
+		self.inputToolbar = [[BHInputToolbar alloc] 
+			initWithFrame:CGRectMake(0, 
+					self.view.bounds.size.height -
+						 kDefaultToolbarHeight, 
+					self.view.bounds.size.width, 
+					kDefaultToolbarHeight)];
+		[self.view addSubview:self.inputToolbar];
+		self.inputToolbar.inputDelegate = self;
+		self.inputToolbar.autoresizingMask =
+			UIViewAutoresizingFlexibleTopMargin|
+			UIViewAutoresizingFlexibleWidth;
+		self.inputAccessoryToolbar = self.inputToolbar;
+	
+	if (self.dialog.broadcast)
+		[self.inputToolbar setToolbarEmpty];
+	else
+		[self.inputToolbar setToolbarDefault];
 
 	//ChatBox *cb = [[ChatBox alloc]init];
 	//cb.frame = CGRectMake(
@@ -227,12 +263,12 @@ Someone = {1, 15, 11, 10};
 	//[self.view addSubview:cb];
 	
 	// keyboard
-	[[NSNotificationCenter defaultCenter] 
-		addObserver:self selector:@selector(keyboardWillHide:)
-		name:UIKeyboardWillHideNotification object:nil];
-	[[NSNotificationCenter defaultCenter] 
-		addObserver:self selector:@selector(keyboardWillShow:)
-		name:UIKeyboardWillShowNotification object:nil];
+	//[[NSNotificationCenter defaultCenter] 
+		//addObserver:self selector:@selector(keyboardWillHide:)
+		//name:UIKeyboardWillHideNotification object:nil];
+	//[[NSNotificationCenter defaultCenter] 
+		//addObserver:self selector:@selector(keyboardWillShow:)
+		//name:UIKeyboardWillShowNotification object:nil];
 
 	// load data
 	[self reloadData];
@@ -240,12 +276,17 @@ Someone = {1, 15, 11, 10};
 
 - (void)viewDidUnload
 {
-  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  //[[NSNotificationCenter defaultCenter] removeObserver:self];
   [super viewDidUnload];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
 	[super viewWillAppear:animated];
+
+
+	/* Listen for keyboard */
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
 
 	// set updates handler
 	if (self.appDelegate.tg){
@@ -267,10 +308,10 @@ Someone = {1, 15, 11, 10};
 	[self.navigationController setNavigationBarHidden:NO animated:YES];
 
 	// hide toolbar if channel
-	if (self.dialog.broadcast)
-	{
-		[self toolbarForChannel];
-	}
+	//if (self.dialog.broadcast)
+	//{
+		//[self toolbarForChannel];
+	//}
 
 	// set icon
 	//self.icon = [[UIImageView alloc]
@@ -297,8 +338,13 @@ Someone = {1, 15, 11, 10};
 	}
 
 - (void)viewWillDisappear:(BOOL)animated {
-	[self.textField endEditing:YES];
-	[self.textField resignFirstResponder];
+	self.inputToolbar.textView.internalTextView.text = @"";
+	[self.inputToolbar.textView.internalTextView resignFirstResponder];
+
+	/* No longer listen for keyboard */
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillShowNotification object:nil];
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
+
 	//[self cancelAll];
 	[self.icon removeFromSuperview];
 	// remove updates handler
@@ -320,47 +366,49 @@ Someone = {1, 15, 11, 10};
 	//[self.download cancelAllOperations];
 }
 
--(void)toolbarForChannel{
-	[self 
-		setToolbarItems:nil 
-	  animated: YES];
-}
+//-(void)toolbarForChannel{
+	//[self 
+		//setToolbarItems:nil 
+		//animated: YES];
+//}
 
--(void)toolbarAsEntry{
-	[self 
-		setToolbarItems:@[
-											self.flexibleSpace,
-											self.attach, 
-											self.flexibleSpace,
-											self.textFieldItem, 
-											self.flexibleSpace,
-											self.record,
-											self.flexibleSpace]
-		animated:YES];
-}
+//-(void)toolbarAsEntry{
+	//[self 
+		//setToolbarItems:@[
+											//self.flexibleSpace,
+											//self.attach, 
+											//self.flexibleSpace,
+											//self.textFieldItem, 
+											//self.flexibleSpace,
+											//self.record,
+											//self.flexibleSpace]
+		//animated:YES];
+//}
 
--(void)toolbarAsEntryTyping{
-	[self 
-		setToolbarItems:@[
-											self.flexibleSpace,
-											self.attach, 
-											self.flexibleSpace,
-											self.textFieldItem, 
-											self.flexibleSpace,
-											self.send,
-											self.flexibleSpace]
-		animated:YES];
-}
+//-(void)toolbarAsEntryTyping{
+	//[self 
+		//setToolbarItems:@[
+											//self.flexibleSpace,
+											//self.attach, 
+											//self.flexibleSpace,
+											//self.textFieldItem, 
+											//self.flexibleSpace,
+											//self.send,
+											//self.flexibleSpace]
+		//animated:YES];
+//}
 
--(void)toolbarAsProgress{
-	[self 
-		setToolbarItems:@[self.progress, 
-											self.label, 
-											self.flexibleSpace,
-											self.cancel,
-											self.flexibleSpace]
-		animated:YES];
-}
+//-(void)toolbarAsProgress{
+	//[self.navigationController.topViewController.view
+		//addSubview:self.progressView];
+	////[self 
+		////setToolbarItems:@[self.progress, 
+											////self.label, 
+											////self.flexibleSpace,
+											////self.cancel,
+											////self.flexibleSpace]
+		////animated:YES];
+//}
 
 -(void)timer:(id)sender{
 	// do timer funct
@@ -374,43 +422,14 @@ Someone = {1, 15, 11, 10};
 	}
 }
 
-- (void)onSend:(id)sender{
-	NSString *text = self.textField.text;
-	if (self.appDelegate.isOnLineAndAuthorized)
-	{
-		[self.syncData addOperationWithBlock:^{
-			tg_peer_t peer = {
-					self.dialog.peerType, 
-					self.dialog.peerId, 
-					self.dialog.accessHash
-			};
-			//if (
-					tg_message_send(
-					self.appDelegate.tg, 
-					peer, text.UTF8String);
-				//)
-			//{
-				//dispatch_sync(dispatch_get_main_queue(), ^{
-					//[self.appDelegate showMessage:@"can't send message"];
-				//});
-			//} else {
-				[self appendDataFrom:0 date:[NSDate date] 
-							scrollToBottom:YES];
-			//}
-		}];
-	} else {
-		[self.appDelegate showMessage:@"no network!"];
-	}
-
-	[self.textField setText:@""];
-	[self.textField resignFirstResponder];
-	//[self textViewSetHeight:self.textField numLines:1];
+-(void)attachButtonPressed{
+	self.inputToolbar.textView.internalTextView.text = @"";
+	[self.inputToolbar.textView.internalTextView resignFirstResponder];
+	[self becomeFirstResponder];
+	[self onAdd:nil];
 }
 
 - (void)onAdd:(id)sender{
-	// hide keyboard
-	[self.textField resignFirstResponder];
-
 	// create actionSheet
 	self.actionSheetType = ActionSheetAttach;
 	UIActionSheet *as = [[UIActionSheet alloc]
@@ -428,7 +447,7 @@ Someone = {1, 15, 11, 10};
 	[as showFromToolbar:self.navigationController.toolbar];
 }
 
-- (void)onCancel:(id)sender{
+- (void)cancelButtonPressed{
 	// create actionSheet
 	self.actionSheetType = ActionSheetProgress;
 	UIActionSheet *as = [[UIActionSheet alloc]
@@ -449,17 +468,48 @@ Someone = {1, 15, 11, 10};
 	}
 
 	if (self.dialog.broadcast)
-		[self toolbarForChannel];
+		[self.inputToolbar setToolbarEmpty];
 	else
-		[self toolbarAsEntry];
+		[self.inputToolbar setToolbarDefault];
 }
 
-
-
--(void)refresh:(id)sender{
+-(void)loadMoreMessages:(id)sender{
+	NSInteger count = self.bubbleDataArray.count;
+	// load more messages
 	[self.syncData addOperationWithBlock:^{
-		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:YES];
+		[self appendMessagesFrom:count date:[NSDate date] scrollToBottom:NO];
+		[self.bubbleTableView reloadData];
+		NSInteger delta = self.bubbleDataArray.count - count;
+		// now scroll delta messages from top
+			int i = 0;
+			NSInteger section = 0;
+			for (NSArray *s in self.bubbleTableView.bubbleSection)
+			{
+				NSInteger row = 0;
+				for (NSBubbleData *d in s){
+					i++;
+					if (i == delta){
+						NSIndexPath *indexPath = 
+							[NSIndexPath indexPathForRow:row inSection:section]; 
+						dispatch_sync(dispatch_get_main_queue(), ^{
+							[self.bubbleTableView scrollToRowAtIndexPath:indexPath
+								atScrollPosition:UITableViewScrollPositionTop 
+								animated:NO];
+						});
+
+						return;
+					}
+					
+					row++;
+				}
+
+				section++;
+			}
+
+			// if no messages - just reload data
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[self.bubbleTableView reloadData];
+			});
 	}];
 }
 
@@ -942,18 +992,24 @@ static int messages_callback(void *d, const tg_message_t *m){
 			// init TGMessage
 			item.message = 
 				[[TGMessage alloc]initWithMessage:m dialog:self.dialog];
-			
-			if (m->photo_id){
-				[self getPhotoForMessageCached:item 
-					download:[update boolValue]];
-			} else if (m->doc_id || 
-					m->media_type == id_messageMediaContact)
-			{
-				[self getDocumentForMessageChached:item
-					download:[update boolValue]];
-			} else if (m->media_type == id_messageMediaGeo){
+		
+			//if (item.message.isService){
+				//// update message
+				//[item initWithServiceMessage:item.message.message 
+															//date:item.message.date];
+			//} else {
+				if (m->photo_id){
+					[self getPhotoForMessageCached:item 
+						download:[update boolValue]];
+				} else if (m->doc_id || 
+						m->media_type == id_messageMediaContact)
+				{
+					[self getDocumentForMessageChached:item
+						download:[update boolValue]];
+				} else if (m->media_type == id_messageMediaGeo){
 
-			}
+				}
+			//} // not service message
 		});
 	} else {
 		item = [NSBubbleData alloc]; 
@@ -966,6 +1022,14 @@ static int messages_callback(void *d, const tg_message_t *m){
 		// init TGMessage
 		item.message = 
 			[[TGMessage alloc]initWithMessage:m dialog:self.dialog];
+
+		//if (item.message.isService){
+			//dispatch_sync(dispatch_get_main_queue(), ^{
+				//[item initWithServiceMessage:item.message.message 
+																//date:item.message.date];
+			//});
+			//return 0;
+		//}
 		
 		NSBubbleType type = 
 			item.message.mine?BubbleTypeMine:BubbleTypeSomeoneElse; 
@@ -1187,8 +1251,8 @@ int download_progress(void *d, int size, int total){
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		int downloaded = self.progressCurrent + size;
 		float fl = (float)downloaded / self.progressTotal;
-		[self.progressView setProgress:fl];
-		self.progressLabel.text = 
+		[self.inputToolbar.progressView setProgress:fl];
+		self.inputToolbar.progressLabel.text = 
 			[NSString stringWithFormat:@"%d /\n%d",
 				downloaded, self.progressTotal];
 	});
@@ -1200,8 +1264,8 @@ int upload_progress(void *d, int size, int total){
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		self.progressCurrent += size;
 		float fl = (float)self.progressCurrent / total;
-		[self.progressView setProgress:fl];
-		self.progressLabel.text = 
+		[self.inputToolbar.progressView setProgress:fl];
+		self.inputToolbar.progressLabel.text = 
 			[NSString stringWithFormat:@"%d /\n%d",
 				self.progressCurrent, total];
 	});
@@ -1384,9 +1448,9 @@ int upload_progress(void *d, int size, int total){
 		}
 
 		// download file
-		[self toolbarAsProgress];
-		[self.progressView setProgress:0.0];
-		[self.progressLabel 
+		[self.inputToolbar setToolbarWithProgress];
+		[self.inputToolbar.progressView setProgress:0.0];
+		[self.inputToolbar.progressLabel 
 			setText:[NSString stringWithFormat:@"%d /\n%lld",
 			0, m.docSize]];
 		
@@ -1407,7 +1471,7 @@ int upload_progress(void *d, int size, int total){
 			self.progressTotal = m.docSize;
 			self.progressCurrent = 0;
 			self.stopTransfer = NO;
-			tg_get_document(
+			int err = tg_get_document(
 					self.appDelegate.tg, 
 					m.docId,
 					m.docSize, 
@@ -1417,15 +1481,21 @@ int upload_progress(void *d, int size, int total){
 					get_document_cb,
 					(__bridge void *)self,
 					download_progress);
+
+			if (err){
+				NSLog(@"document download error");
+			} else {
+				[d writeToFile:filepath atomically:YES];
+			}
 			
-			// on done
-			[d writeToFile:filepath atomically:YES];
 			dispatch_sync(dispatch_get_main_queue(), ^{
 				if (self.dialog.broadcast)
-					[self toolbarForChannel];
+					[self.inputToolbar setToolbarEmpty];
 				else
-					[self toolbarAsEntry];
-				[self openUrl:url data:data];
+					[self.inputToolbar setToolbarDefault];
+
+				if (!err)
+					[self openUrl:url data:data];
 			});
 		}];
 	}
@@ -1583,15 +1653,18 @@ didScroll:(UIScrollView *)scrollView
 
 - (void)bubbleTableViewDidBeginDragging:(UIBubbleTableView *)bubbleTableView 
 {
-	[self.textField endEditing:YES];
-	[self.textField resignFirstResponder];
+	//[self.inputToolbar.textView.internalTextView resignFirstResponder];
+	//[self.inputToolbar resignFirstResponder];
+	//[self becomeFirstResponder];
 }
 
 - (void)bubbleTableViewOnTap:(UIBubbleTableView *)bubbleTableView
 {
-	//[self.appDelegate showMessage:@"TAP"];
-	//[self.textField endEditing:YES];
-	//[self.textField resignFirstResponder];
+	[self.inputToolbar.textView resignFirstResponder];
+	//[self.inputToolbar.textView.internalTextView resignFirstResponder];
+	[self.inputToolbar.textView clearText];
+	//self.inputToolbar.textView.internalTextView.text = @"";
+	[self becomeFirstResponder];
 }
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
@@ -1613,38 +1686,38 @@ didScroll:(UIScrollView *)scrollView
 	//if (section){
 		//data = [section objectAtIndex:1];
 	//}
-	NSInteger count = self.bubbleDataArray.count;
-	// load more messages
-	[self.syncData addOperationWithBlock:^{
-		[self appendMessagesFrom:count date:[NSDate date] scrollToBottom:NO];
-		[self.bubbleTableView reloadData];
-		NSInteger delta = self.bubbleDataArray.count - count;
-		// now scroll delta messages from top
-			int i = 0;
-			NSInteger section = 0;
-			for (NSArray *s in self.bubbleTableView.bubbleSection)
-			{
-				NSInteger row = 0;
-				for (NSBubbleData *d in s){
-					i++;
-					if (i == delta){
-						NSIndexPath *indexPath = 
-							[NSIndexPath indexPathForRow:row inSection:section]; 
-						dispatch_sync(dispatch_get_main_queue(), ^{
-							[self.bubbleTableView scrollToRowAtIndexPath:indexPath
-								atScrollPosition:UITableViewScrollPositionTop 
-								animated:NO];
-						});
+	//NSInteger count = self.bubbleDataArray.count;
+	//// load more messages
+	//[self.syncData addOperationWithBlock:^{
+		//[self appendMessagesFrom:count date:[NSDate date] scrollToBottom:NO];
+		//[self.bubbleTableView reloadData];
+		//NSInteger delta = self.bubbleDataArray.count - count;
+		//// now scroll delta messages from top
+			//int i = 0;
+			//NSInteger section = 0;
+			//for (NSArray *s in self.bubbleTableView.bubbleSection)
+			//{
+				//NSInteger row = 0;
+				//for (NSBubbleData *d in s){
+					//i++;
+					//if (i == delta){
+						//NSIndexPath *indexPath = 
+							//[NSIndexPath indexPathForRow:row inSection:section]; 
+						//dispatch_sync(dispatch_get_main_queue(), ^{
+							//[self.bubbleTableView scrollToRowAtIndexPath:indexPath
+								//atScrollPosition:UITableViewScrollPositionTop 
+								//animated:NO];
+						//});
 
-						break;;
-					}
+						//break;;
+					//}
 					
-					row++;
-				}
+					//row++;
+				//}
 
-				section++;
-			}
-	}];
+				//section++;
+			//}
+	//}];
 }
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView 
@@ -1714,119 +1787,119 @@ didScroll:(UIScrollView *)scrollView
 {
 	return self.bubbleDataArray.count;
 }
-#pragma mark <UITextView Delegate>
--(void)textViewDidBeginEditing:(UITextView *)textView {
-	int numLines = 
-		textView.contentSize.height / textView.font.lineHeight;
-	[self textViewSetHeight:textView numLines:numLines];
+//#pragma mark <UITextView Delegate>
+//-(void)textViewDidBeginEditing:(UITextView *)textView {
+	//int numLines = 
+		//textView.contentSize.height / textView.font.lineHeight;
+	//[self textViewSetHeight:textView numLines:numLines];
 	
-	[self toolbarAsEntryTyping];
-	if (self.appDelegate.isOnLineAndAuthorized)
-	{
-		[self.syncData addOperationWithBlock:^{
-			tg_peer_t peer = {
-						self.dialog.peerType, 
-						self.dialog.peerId, 
-						self.dialog.accessHash
-			};
-			tg_messages_set_typing(
-					self.appDelegate.tg, 
-					peer, 
-					true);
-		}];
-	}
+	//[self toolbarAsEntryTyping];
+	//if (self.appDelegate.isOnLineAndAuthorized)
+	//{
+		//[self.syncData addOperationWithBlock:^{
+			//tg_peer_t peer = {
+						//self.dialog.peerType, 
+						//self.dialog.peerId, 
+						//self.dialog.accessHash
+			//};
+			//tg_messages_set_typing(
+					//self.appDelegate.tg, 
+					//peer, 
+					//true);
+		//}];
+	//}
 
-}
+//}
 
--(void)textViewDidEndEditing:(UITextView *)textView {
-	[self toolbarAsEntry];
-	if (self.appDelegate.tg &&
-			self.appDelegate.authorizedUser && 
-			self.appDelegate.reach.isReachable)
-	{
-		[self.syncData addOperationWithBlock:^{
-			tg_peer_t peer = {
-						self.dialog.peerType, 
-						self.dialog.peerId, 
-						self.dialog.accessHash
-			};
-			tg_messages_set_typing(
-					self.appDelegate.tg, 
-					peer, 
-					false);
-		}];
-	}
-}
+//-(void)textViewDidEndEditing:(UITextView *)textView {
+	//[self toolbarAsEntry];
+	//if (self.appDelegate.tg &&
+			//self.appDelegate.authorizedUser && 
+			//self.appDelegate.reach.isReachable)
+	//{
+		//[self.syncData addOperationWithBlock:^{
+			//tg_peer_t peer = {
+						//self.dialog.peerType, 
+						//self.dialog.peerId, 
+						//self.dialog.accessHash
+			//};
+			//tg_messages_set_typing(
+					//self.appDelegate.tg, 
+					//peer, 
+					//false);
+		//}];
+	//}
+//}
 
--(void)textViewSetHeight:(UITextView *)textView numLines:(int)numLines{
-	CGRect frame = self.navigationController.toolbar.frame;
-	if (numLines < 8){
-		//CGFloat height = textView.contentSize.height;
-		frame.origin.y -= (numLines - self.numLines)*textView.font.lineHeight; 
-		frame.size.height += (numLines - self.numLines)*textView.font.lineHeight; 
-		self.navigationController.toolbar.frame = frame;
-		self.numLines = numLines;
-		textView.showsVerticalScrollIndicator = NO;
-	} else
-		textView.showsVerticalScrollIndicator = YES;
-}
+//-(void)textViewSetHeight:(UITextView *)textView numLines:(int)numLines{
+	//CGRect frame = self.navigationController.toolbar.frame;
+	//if (numLines < 8){
+		////CGFloat height = textView.contentSize.height;
+		//frame.origin.y -= (numLines - self.numLines)*textView.font.lineHeight; 
+		//frame.size.height += (numLines - self.numLines)*textView.font.lineHeight; 
+		//self.navigationController.toolbar.frame = frame;
+		//self.numLines = numLines;
+		//textView.showsVerticalScrollIndicator = NO;
+	//} else
+		//textView.showsVerticalScrollIndicator = YES;
+//}
 
-- (void)textViewDidChange:(UITextView *)textView {
-	// resize text view
-	int numLines = 
-		textView.contentSize.height / textView.font.lineHeight;
-	[self textViewSetHeight:textView numLines:numLines];
-}
+//- (void)textViewDidChange:(UITextView *)textView {
+	//// resize text view
+	//int numLines = 
+		//textView.contentSize.height / textView.font.lineHeight;
+	//[self textViewSetHeight:textView numLines:numLines];
+//}
 
-#pragma mark <UITextField Delegate>
-- (void)textFieldDidBeginEditing:(UITextField *)textField {
-	[self toolbarAsEntryTyping];
-	if (self.appDelegate.isOnLineAndAuthorized)
-	{
-		[self.syncData addOperationWithBlock:^{
-			tg_peer_t peer = {
-						self.dialog.peerType, 
-						self.dialog.peerId, 
-						self.dialog.accessHash
-			};
-			tg_messages_set_typing(
-					self.appDelegate.tg, 
-					peer, 
-					true);
-		}];
-	}
+//#pragma mark <UITextField Delegate>
+//- (void)textFieldDidBeginEditing:(UITextField *)textField {
+	//[self toolbarAsEntryTyping];
+	//if (self.appDelegate.isOnLineAndAuthorized)
+	//{
+		//[self.syncData addOperationWithBlock:^{
+			//tg_peer_t peer = {
+						//self.dialog.peerType, 
+						//self.dialog.peerId, 
+						//self.dialog.accessHash
+			//};
+			//tg_messages_set_typing(
+					//self.appDelegate.tg, 
+					//peer, 
+					//true);
+		//}];
+	//}
 
-	//self.bubbleTableView.typingBubble = NSBubbleTypingTypeMe;
-	//[self.bubbleTableView reloadData];
-	//[self.bubbleTableView scrollToBottomWithAnimation:YES];
-}
+	////self.bubbleTableView.typingBubble = NSBubbleTypingTypeMe;
+	////[self.bubbleTableView reloadData];
+	////[self.bubbleTableView scrollToBottomWithAnimation:YES];
+//}
 
-- (void)textFieldDidEndEditing:(UITextField *)textField {
-	[self toolbarAsEntry];
-	if (self.appDelegate.tg &&
-			self.appDelegate.authorizedUser && 
-			self.appDelegate.reach.isReachable)
-	{
-		[self.syncData addOperationWithBlock:^{
-			tg_peer_t peer = {
-						self.dialog.peerType, 
-						self.dialog.peerId, 
-						self.dialog.accessHash
-			};
-			tg_messages_set_typing(
-					self.appDelegate.tg, 
-					peer, 
-					false);
-		}];
-	}
+//- (void)textFieldDidEndEditing:(UITextField *)textField {
+	//[self toolbarAsEntry];
+	//if (self.appDelegate.tg &&
+			//self.appDelegate.authorizedUser && 
+			//self.appDelegate.reach.isReachable)
+	//{
+		//[self.syncData addOperationWithBlock:^{
+			//tg_peer_t peer = {
+						//self.dialog.peerType, 
+						//self.dialog.peerId, 
+						//self.dialog.accessHash
+			//};
+			//tg_messages_set_typing(
+					//self.appDelegate.tg, 
+					//peer, 
+					//false);
+		//}];
+	//}
 
-	//self.bubbleTableView.typingBubble = NSBubbleTypingTypeNobody;
-	//[self.bubbleTableView reloadData];
-}
+	////self.bubbleTableView.typingBubble = NSBubbleTypingTypeNobody;
+	////[self.bubbleTableView reloadData];
+//}
 
-- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
-	return self.textFieldIsEditable;
-}
+//- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
+	//return self.textFieldIsEditable;
+//}
 
 #pragma mark <ACTION SHEET DELEGATE>
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
@@ -1978,6 +2051,37 @@ didScroll:(UIScrollView *)scrollView
 	[self sendPhoto:image];
 } 
 
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
+{
+		return YES;
+}
+
+-(void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{	
+		//CGRect screenFrame = [[UIScreen mainScreen] applicationFrame];
+		CGRect frame = self.view.bounds;
+		CGRect r = self.inputToolbar.frame;
+	if (UIInterfaceOrientationIsPortrait(toInterfaceOrientation))
+		{
+				r.origin.y = frame.size.height - self.inputToolbar.frame.size.height - kStatusBarHeight;
+				if (keyboardIsVisible) {
+						r.origin.y -= kKeyboardHeightPortrait;
+				}
+				[self.inputToolbar.textView setMaximumNumberOfLines:13]; 
+	}
+	else
+		{
+				r.origin.y = frame.size.width - self.inputToolbar.frame.size.height - kStatusBarHeight;
+				if (keyboardIsVisible) {
+						r.origin.y -= kKeyboardHeightLandscape;
+				}
+				[self.inputToolbar.textView setMaximumNumberOfLines:7];
+				[self.inputToolbar.textView sizeToFit];
+		}
+		self.inputToolbar.frame = r;
+}
+
 #pragma mark <Keyboard Functions>
 - (void)keyboardWillShow:(NSNotification *)notification {
 		CGSize keyboardSize = [[[notification userInfo] 
@@ -1987,52 +2091,100 @@ didScroll:(UIScrollView *)scrollView
 
 		float newVerticalPosition;
 		if (UIInterfaceOrientationIsPortrait(interfaceOrientation))
-			newVerticalPosition = -keyboardSize.height;
+			newVerticalPosition = -keyboardSize.height + kDefaultToolbarHeight;
 		else 
-			newVerticalPosition = -keyboardSize.width;
+			newVerticalPosition = -keyboardSize.width + kDefaultToolbarHeight;
 
 		[self moveFrameToVerticalPosition:newVerticalPosition forDuration:0.3f];
+    keyboardIsVisible = YES;
 }
 
 - (void)keyboardWillHide:(NSNotification *)notification {
 		[self moveFrameToVerticalPosition:0.0f forDuration:0.3f];
+    keyboardIsVisible = NO;
 }
 
 - (void)moveFrameToVerticalPosition:(float)position forDuration:(float)duration {
-    CGRect frame = self.view.frame;
-    CGRect toolbarFrame = self.navigationController.toolbar.frame;
-    frame.origin.y = position;
-		if (position){
-			self.toolbarOrigY = toolbarFrame.origin.y;
-			toolbarFrame.origin.y += position;
-		} else {
-				//newVerticalPosition = -keyboardSize.height;
-			UIInterfaceOrientation interfaceOrientation = 
-				UIApplication.sharedApplication.statusBarOrientation;
+		CGRect frame = self.bubbleTableView.frame;
+		//CGRect toolbarFrame = self.navigationController.toolbar.frame;
+		//CGRect toolbarFrame = self.inputToolbar.frame;
+		frame.origin.y = position;
+		//if (position){
+			//self.toolbarOrigY = toolbarFrame.origin.y;
+			//toolbarFrame.origin.y += position;
+		//} else {
+			//toolbarFrame.origin.y = 
+				//self.view.bounds.size.height - kDefaultToolbarHeight;
+			
+			////newVerticalPosition = -keyboardSize.height;
+			
+			//UIInterfaceOrientation interfaceOrientation = 
+				//UIApplication.sharedApplication.statusBarOrientation;
 
-			if (UIInterfaceOrientationIsPortrait(interfaceOrientation)){
-				toolbarFrame.origin.y = 
-					self.appDelegate.window.bounds.size.height -
-					self.navigationController.toolbar.bounds.size.height;
-			} else {
-				toolbarFrame.origin.y = 
-					self.appDelegate.window.bounds.size.width -
-					self.navigationController.toolbar.bounds.size.height;
-			} 
-		}
+			//if (UIInterfaceOrientationIsPortrait(interfaceOrientation)){
+				//toolbarFrame.origin.y = 
+					//self.appDelegate.window.bounds.size.height -
+					////self.navigationController.toolbar.bounds.size.height;
+					//self.inputToolbar.bounds.size.height;
+			//} else {
+				//toolbarFrame.origin.y = 
+					//self.appDelegate.window.bounds.size.width -
+					////self.navigationController.toolbar.bounds.size.height;
+					//self.inputToolbar.bounds.size.height;
+			//} 
+		//}
 
-    [UIView animateWithDuration:duration animations:^{
-        self.view.frame = frame;
-				self.navigationController.toolbar.frame = toolbarFrame;
-    }];
+		[UIView animateWithDuration:duration animations:^{
+				self.bubbleTableView.frame = frame;
+				//self.navigationController.toolbar.frame = toolbarFrame;
+				//self.inputToolbar.frame = toolbarFrame;
+		}];
 }
 
+//- (void)keyboardWillShow:(NSNotification *)notification 
+//{
+    //[> Move the toolbar to above the keyboard <]
+	//[UIView beginAnimations:nil context:NULL];
+	//[UIView setAnimationDuration:0.3];
+	//CGRect frame = self.inputToolbar.frame;
+    //if (UIInterfaceOrientationIsPortrait(self.interfaceOrientation)) {
+        //frame.origin.y = self.view.frame.size.height - frame.size.height - kKeyboardHeightPortrait;
+    //}
+    //else {
+        //frame.origin.y = self.view.frame.size.width - frame.size.height - kKeyboardHeightLandscape - kStatusBarHeight - 40;
+    //}
+	//self.inputToolbar.frame = frame;
+	//[UIView commitAnimations];
+    //keyboardIsVisible = YES;
+//}
+
+//- (void)keyboardWillHide:(NSNotification *)notification 
+//{
+    //[> Move the toolbar back to bottom of the screen <]
+	//[UIView beginAnimations:nil context:NULL];
+	//[UIView setAnimationDuration:0.3];
+	//CGRect frame = self.inputToolbar.frame;
+    //if (UIInterfaceOrientationIsPortrait(self.interfaceOrientation)) {
+        //frame.origin.y = self.view.frame.size.height - frame.size.height;
+    //}
+    //else {
+        //frame.origin.y = self.view.frame.size.width - frame.size.height;
+    //}
+	//self.inputToolbar.frame = frame;
+	//[UIView commitAnimations];
+    //keyboardIsVisible = NO;
+//}
+
 #pragma mark <Audio Recording>
--(void)startRecording:(id)sender{
-	
+//-(void)startRecording:(id)sender{
+-(void)recordButtonStart {
 	// Init audio with record capability
 	AVAudioSession *audioSession = [AVAudioSession sharedInstance];
 	[audioSession setCategory:AVAudioSessionCategoryRecord error:nil];
+
+	UINavigationBar *bar = [self.navigationController navigationBar];
+	self.defaultBarColor = bar.tintColor;
+	bar.tintColor = [UIColor redColor];
 
 	self.recordSettings = [[NSMutableDictionary alloc] 
 		initWithCapacity:10];
@@ -2093,11 +2245,11 @@ didScroll:(UIScrollView *)scrollView
 		self.textFieldIsEditable = NO;
 		self.textField.text = @"";
 		self.textField.placeholder = @"Recording audio...";
-		[self startRecording:nil];
+		//[self startRecording:nil];
 	}
 	else {
 		record.style = UIBarButtonItemStyleBordered;
-		[self stopRecording:nil];
+		//[self stopRecording:nil];
 		self.textFieldIsEditable = YES;
 		self.textField.text = @"";
 		self.textField.placeholder = @"";
@@ -2177,9 +2329,9 @@ didScroll:(UIScrollView *)scrollView
 		}
 
 		dispatch_sync(dispatch_get_main_queue(), ^{
-			[self toolbarAsProgress];
-			[self.progressView setProgress:0.0];
-			[self.progressLabel setText:@"0 /\n0"];
+			[self.inputToolbar setToolbarWithProgress];
+			[self.inputToolbar.progressView setProgress:0.0];
+			[self.inputToolbar.progressLabel setText:@"0 /\n0"];
 		});
 
 		self.progressTotal = 0;
@@ -2219,20 +2371,25 @@ didScroll:(UIScrollView *)scrollView
 		// on done
 		dispatch_sync(dispatch_get_main_queue(), ^{
 			if (self.dialog.broadcast)
-				[self toolbarForChannel];
+				[self.inputToolbar setToolbarEmpty];
 			else
-				[self toolbarAsEntry];
+				[self.inputToolbar setToolbarDefault];
 		});
 		[self appendDataFrom:0 date:[NSDate date] 
 					scrollToBottom:YES];
 	}];
 }
 
--(void)stopRecording:(id)sender{
+//-(void)stopRecording:(id)sender{
+-(void)recordButtonStop {
 	//[self.appDelegate showMessage:@"STOP"];
 	NSLog(@"stopRecording");
 	[self.audioRecorder stop];
 	NSLog(@"stopped");
+
+
+	UINavigationBar *bar = [self.navigationController navigationBar];
+	bar.tintColor = self.defaultBarColor;
 	
 	[self.appDelegate askYesNo:@"Send voice message?" 
 		onYes:^{
@@ -2433,6 +2590,52 @@ didScroll:(UIScrollView *)scrollView
 #pragma mark <TextEditViewController DELEGATE FUNCTIONS>
 -(void)textEditViewControllerSaveText:(NSString *)text{
 }
+
+#pragma mark - UIInputToolbar
+
+-(void)inputButtonPressed:(NSString *)inputText
+{
+    /* Called when toolbar button is pressed */
+    //NSLog(@"Pressed button with text: '%@'", inputText);
+	
+	NSString *text = inputText;
+	if (self.appDelegate.isOnLineAndAuthorized)
+	{
+		[self.syncData addOperationWithBlock:^{
+			tg_peer_t peer = {
+					self.dialog.peerType, 
+					self.dialog.peerId, 
+					self.dialog.accessHash
+			};
+			//if (
+					tg_message_send(
+					self.appDelegate.tg, 
+					peer, text.UTF8String);
+				//)
+			//{
+				//dispatch_sync(dispatch_get_main_queue(), ^{
+					//[self.appDelegate showMessage:@"can't send message"];
+				//});
+			//} else {
+				[self appendDataFrom:0 date:[NSDate date] 
+							scrollToBottom:YES];
+			//}
+		}];
+	} else {
+		[self.appDelegate showMessage:@"no network!"];
+	}
+
+	[self becomeFirstResponder];
+}
+- (BOOL)canBecomeFirstResponder{
+    return YES;
+}
+
+- (UIView *)inputAccessoryView{
+    return self.inputAccessoryToolbar;
+}
+
+
 
 @end
 // vim:ft=objc

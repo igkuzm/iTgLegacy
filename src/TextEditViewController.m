@@ -7,6 +7,7 @@
  */
 
 #import "TextEditViewController.h"
+#include "UIKit/UIKit.h"
 
 @interface TextEditViewController ()
 
@@ -29,6 +30,8 @@
 	[self.view addSubview:self.scrollView];
 
 	self.textView = [[UITextView alloc]initWithFrame:self.view.bounds];
+	self.textView.autoresizingMask = 
+		UIViewAutoresizingFlexibleHeight|UIViewAutoresizingFlexibleWidth;
 	[self.textView setFont:[UIFont fontWithName:@"arial" size:18]];
 	//self.textView.delegate=self;
 	[self.scrollView addSubview:self.textView];

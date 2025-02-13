@@ -34,5 +34,9 @@ accessoryButtonTappedForData:(NSBubbleData *)data;
 - (void)performSwipeToLeftAction:(NSBubbleData *)data;
 - (void)performSwipeToRightAction:(NSBubbleData *)data;
 
+- (void) bubbleTableViewWillEndDragging:(UIBubbleTableView *)bubbleTableView 
+                      withVelocity:(CGPoint) velocity 
+               targetContentOffset:(CGPoint *) targetContentOffset;
+
 
 @end

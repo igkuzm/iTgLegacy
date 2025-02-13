@@ -117,12 +117,9 @@
 	self.text = [[UILabel alloc] 
 		initWithFrame:CGRectMake(
 				0, 
-				self.name?imageSize.height + 28:imageSize.height +8, 
+				self.name?imageSize.height + 28 + 4:imageSize.height +8 + 4, 
 				textSize.width, 
 				textSize.height)];
-	//self.textView.editable = NO;
-	//self.textView.dataDetectorTypes = UIDataDetectorTypeAll;
-	//self.textView.scrollEnabled = NO;
 	self.text.text = text;
 	self.text.font = font; 
 	self.text.backgroundColor = [UIColor clearColor];
@@ -138,7 +135,7 @@
 	// view
 	CGFloat viewH = imageSize.height + 8;
 	if (text)
-		viewH += textSize.height + 8;
+		viewH += textSize.height + 8 + 4;
 	if (self.name)
 		viewH += 28;
 
@@ -147,9 +144,11 @@
 		viewW = textSize.width;
 	if (imageSize.width > viewW)
 		viewW = imageSize.width;
-	if (nameSize.width > viewW)
+	if (nameSize.width + 2> viewW)
 		viewW = nameSize.width;
-
+	if (image && viewW < 180)
+		viewW = 180;
+		
 	UIView *view = [[UIView alloc]
 		initWithFrame:CGRectMake(
 				0, 
@@ -167,11 +166,11 @@
 		[view addSubview:self.text];
 
 	// titleLabel
-	self.titleLabel = [[UILabel alloc] 
-		initWithFrame:CGRectMake(
-				imageSize.width + 10,
-			 	0, 
-				self.width - imageSize.width - 4, 20)];
+	self.titleLabel = [[UILabel alloc]init]; 
+	self.titleLabel.frame = CGRectMake(
+				imageSize.width + 6,
+			 	8, 
+				viewW - imageSize.width - 4, 20);
   self.titleLabel.backgroundColor = [UIColor clearColor];
 	self.titleLabel.font = [UIFont systemFontOfSize:10];
 	[view addSubview:self.titleLabel];
@@ -179,9 +178,9 @@
 	// sizeLabel
 	self.sizeLabel = [[UILabel alloc] 
 		initWithFrame:CGRectMake(
-				imageSize.width + 10,
+				imageSize.width + 6,
 			 	22, 
-				self.width - imageSize.width - 4, 20)];
+				viewW - imageSize.width - 4, 20)];
   self.sizeLabel.backgroundColor = [UIColor clearColor];
 	self.sizeLabel.font = [UIFont systemFontOfSize:8];
 	[view addSubview:self.sizeLabel];
@@ -191,6 +190,46 @@
     return [self initWithView:view 
 												 date:date type:type insets:insets];       
 }
+
+
+//- (id)initWithServiceMessage:(NSString *)text date:(NSDate *)date
+//{
+	//if (!self.width)
+		//self.width = 220;
+	
+	//UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]-2];
+   
+	//CGSize textSize = [text 
+		//sizeWithFont:font 
+		//constrainedToSize:CGSizeMake(self.width, 9999) 
+		//lineBreakMode:NSLineBreakByWordWrapping];
+
+	//self.text = [[UILabel alloc] 
+		//initWithFrame:CGRectMake(
+				//self.width/2 - textSize.width/2, 
+				//0, 
+				//textSize.width, 
+				//textSize.height)];
+	
+	//self.text.text = text;
+	//self.text.font = font; 
+	//self.text.textColor = [UIColor lightGrayColor];
+	//self.text.backgroundColor = [UIColor clearColor];
+	//self.text.numberOfLines = 0;
+	//self.text.lineBreakMode = NSLineBreakByWordWrapping;
+
+	//UIView *view = [[UIView alloc]
+		//initWithFrame:CGRectMake(
+				//0, 
+				//0, 
+				//self.width, 
+				//textSize.height)];
+	//[view addSubview:self.text];
+	
+  //UIEdgeInsets insets = {0,0,0,0}; 
+  //return [self initWithView:view 
+						//date:date type:BubbleTypeMine insets:insets];       
+//}
 
 #pragma mark - Custom view bubble
 

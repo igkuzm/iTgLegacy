@@ -11,6 +11,7 @@
 #include "UIKit/UIKit.h"
 #include "Foundation/Foundation.h"
 #include "QuickLookController.h"
+#import "InputToolBar.h"
 
 @implementation ConfigViewController
 
@@ -233,6 +234,10 @@ enum {
 							cell.textLabel.text = @"Last log";
 						}
 						break;
+					case 3:
+						{
+							cell.textLabel.text = @"test input bar";
+						}
 					
 					default:
 						break;
@@ -338,6 +343,15 @@ enum {
 					 }
 					 break;
 
+				 //case 3:
+					 //{
+						 //InputToolBar *ip = [[InputToolBar alloc]init];
+						 //ip.frame = CGRectMake(
+								 //0, self.view.frame.size.height-40, 
+								 //self.view.frame.size.width, 40);
+						 //[self.view addSubview:ip];
+					 //}
+						//break;
 
 					default:
 						break;

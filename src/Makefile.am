@@ -17,6 +17,10 @@ iTgLegacy_SOURCES = \
 		TGMessage.m \
 		TGVideoPlayer.m \
 		ChatBox.m \
+		InputToolBar.m \
+		UIInputToolbar/BHExpandingTextView.m \
+		UIInputToolbar/BHExpandingTextViewInternal.m \
+		UIInputToolbar/BHInputToolbar.m \
 		BubbleView/NSBubbleData.m \
 		BubbleView/UIBubbleHeaderTableViewCell.m \
 		BubbleView/UIBubbleTableView.m \

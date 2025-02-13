@@ -11,6 +11,7 @@
 #import <CoreLocation/CoreLocation.h>
 #import <MapKit/MapKit.h>
 #import "TextEditViewController.h"
+#import "UIInputToolbar/BHInputToolbar.h"
 
 enum {
 	ActionSheetAttach,
@@ -26,9 +27,16 @@ enum {
 	FilePickerControllerDelegate, UITextViewDelegate,
 	ABPeoplePickerNavigationControllerDelegate,
 	CLLocationManagerDelegate, NSBubbleDataDelegate,
-	TextEditViewControllerDelegate>
+	TextEditViewControllerDelegate, BHInputToolbarDelegate>
 {
+	BHInputToolbar *inputToolbar;
+    
+  @private
+  BOOL keyboardIsVisible;
 }
+
+@property (nonatomic, strong) BHInputToolbar *inputToolbar;
+@property (strong, nonatomic) UIView *inputAccessoryToolbar;
 
 @property (strong) AppDelegate *appDelegate;
 
@@ -40,6 +48,7 @@ enum {
 @property (strong) AVAudioRecorder *audioRecorder;
 @property (strong) NSMutableDictionary *recordSettings;
 
+
 @property SystemSoundID recordStart;
 
 @property Boolean textFieldIsEditable;
@@ -48,8 +57,8 @@ enum {
 
 @property int actionSheetType;
 
-@property (strong) UIProgressView *progressView;
-@property (strong) UILabel *progressLabel;
+//@property (strong) UIProgressView *progressView;
+//@property (strong) UILabel *progressLabel;
 @property int progressTotal;
 @property int progressCurrent;
 

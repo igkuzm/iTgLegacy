@@ -52,9 +52,9 @@
 
 		// tap gesture
 		// on tap
-		//UITapGestureRecognizer *gestureRecognizer = 
-			//[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onTap)];
-		//[self addGestureRecognizer:gestureRecognizer];
+		UITapGestureRecognizer *gestureRecognizer = 
+			[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onTap)];
+		[self addGestureRecognizer:gestureRecognizer];
 }
 
 - (id)init
@@ -113,23 +113,16 @@
     self.showsHorizontalScrollIndicator = NO;
     
     // Cleaning up
-	self.bubbleSection = nil;
+		self.bubbleSection = nil;
     
     // Loading new data
     int count = 0;
-//#if !__has_feature(objc_arc)
-    //self.bubbleSection = [[[NSMutableArray alloc] init] autorelease];
-//#else
     self.bubbleSection = [[NSMutableArray alloc] init];
-//#endif
     
     if (self.bubbleDataSource && (count = [self.bubbleDataSource rowsForBubbleTable:self]) > 0)
     {
-//#if !__has_feature(objc_arc)
-        //NSMutableArray *bubbleData = [[[NSMutableArray alloc] initWithCapacity:count] autorelease];
-//#else
-        NSMutableArray *bubbleData = [[NSMutableArray alloc] initWithCapacity:count];
-//#endif
+        NSMutableArray *bubbleData = 
+					[[NSMutableArray alloc] initWithCapacity:count];
         
         for (int i = 0; i < count; i++)
         {
@@ -156,11 +149,7 @@
             
             if ([data.date timeIntervalSinceDate:last] > self.snapInterval)
             {
-//#if !__has_feature(objc_arc)
-                //currentSection = [[[NSMutableArray alloc] init] autorelease];
-//#else
                 currentSection = [[NSMutableArray alloc] init];
-//#endif
                 [self.bubbleSection addObject:currentSection];
             }
             
@@ -278,7 +267,7 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
         return cell;
     }
     
-  // Standard bubble    
+		// Standard bubble    
     static NSString *cellId = @"tblBubbleCell";
     UIBubbleTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellId];
     NSBubbleData *data = [[self.bubbleSection objectAtIndex:indexPath.section] objectAtIndex:indexPath.row - 1];
@@ -462,6 +451,14 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 	}
 
 }
+
+//- (void) scrollViewWillEndDragging:(UIScrollView *) scrollView 
+                      //withVelocity:(CGPoint) velocity 
+               //targetContentOffset:(CGPoint *) targetContentOffset
+//{
+	//if (self.bubbleDelegate && [self.bubbleDelegate respondsToSelector:@selector(bubbleTableViewWillEndDragging:withVelocity:targetContentOffset::)])
+		//[self.bubbleDelegate bubbleTableViewWillEndDragging:self withVelocity:velocity targetContentOffset:targetContentOffset];
+//}
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
 	//if (section == 0)
