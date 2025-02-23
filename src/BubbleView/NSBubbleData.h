@@ -54,6 +54,7 @@ typedef enum _NSBubbleType
 @property UIEdgeInsets textInsetsSomeone;
 
 
+@property Boolean showPlayButton;
 
 - (id)initWithImage:(UIImage *)image date:(NSDate *)date type:(NSBubbleType)type text:(NSString *)text;
 

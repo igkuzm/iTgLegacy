@@ -589,7 +589,8 @@ Someone = {1, 15, 11, 10};
 				if (d.message.isVoice){
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_audio@2x.png"];
-					d.videoPlayButton.hidden = NO;
+					//d.videoPlayButton.hidden = NO;
+					d.showPlayButton = YES;
 				}
 				else if ([d.message.mimeType isEqualToString:@"video/mov"] ||
 					  [d.message.docFileName.pathExtension.lowercaseString 
@@ -598,7 +599,7 @@ Someone = {1, 15, 11, 10};
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_mov@2x.png"];
 					d.message.isVideo = YES;
-					d.videoPlayButton.hidden = NO;
+					d.showPlayButton = YES;
 				}
 
 				else if ([d.message.mimeType isEqualToString:@"text/html"] ||
@@ -607,8 +608,6 @@ Someone = {1, 15, 11, 10};
 				{
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_txt@2x.png"];
-					d.message.isVideo = YES;
-					d.videoPlayButton.hidden = NO;
 				}
 
 				else if ([d.message.mimeType isEqualToString:@"video/mp4"] ||
@@ -618,7 +617,7 @@ Someone = {1, 15, 11, 10};
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_mp4@2x.png"];
 					d.message.isVideo = YES;
-					d.videoPlayButton.hidden = NO;
+					d.showPlayButton = YES;
 				}
 				
 				else if ([d.message.mimeType isEqualToString:@"audio/ogg"] ||
@@ -628,7 +627,7 @@ Someone = {1, 15, 11, 10};
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_audio@2x.png"];
 					d.message.isVoice = YES;
-					d.videoPlayButton.hidden = NO;
+					d.showPlayButton = YES;
 				}
 				
 				else if ([d.message.mimeType isEqualToString:@"audio/mp3"] ||
@@ -637,7 +636,7 @@ Someone = {1, 15, 11, 10};
 				{
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_mp3@2x.png"];
-					d.videoPlayButton.hidden = NO;
+					d.showPlayButton = YES;
 				}
 				else if ([d.message.mimeType 
 									isEqualToString:@"application/x-pdf"] ||
@@ -688,21 +687,25 @@ Someone = {1, 15, 11, 10};
 				}
 
 				else if (d.message.isVideo)
+				{
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_video@2x.png"];
+					d.showPlayButton = YES;
+				}
 				
 				else
 					d.message.photo = 
 						[UIImage imageNamed:@"filetype_icon_unknown@2x.png"];
 
 
-				// now try to load default photo
-				if (d.message.photoSizes.count){
+				// try to load video placeholder
 					CGSize size = {0,0};
-					// find size with name "x"
-					for (NSDictionary *dict in d.message.photoSizes){
-						if ([[dict valueForKey:@"type"] isEqualToString:@"x"])
-						 size = [[dict valueForKey:@"size"]CGSizeValue];
+					// find size with name "v" - video preview
+					if (d.message.videoSizes.count){
+						for (NSDictionary *dict in d.message.videoSizes){
+							if ([[dict valueForKey:@"type"] isEqualToString:@"v"])
+							 size = [[dict valueForKey:@"size"]CGSizeValue];
+						}
 					}
 					
 					UIImage *placeholder = d.message.photo;
@@ -714,17 +717,20 @@ Someone = {1, 15, 11, 10};
 
 					d.message.photo = [UIImage 
 						imageWithPlaceholder:placeholder 
-						cachePath:d.message.photoPath 
+						cachePath:d.message.videoThumbPath 
 						view:d.imageView 
 						downloadBlock:^NSData *(void){
-							if (d.message.photoId && !d.message.photoData){
+							if (d.message.docId && !d.message.photoData){
+								//NSLog(@"GET DOCUMENT THUMB!");
 								char *photo  = 
-									tg_get_photo_file(
+									tg_get_document_thumb(
 											self.appDelegate.tg, 
-											d.message.photoId, 
-											d.message.photoAccessHash, 
-											d.message.photoFileReference.UTF8String, 
-											"x");
+											d.message.docId, 
+											d.message.docAccessHash, 
+											d.message.docFileReference.UTF8String, 
+											"m");
+								//NSLog(@"GOT DOCUMENT THUMB: %s", 
+																//photo?"OK":"NULL");
 								if (photo){
 									d.message.photoData = [NSData dataFromBase64String:
 											[NSString stringWithUTF8String:photo]];
@@ -745,7 +751,6 @@ Someone = {1, 15, 11, 10};
 								 [self.bubbleTableView reloadData];
 							 }
 						}];
-				}
 			}
 			break;
 		case id_messageMediaGeo:
@@ -1013,6 +1018,7 @@ static int messages_callback(void *d, const tg_message_t *m){
 		});
 	} else {
 		item = [NSBubbleData alloc]; 
+		item.showPlayButton = NO;
 
 		item.delegate = self;
 

@@ -25,6 +25,7 @@
 
 #import "BHInputToolbar.h"
 #include "UIKit/UIKit.h"
+#include "../UIImage+Utils/UIImage+Utils.h"
 
 @implementation BHInputToolbar
 
@@ -63,7 +64,7 @@
 		//button.contentStretch          = CGRectMake(0.5, 0.5, 0, 0);
 		//button.contentMode             = UIViewContentModeScaleToFill;
 
-		[button setBackgroundImage:buttonImage 
+		[button setBackgroundImage:[buttonImage imageWithTint:[UIColor blueColor]]
 											forState:UIControlStateNormal];
 		//[button setTitle:buttonLabel forState:UIControlStateNormal];
 		[button addTarget:self 

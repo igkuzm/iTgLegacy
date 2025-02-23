@@ -92,7 +92,7 @@
 			 	imageSize.height/2 - 20, 
 				40, 40)];
 	self.videoPlayButton.image = [UIImage imageNamed:@"Video-play-button"];
-	self.videoPlayButton.hidden = YES;
+	self.videoPlayButton.hidden = !self.showPlayButton;
 	[self.imageView addSubview:self.videoPlayButton];
 	
 	self.spinner = [[UIActivityIndicatorView alloc] 

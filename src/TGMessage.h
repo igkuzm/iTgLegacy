@@ -22,6 +22,7 @@
 @property uint64_t photoAccessHash;
 @property (strong) NSString *photoFileReference;
 @property (strong) NSString *photoPath;
+@property (strong) NSString *videoThumbPath;
 @property (strong) NSMutableArray *photoSizes;
 @property (strong) NSMutableArray *videoSizes;
 @property CGSize photoCachedSize;

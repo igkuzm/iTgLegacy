@@ -150,6 +150,10 @@
 		}
 
 		// video
+		self.videoThumbPath = 
+			[NSString stringWithFormat:@"%@/%lld.v.png", 
+				appDelegate.smallPhotoCache, self.docId];
+
 		if ([self.mimeType isEqualToString:@"video/mov"] ||
 		    [self.mimeType isEqualToString:@"video/mp4"] ||
 				[self.docFileName.pathExtension.lowercaseString 
