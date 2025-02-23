@@ -29,6 +29,7 @@
 @end
 
 @interface UIImage (Utils)
+- (UIImage *)imageWithTint:(UIColor *)tintColor;
 + (UIImage *)imageWithImage:(UIImage *)image 
 							 scaledToSize:(CGSize)newSize;
 
