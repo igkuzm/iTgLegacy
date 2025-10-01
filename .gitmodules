@@ -1,0 +1,3 @@
+[submodule "libtg2"]
+	path = libtg2
+	url = git@github.com:igkuzm/libtg2
