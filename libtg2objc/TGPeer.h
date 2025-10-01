@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+#import <CoreData/CoreData.h>
 #import "../libtg2/libtg.h"
 
 typedef NS_ENUM(NSUInteger, TGPeerType) {
@@ -8,7 +8,7 @@ typedef NS_ENUM(NSUInteger, TGPeerType) {
 	kTGPeerTypeChannel,
 };
 
-@interface TGPeer : NSObject
+@interface TGPeer : NSManagedObject
 {
 }
 
@@ -16,6 +16,7 @@ typedef NS_ENUM(NSUInteger, TGPeerType) {
 @property int id;
 
 - (id)initWithTL:(const tl_t *)tl;
++ (NSEntityDescription *)entity;
 @end
 
 // vim:ft=objc

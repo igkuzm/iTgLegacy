@@ -1,8 +1,8 @@
-#import <Foundation/Foundation.h>
+#import <CoreData/CoreData.h>
 #import "../libtg2/libtg.h"
 #import "TGChatPhoto.h"
 
-@interface TGFolder : NSObject
+@interface TGFolder : NSManagedObject
 {
 }
 
@@ -14,6 +14,8 @@
 @property (strong) TGChatPhoto *photo;
 
 - (id)initWithTL:(const tl_t *)tl;
+
++ (NSEntityDescription *)entity;
 @end
 
 // vim:ft=objc

@@ -17,5 +17,69 @@
 	}
 	return self;
 }
+
++ (NSEntityDescription *)entityDescription{
+
+	NSEntityDescription *entity = [[NSEntityDescription alloc] init];
+	[entity setName:@"TGChatPhoto"];
+	[entity setManagedObjectClassName:@"TGChatPhoto"];
+	
+	NSMutableArray *properties = [NSMutableArray array];
+	
+	// create the attributes
+	// Boolean
+	for (NSString *attributeDescriptionName in @[
+			@"has_video",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSBooleanAttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// Int32
+	for (NSString *attributeDescriptionName in @[
+			@"chatPhotoType",
+			@"dc_id",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSInteger32AttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// Int64
+	for (NSString *attributeDescriptionName in @[
+			@"photo_id",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSInteger64AttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// NSBinaryData
+	for (NSString *attributeDescriptionName in @[
+			@"stripped_thumb",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSBinaryDataAttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	[entity setProperties:properties];
+
+	return entity;
+}
+
 @end
 // vim:ft=objc

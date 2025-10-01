@@ -20,5 +20,35 @@
 	}
 	return self;
 }
+
++ (NSEntityDescription *)entity{
+
+	NSEntityDescription *entity = [[NSEntityDescription alloc] init];
+	[entity setName:@"TGPeer"];
+	[entity setManagedObjectClassName:@"TGPeer"];
+	
+	// create the attributes
+	NSMutableArray *properties = [NSMutableArray array];
+
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:@"peerType"];
+		[attribute setAttributeType:NSInteger32AttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+ 
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:@"id"];
+		[attribute setAttributeType:NSInteger32AttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	[entity setProperties:properties];
+
+	return entity;
+}
 @end
 // vim:ft=objc

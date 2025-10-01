@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+#import <CoreData/CoreData.h>
 #import "../libtg2/libtg.h"
 
 typedef NS_ENUM(NSUInteger, TGChatPhotoType) {
@@ -6,7 +6,7 @@ typedef NS_ENUM(NSUInteger, TGChatPhotoType) {
 	kTGChatPhotoTypeChatPhoto,
 };
 
-@interface TGChatPhoto : NSObject
+@interface TGChatPhoto : NSManagedObject
 {
 }
 
@@ -17,6 +17,7 @@ typedef NS_ENUM(NSUInteger, TGChatPhotoType) {
 @property int dc_id;
 
 - (id)initWithTL:(const tl_t *)tl;
++ (NSEntityDescription *)entity;
 @end
 
 // vim:ft=objc

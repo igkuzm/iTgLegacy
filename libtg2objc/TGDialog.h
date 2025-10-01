@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+#import <CoreData/CoreData.h>
 #import "../libtg2/libtg.h"
 #import "TGPeer.h"
 #import "TGFolder.h"
@@ -9,7 +9,7 @@ typedef NS_ENUM(NSUInteger, TGDialogType) {
 	kTGDialogTypeDialogFolder,
 };
 
-@interface TGDialog : NSObject
+@interface TGDialog : NSManagedObject
 {
 }
 
@@ -37,6 +37,8 @@ typedef NS_ENUM(NSUInteger, TGDialogType) {
 @property int unread_unmuted_messages_count;
 
 - (id)initWithTL:(const tl_t *)tl;
+
++ (NSEntityDescription *)entity;
 @end
 
 // vim:ft=objc

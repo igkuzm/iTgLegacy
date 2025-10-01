@@ -90,6 +90,120 @@
 	return self;
 }
 
++ (NSEntityDescription *)entity{
+
+	NSEntityDescription *entity = [[NSEntityDescription alloc] init];
+	[entity setName:@"TGMessage"];
+	[entity setManagedObjectClassName:@"TGMessage"];
+	
+	NSMutableArray *properties = [NSMutableArray array];
+	
+	// create the attributes
+	// Boolean
+	for (NSString *name in @[
+			@"out",
+			@"mentioned",
+			@"media_unread",
+			@"silent",
+			@"post",
+			@"from_scheduled",
+			@"legacy",
+			@"edit_hide",
+			@"pinned",
+			@"noforwards",
+			@"invert_media",
+			@"offline",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:name];
+		[attribute setAttributeType:NSBooleanAttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// Int32
+	for (NSString *name in @[
+			@"messageType",
+			@"id",
+			@"from_boosts_applied",
+			@"views",
+			@"forwards",
+			@"ttl_period",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:name];
+		[attribute setAttributeType:NSInteger32AttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// Int64
+	for (NSString *name in @[
+			@"via_bot_id",
+			@"via_business_bot_id",
+			@"grouped_id",
+			@"effect",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:name];
+		[attribute setAttributeType:NSInteger64AttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+
+	// NSString
+	for (NSString *name in @[
+			@"message",
+			@"post_author",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:name];
+		[attribute setAttributeType:NSStringAttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+	
+	// NSDate
+	for (NSString *name in @[
+			@"date",
+			@"edit_date",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:name];
+		[attribute setAttributeType:NSDateAttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// TGPeer
+	for (NSString *name in @[
+			@"from_id",
+			@"peer_id",
+			@"saved_peer_id",
+	])
+	{
+		NSRelationshipDescription *relation = 
+			[[NSRelationshipDescription alloc] init];
+		[relation setName:name];
+		[relation setDestinationEntity:[TGPeer entity]];
+		[relation setMinCount:0];
+		[relation setMaxCount:1];
+		[relation setDeleteRule:NSNullifyDeleteRule];
+		//[relation setDeleteRule:NSCascadeDeleteRule]; // for multy
+		//[relation setInverseRelationship:]
+		[properties addObject:relation];
+	}
+
+	[entity setProperties:properties];
+
+	return entity;
+}
 @end
 
 // vim:ft=objc

@@ -18,5 +18,71 @@
 	}
 	return self;
 }
+
++ (NSEntityDescription *)entity{
+
+	NSEntityDescription *entity = [[NSEntityDescription alloc] init];
+	[entity setName:@"TGFolder"];
+	[entity setManagedObjectClassName:@"TGFolder"];
+	
+	NSMutableArray *properties = [NSMutableArray array];
+	
+	// create the attributes
+	// Boolean
+	for (NSString *attributeDescriptionName in @[
+			@"autofill_new_broadcasts",
+			@"autofill_public_groups",
+			@"autofill_new_correspondents",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSBooleanAttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// Int32
+	for (NSString *attributeDescriptionName in @[
+			@"id",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSInteger32AttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// NSString
+	for (NSString *attributeDescriptionName in @[
+			@"title",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSStringAttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// TGChatPhoto
+	{
+		NSRelationshipDescription *relation = 
+			[[NSRelationshipDescription alloc] init];
+		[relation setName:@"photo"];
+		[relation setDestinationEntity:[TGChatPhoto entity]];
+		[relation setMinCount:0];
+		[relation setMaxCount:1];
+		[relation setDeleteRule:NSNullifyDeleteRule];
+		//[relation setDeleteRule:NSCascadeDeleteRule]; // for multy
+		//[relation setInverseRelationship:]
+		[properties addObject:relation];
+	}
+
+	[entity setProperties:properties];
+
+	return entity;
+}
 @end
 // vim:ft=objc

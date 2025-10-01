@@ -48,6 +48,83 @@
 	return self;
 }
 
+
++ (NSEntityDescription *)entity{
+
+	NSEntityDescription *entity = [[NSEntityDescription alloc] init];
+	[entity setName:@"TGDialog"];
+	[entity setManagedObjectClassName:@"TGDialog"];
+	
+	NSMutableArray *properties = [NSMutableArray array];
+	
+	// create the attributes
+	// Boolean
+	for (NSString *attributeDescriptionName in @[
+			@"pinned",
+			@"unread_mark",
+			@"view_forum_as_messages",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSBooleanAttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// Int32
+	for (NSString *attributeDescriptionName in @[
+			@"dialogType",
+			@"top_message",
+			@"read_inbox_max_id",
+			@"read_outbox_max_id",
+			@"unread_count",
+			@"unread_mentions_count",
+			@"unread_reactions_count",
+			@"pts",
+			@"ttl_period",
+			@"unread_muted_peers_count",
+			@"unread_unmuted_peers_count",
+			@"unread_muted_messages_count",
+			@"unread_unmuted_messages_count",
+	])
+	{
+		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
+		[attribute setName:attributeDescriptionName];
+		[attribute setAttributeType:NSInteger32AttributeType];
+		[attribute setOptional:YES];
+		[properties addObject:attribute];
+	}
+
+	// TGPeer
+	{
+		NSRelationshipDescription *relation = 
+			[[NSRelationshipDescription alloc] init];
+		[relation setName:@"peer"];
+		[relation setDestinationEntity:[TGPeer entity]];
+		[relation setMinCount:0];
+		[relation setMaxCount:1];
+		[relation setDeleteRule:NSNullifyDeleteRule];
+		[properties addObject:relation];
+	}
+
+	// TGPeer
+	{
+		NSRelationshipDescription *relation = 
+			[[NSRelationshipDescription alloc] init];
+		[relation setName:@"folder"];
+		[relation setDestinationEntity:[TGFolder entity]];
+		[relation setMinCount:0];
+		[relation setMaxCount:1];
+		[relation setDeleteRule:NSNullifyDeleteRule];
+		[properties addObject:relation];
+	}
+
+	[entity setProperties:properties];
+
+	return entity;
+}
+
 @end
 
 // vim:ft=objc

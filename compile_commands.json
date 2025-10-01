@@ -1,7 +1,7 @@
 [
   {
     "directory": "/",
-    "command": "clang -fblocks -framework UIKit -isysroot /opt/iostoolchain/SDK/iPhoneOS6.1.sdk -F/opt/iostoolchain/SDK/iPhoneOS6.1.sdk/System/Library/Frameworks -I/opt/iostoolchain/SDK/iPhoneOS6.1.sdk/usr/include -I. -I.. -Ilibtg2",
+    "command": "clang -fblocks -framework UIKit -framework CoreData -isysroot /opt/iostoolchain/SDK/iPhoneOS6.1.sdk -F/opt/iostoolchain/SDK/iPhoneOS6.1.sdk/System/Library/Frameworks -I/opt/iostoolchain/SDK/iPhoneOS6.1.sdk/usr/include -I. -I.. -Ilibtg2",
     "file": "main.m",
     "output": "main.o"
   }
