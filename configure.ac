@@ -6,7 +6,7 @@ AC_PROG_CXX
 AC_PROG_OBJC
 AC_PROG_OBJCXX
 
-AC_CONFIG_HEADER(libtg/config.h)
+AC_CONFIG_HEADERS([libtg2/config.h])
 
 AC_ARG_WITH([tgtest],
 						[AS_HELP_STRING([--with-tgtest],
@@ -74,11 +74,12 @@ AC_CHECK_HEADER([openssl/ssl.h],[],[AC_MSG_ERROR([Please install openssl])],[])
 
 AC_CONFIG_FILES([
 	Makefile
-	libtg/Makefile
-	libtg/tl_generator/Makefile
-	libtg/mtx/Makefile
-	libtg/tl/Makefile
-	libtg/tg/Makefile
+	libtg2/Makefile
+	libtg2/tl_generator/Makefile
+	libtg2/mtx/Makefile
+	libtg2/tl/Makefile
+	libtg2/tg/Makefile
+	libtg2objc/Makefile
 	src/Makefile
 ])
 AC_OUTPUT

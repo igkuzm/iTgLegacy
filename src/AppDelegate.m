@@ -28,35 +28,134 @@
 
 @implementation AppDelegate
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-
+- (BOOL)application:(UIApplication *)application 
+	didFinishLaunchingWithOptions:(NSDictionary *)launchOptions 
+{
 	// lock crush
 	//UIApplication.sharedApplication.idleTimerDisabled = YES;
 	
-	self.unread = [NSMutableArray array];
-	NSArray *unread = 
-		[NSUserDefaults.standardUserDefaults objectForKey:@"unread"];
-	if (unread){
-		[self.unread addObjectsFromArray:unread];
-	}
+	//self.unread = [NSMutableArray array];
+	//NSArray *unread = 
+		//[NSUserDefaults.standardUserDefaults objectForKey:@"unread"];
+	//if (unread){
+		//[self.unread addObjectsFromArray:unread];
+	//}
 
 	// colorset
-	self.colorset = [NSUserDefaults.standardUserDefaults 
-			objectForKey:@"colorset"];
-	if (!self.colorset)
-		self.colorset = [NSArray array];
+	//self.colorset = [NSUserDefaults.standardUserDefaults 
+			//objectForKey:@"colorset"];
+	//if (!self.colorset)
+		//self.colorset = [NSArray array];
 
 	// create cache
-	NSString *cache = [NSSearchPathForDirectoriesInDomains(
-			NSCachesDirectory, 
-			NSUserDomainMask,
-		 	YES) objectAtIndex:0]; 
+	[self initCacheDir];
 	
 	// logging
+	[self initLog];
+	
+	// init coordinator 
+	self.coordinator = [TGPersistentStoreCoordinator coordinator];
+
+	//self.syncData = [[NSOperationQueue alloc]init];
+	//self.syncData.maxConcurrentOperationCount = 1;
+	
+	// set badge number
+	//application.applicationIconBadgeNumber = 0;
+
+		//self.smallPhotoCache = [cache 
+			//stringByAppendingPathComponent:@"s"];
+	//[NSFileManager.defaultManager 
+		//createDirectoryAtPath:self.smallPhotoCache attributes:nil];
+		
+	//self.peerPhotoCache = [cache 
+			//stringByAppendingPathComponent:@"peer"];
+	//[NSFileManager.defaultManager 
+		//createDirectoryAtPath:self.peerPhotoCache attributes:nil];
+	
+	//self.imagesCache = [cache 
+			//stringByAppendingPathComponent:@"images"];
+	//[NSFileManager.defaultManager 
+		//createDirectoryAtPath:self.imagesCache attributes:nil];
+	
+	//self.filesCache = [cache 
+			//stringByAppendingPathComponent:@"files"];
+	//[NSFileManager.defaultManager 
+		//createDirectoryAtPath:self.filesCache attributes:nil];
+	
+	//self.thumbDocCache = [cache 
+			//stringByAppendingPathComponent:@"docThumbs"];
+	//[NSFileManager.defaultManager 
+		//createDirectoryAtPath:self.thumbDocCache attributes:nil];
+	
+  //[[NSNotificationCenter defaultCenter] addObserver:@"" selector:@selector(callMyWebService) name:nil object:nil];
+
+	// Override point for customization after application launch.
+	//[application beginReceivingRemoteControlEvents];
+	//[application registerForRemoteNotificationTypes:
+		//(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeSound|UIRemoteNotificationTypeAlert)];
+
+	// show notifications in dialogs
+	//self.showNotifications = [NSUserDefaults.standardUserDefaults 
+			//boolForKey:@"showNotifications"];
+	
+	// start reachability
+	//self.reach = [Reachability reachabilityWithHostname:@"www.google.ru"];
+	// Set the blocks
+	//self.reach.reachableBlock = ^(Reachability*reach)
+	//{
+			//// keep in mind this is called on a background thread
+			//// and if you are updating the UI it needs to happen
+			//// on the main thread, like this:
+
+			//dispatch_async(dispatch_get_main_queue(), ^{
+					//if (self.reachabilityDelegate)
+						//[self.reachabilityDelegate isOnLine];
+					//NSLog(@"REACHABLE!");
+			//});
+	//};
+
+	//self.reach.unreachableBlock = ^(Reachability*reach)
+	//{
+			//dispatch_async(dispatch_get_main_queue(), ^{
+					//if (self.reachabilityDelegate)
+						//[self.reachabilityDelegate isOffLine];
+			//});
+
+			//NSLog(@"UNREACHABLE!");
+	//};
+
+	// Start the notifier, which will cause the reachability object to retain itself!
+	//[self.reach startNotifier];
+
+	// change current directory path to bundle
+	//[[NSFileManager defaultManager]changeCurrentDirectoryPath:
+		//[[NSBundle mainBundle] bundlePath]];
+
+	// start window
+	//self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
+	//self.rootViewController = 
+			//[[RootViewController alloc]init];
+	//[self.window setRootViewController:self.rootViewController];
+	//[self.window makeKeyAndVisible];	
+
+	//[self loadTgLib];
+	//[self authorize];
+	
+	return true;
+}
+
+- (void)initCacheDir{
+	self.cacheDir = [NSSearchPathForDirectoriesInDomains(
+			NSCachesDirectory, 
+			NSUserDomainMask,
+			 YES) objectAtIndex:0]; 
+}
+
+- (void)initLog {
 	//NSString *log = 
 		//[NSTemporaryDirectory() stringByAppendingPathComponent:@"log.txt"];
 	NSString *log = 
-		[cache stringByAppendingPathComponent:@"log.txt"];
+		[self.cacheDir stringByAppendingPathComponent:@"log.txt"];
 	NSString *lastlog = 
 		[NSTemporaryDirectory() stringByAppendingPathComponent:@"lastlog.txt"];
 	FILE *logp = fopen(log.UTF8String, "r");
@@ -75,93 +174,6 @@
 	self.log = freopen([log UTF8String], "a+", stderr);
 
 	NSLog(@"start...");
-
-	self.syncData = [[NSOperationQueue alloc]init];
-	self.syncData.maxConcurrentOperationCount = 1;
-	
-	// set badge number
-	application.applicationIconBadgeNumber = 0;
-
-		self.smallPhotoCache = [cache 
-			stringByAppendingPathComponent:@"s"];
-	[NSFileManager.defaultManager 
-		createDirectoryAtPath:self.smallPhotoCache attributes:nil];
-		
-	self.peerPhotoCache = [cache 
-			stringByAppendingPathComponent:@"peer"];
-	[NSFileManager.defaultManager 
-		createDirectoryAtPath:self.peerPhotoCache attributes:nil];
-	
-	self.imagesCache = [cache 
-			stringByAppendingPathComponent:@"images"];
-	[NSFileManager.defaultManager 
-		createDirectoryAtPath:self.imagesCache attributes:nil];
-	
-	self.filesCache = [cache 
-			stringByAppendingPathComponent:@"files"];
-	[NSFileManager.defaultManager 
-		createDirectoryAtPath:self.filesCache attributes:nil];
-	
-	self.thumbDocCache = [cache 
-			stringByAppendingPathComponent:@"docThumbs"];
-	[NSFileManager.defaultManager 
-		createDirectoryAtPath:self.thumbDocCache attributes:nil];
-	
-  //[[NSNotificationCenter defaultCenter] addObserver:@"" selector:@selector(callMyWebService) name:nil object:nil];
-
-	// Override point for customization after application launch.
-	[application beginReceivingRemoteControlEvents];
-	[application registerForRemoteNotificationTypes:
-		(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeSound|UIRemoteNotificationTypeAlert)];
-
-	// show notifications in dialogs
-	self.showNotifications = [NSUserDefaults.standardUserDefaults 
-			boolForKey:@"showNotifications"];
-	
-	// start reachability
-	self.reach = [Reachability reachabilityWithHostname:@"www.google.ru"];
-	// Set the blocks
-	self.reach.reachableBlock = ^(Reachability*reach)
-	{
-			// keep in mind this is called on a background thread
-			// and if you are updating the UI it needs to happen
-			// on the main thread, like this:
-
-			dispatch_async(dispatch_get_main_queue(), ^{
-					if (self.reachabilityDelegate)
-						[self.reachabilityDelegate isOnLine];
-					NSLog(@"REACHABLE!");
-			});
-	};
-
-	self.reach.unreachableBlock = ^(Reachability*reach)
-	{
-			dispatch_async(dispatch_get_main_queue(), ^{
-					if (self.reachabilityDelegate)
-						[self.reachabilityDelegate isOffLine];
-			});
-
-			NSLog(@"UNREACHABLE!");
-	};
-
-	// Start the notifier, which will cause the reachability object to retain itself!
-	[self.reach startNotifier];
-
-	// change current directory path to bundle
-	[[NSFileManager defaultManager]changeCurrentDirectoryPath:
-		[[NSBundle mainBundle] bundlePath]];
-
-	// start window
-	self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];	
-	self.rootViewController = 
-			[[RootViewController alloc]init];
-	[self.window setRootViewController:self.rootViewController];
-	[self.window makeKeyAndVisible];	
-
-	[self loadTgLib];
-	[self authorize];
-	
-	return true;
 }
 
 - (void)showAlarm:(NSString *)text {

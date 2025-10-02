@@ -1,9 +1,10 @@
 #import "TGMessage.h"
+#import "CoreDataTools.h"
 #import "NSString+libtg2.h"
 
 @implementation TGMessage 
 
-- (id)initWithTLMessage:(const tl_message_t *)m{
+- (void)updateWithTLMessage:(const tl_message_t *)m{
 	self.messageType = kTGMessageTypeMessage;
 	self.out = m->out_;
 	self.mentioned = m->mentioned_;
@@ -43,11 +44,9 @@
 	self.quick_reply_shortcut_id = m->quick_reply_shortcut_id_;
 	self.effect = m->effect_;
 	// factcheck
-	
-	return self;
 }
 
-- (id)initWithTLMessageService:(const tl_messageService_t *)m{
+- (void)updateWithTLMessageService:(const tl_messageService_t *)m{
 	self.messageType = kTGMessageTypeMessageService;
 	self.out = m->out_;
 	self.mentioned = m->mentioned_;
@@ -63,144 +62,140 @@
 	// action
 	self.ttl_period = m->ttl_period_;
 	self.timeToLive = [NSDate dateWithTimeIntervalSince1970:(m->date_ + m->ttl_period_)];
-
-	return self;
 }
 
-- (id)initWithTLMessageEmpty:(const tl_messageEmpty_t *)m{
+- (void)updateWithTLMessageEmpty:(const tl_messageEmpty_t *)m{
 	self.messageType = kTGMessageTypeEmplty;
 	self.id = m->id_;
 	self.peer_id = [[TGPeer alloc]initWithTL:m->peer_id_];
-
-	return self;
 }
 
-- (id)initWithTL:(const tl_t *)tl{
-	if (self = [super init]) {
-		if (tl->_id == id_message)
-			return [self initWithTLMessage:(tl_message_t *)tl];
-		
-		if (tl->_id == id_messageService)
-			return [self initWithTLMessageService:(tl_messageService_t *)tl];
-
-		if (tl->_id == id_messageEmpty)
-			return [self initWithTLMessageEmpty:(tl_messageEmpty_t *)tl];
+- (void)updateWithTL:(const tl_t *)tl{
+	if (tl->_id == id_message){
+		[self initWithTLMessage:(tl_message_t *)tl];
+		return;
 	}
 	
-	return self;
+	if (tl->_id == id_messageService){
+		[self initWithTLMessageService:(tl_messageService_t *)tl];
+		return;
+	}
+
+	if (tl->_id == id_messageEmpty){
+		[self initWithTLMessageEmpty:(tl_messageEmpty_t *)tl];
+		return;
+	}
+
+	NSLog(@"tl is not message type: %s",
+			TL_NAME_FROM_ID(tl->_id));
 }
 
 + (NSEntityDescription *)entity{
 
-	NSEntityDescription *entity = [[NSEntityDescription alloc] init];
-	[entity setName:@"TGMessage"];
-	[entity setManagedObjectClassName:@"TGMessage"];
+	NSArray *attributes = @[ 
+		[NSAttributeDescription 
+			attributeWithName:@"messageType" 
+									 type:NSInteger32AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"out" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"mentioned" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"media_unread" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"silent" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"post" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"from_scheduled" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"legacy" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"edit_hide" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"pinned" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"noforwards" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"invert_media" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"offline" 
+									 type:NSBooleanAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"id" 
+									 type:NSInteger32AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"from_boosts_applied" 
+									 type:NSInteger32AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"via_bot_id" 
+									 type:NSInteger64AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"via_business_bot_id" 
+									 type:NSInteger64AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"date" 
+									 type:NSDateAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"message" 
+									 type:NSStringAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"views" 
+									 type:NSInteger32AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"forwards" 
+									 type:NSInteger32AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"edit_date" 
+									 type:NSDateAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"post_author" 
+									 type:NSStringAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"grouped_id" 
+									 type:NSInteger64AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"ttl_period" 
+									 type:NSInteger32AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"timeToLive" 
+									 type:NSDateAttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"quick_reply_shortcut_id" 
+									 type:NSInteger32AttributeType],
+		[NSAttributeDescription 
+			attributeWithName:@"effect" 
+									 type:NSInteger64AttributeType],
+	];
 	
-	NSMutableArray *properties = [NSMutableArray array];
+	NSArray *relations = @[ 
+		[NSRelationshipDescription 
+			relationWithName:@"from_id" 
+								entity:[TGPeer entity]],
+		[NSRelationshipDescription 
+			relationWithName:@"peer_id" 
+								entity:[TGPeer entity]],
+		[NSRelationshipDescription 
+			relationWithName:@"saved_peer_id" 
+								entity:[TGPeer entity]],
+	];
 	
-	// create the attributes
-	// Boolean
-	for (NSString *name in @[
-			@"out",
-			@"mentioned",
-			@"media_unread",
-			@"silent",
-			@"post",
-			@"from_scheduled",
-			@"legacy",
-			@"edit_hide",
-			@"pinned",
-			@"noforwards",
-			@"invert_media",
-			@"offline",
-	])
-	{
-		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
-		[attribute setName:name];
-		[attribute setAttributeType:NSBooleanAttributeType];
-		[attribute setOptional:YES];
-		[properties addObject:attribute];
-	}
-
-	// Int32
-	for (NSString *name in @[
-			@"messageType",
-			@"id",
-			@"from_boosts_applied",
-			@"views",
-			@"forwards",
-			@"ttl_period",
-	])
-	{
-		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
-		[attribute setName:name];
-		[attribute setAttributeType:NSInteger32AttributeType];
-		[attribute setOptional:YES];
-		[properties addObject:attribute];
-	}
-
-	// Int64
-	for (NSString *name in @[
-			@"via_bot_id",
-			@"via_business_bot_id",
-			@"grouped_id",
-			@"effect",
-	])
-	{
-		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
-		[attribute setName:name];
-		[attribute setAttributeType:NSInteger64AttributeType];
-		[attribute setOptional:YES];
-		[properties addObject:attribute];
-	}
-
-
-	// NSString
-	for (NSString *name in @[
-			@"message",
-			@"post_author",
-	])
-	{
-		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
-		[attribute setName:name];
-		[attribute setAttributeType:NSStringAttributeType];
-		[attribute setOptional:YES];
-		[properties addObject:attribute];
-	}
-	
-	// NSDate
-	for (NSString *name in @[
-			@"date",
-			@"edit_date",
-	])
-	{
-		NSAttributeDescription *attribute = [[NSAttributeDescription alloc] init];
-		[attribute setName:name];
-		[attribute setAttributeType:NSDateAttributeType];
-		[attribute setOptional:YES];
-		[properties addObject:attribute];
-	}
-
-	// TGPeer
-	for (NSString *name in @[
-			@"from_id",
-			@"peer_id",
-			@"saved_peer_id",
-	])
-	{
-		NSRelationshipDescription *relation = 
-			[[NSRelationshipDescription alloc] init];
-		[relation setName:name];
-		[relation setDestinationEntity:[TGPeer entity]];
-		[relation setMinCount:0];
-		[relation setMaxCount:1];
-		[relation setDeleteRule:NSNullifyDeleteRule];
-		//[relation setDeleteRule:NSCascadeDeleteRule]; // for multy
-		//[relation setInverseRelationship:]
-		[properties addObject:relation];
-	}
-
-	[entity setProperties:properties];
+	NSEntityDescription *entity = 
+		[NSEntityDescription 
+			entityFromNSManagedObjectClass:NSStringFromClass(self) 
+												  attributes:attributes 
+												   relations:relations];
 
 	return entity;
 }

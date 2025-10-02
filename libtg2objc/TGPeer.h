@@ -15,7 +15,7 @@ typedef NS_ENUM(NSUInteger, TGPeerType) {
 @property TGPeerType peerType;
 @property int id;
 
-- (id)initWithTL:(const tl_t *)tl;
+- (void)updateWithTL:(const tl_t *)tl;
 + (NSEntityDescription *)entity;
 @end
 

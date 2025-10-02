@@ -13,7 +13,7 @@
 @property (strong) NSString *title;
 @property (strong) TGChatPhoto *photo;
 
-- (id)initWithTL:(const tl_t *)tl;
+- (void)updateWithTL:(const tl_t *)tl;
 
 + (NSEntityDescription *)entity;
 @end

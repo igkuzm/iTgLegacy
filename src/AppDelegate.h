@@ -6,11 +6,11 @@
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
-#include "Foundation/Foundation.h"
 #import <UIKit/UIKit.h>
 #include <stdio.h>
 #import "Reachability.h"
 #include "../libtg2/libtg.h"
+#import "../libtg2objc/TGPersistentStoreCoordinator.h"
 
 @protocol AuthorizationDelegate <NSObject>
 -(void)tgLibLoaded;
@@ -33,36 +33,39 @@ enum {
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
-@property (strong, nonatomic) NSString *token;
-@property (strong, nonatomic) NSTimer *timer;
-@property (strong, nonatomic) UIWindow *window;
-@property (strong,nonatomic) NSURL *url;
-@property NSInteger allertType;
-@property Boolean tokenAlreadyRequested;
-@property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
-@property (strong, nonatomic) void (^askYesNo_onYes)();
-@property (strong) NSOperationQueue *syncData;
+@property (strong) TGPersistentStoreCoordinator *coordinator;
+@property (strong, nonatomic) NSString *cacheDir;
 @property FILE *log;
-@property tg_t *tg;
-@property tl_user_t *authorizedUser;
-@property long *user_id;
-@property (strong) id<AuthorizationDelegate> authorizationDelegate;
-@property (strong) Reachability *reach;
-@property (strong) id<ReachabilityDelegate> reachabilityDelegate;
-@property (strong) id<AppActivityDelegate> appActivityDelegate;
-@property (strong) NSString *imagesCache;
-@property (strong) NSString *filesCache;
-@property (strong) NSString *peerPhotoCache;
-@property (strong) NSString *smallPhotoCache;
-@property (strong) NSString *thumbDocCache;
-@property (strong) id rootViewController;
-@property (strong) id dialogsViewController;
 
-@property (strong) NSArray *colorset;
-@property (strong) NSMutableArray *unread;
--(void)removeUnredId:(uint64_t)fromId;
+//@property (strong, nonatomic) NSString *token;
+//@property (strong, nonatomic) NSTimer *timer;
+//@property (strong, nonatomic) UIWindow *window;
+//@property (strong,nonatomic) NSURL *url;
+//@property NSInteger allertType;
+//@property Boolean tokenAlreadyRequested;
+//@property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
+//@property (strong, nonatomic) void (^askYesNo_onYes)();
+//@property (strong) NSOperationQueue *syncData;
+//@property tg_t *tg;
+//@property tl_user_t *authorizedUser;
+//@property long *user_id;
+//@property (strong) id<AuthorizationDelegate> authorizationDelegate;
+//@property (strong) Reachability *reach;
+//@property (strong) id<ReachabilityDelegate> reachabilityDelegate;
+//@property (strong) id<AppActivityDelegate> appActivityDelegate;
+//@property (strong) NSString *imagesCache;
+//@property (strong) NSString *filesCache;
+//@property (strong) NSString *peerPhotoCache;
+//@property (strong) NSString *smallPhotoCache;
+//@property (strong) NSString *thumbDocCache;
+//@property (strong) id rootViewController;
+//@property (strong) id dialogsViewController;
 
-@property Boolean showNotifications;
+//@property (strong) NSArray *colorset;
+//@property (strong) NSMutableArray *unread;
+//-(void)removeUnredId:(uint64_t)fromId;
+
+//@property Boolean showNotifications;
 
 -(void)showMessage:(NSString *)msg;
 -(void)askYesNo:(NSString *)msg onYes:(void (^)())onYes;

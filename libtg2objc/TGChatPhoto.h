@@ -16,7 +16,7 @@ typedef NS_ENUM(NSUInteger, TGChatPhotoType) {
 @property (strong) NSData *stripped_thumb;
 @property int dc_id;
 
-- (id)initWithTL:(const tl_t *)tl;
+- (void)updateWithTL:(const tl_t *)tl;
 + (NSEntityDescription *)entity;
 @end
 
