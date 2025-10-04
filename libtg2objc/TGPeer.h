@@ -1,22 +1,20 @@
 #import <CoreData/CoreData.h>
 #import "../libtg2/libtg.h"
 
-typedef NS_ENUM(NSUInteger, TGPeerType) {
-	kTGPeerTypeNil,
-	kTGPeerTypeUser,
-	kTGPeerTypeChat,
-	kTGPeerTypeChannel,
-};
-
-@interface TGPeer : NSManagedObject
+@interface TGPeer : NSObject
 {
 }
 
-@property TGPeerType peerType;
+@property int peerType;
 @property int id;
+
+@property (strong) NSManagedObject *managedObject;
 
 - (void)updateWithTL:(const tl_t *)tl;
 + (TGPeer *)newWithTL:(const tl_t *)tl;
++ (TGPeer *)newWithManagedObject:(NSManagedObject *)object;
+- (NSManagedObject *)
+	newManagedObjectInContext:(NSManagedObjectContext *)context;
 + (NSEntityDescription *)entity;
 @end
 

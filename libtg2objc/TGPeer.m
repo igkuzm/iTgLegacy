@@ -3,17 +3,17 @@
 @implementation TGPeer
 - (void)updateWithTL:(const tl_t *)tl{
 	if (tl->_id == id_peerUser){
-		self.peerType = kTGPeerTypeUser;
+		self.peerType = id_peerUser;
 		self.id = ((tl_peerUser_t *)tl)->user_id_;
 		return;
 	}
 	if (tl->_id == id_peerChat){
-		self.peerType = kTGPeerTypeChat;
+		self.peerType = id_peerChat;
 		self.id = ((tl_peerChat_t *)tl)->chat_id_;
 		return;
 	}
 	if (tl->_id == id_peerChannel){
-		self.peerType = kTGPeerTypeChannel;
+		self.peerType = id_peerChannel;
 		self.id = ((tl_peerChannel_t *)tl)->channel_id_;
 		return;
 	}
@@ -28,7 +28,7 @@
 }
 
 + (NSEntityDescription *)entity{
-	NSLog(@"%s: %s", __FILE__, __func__);
+	NSLog(@"%s", __func__);
 
 	NSArray *attributes = @[ 
 		[Attribute name:@"peerType" type:NSInteger32AttributeType],

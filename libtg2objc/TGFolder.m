@@ -26,8 +26,9 @@
 	return obj;
 }
 
-+ (NSEntityDescription *)entity{
-	NSLog(@"%s: %s", __FILE__, __func__);
++ (NSEntityDescription *)entityWithTGphoto:(NSEntityDescription *)tgphoto;
+{
+	NSLog(@"%s", __func__);
 
 	NSArray *attributes = @[ 
 		[Attribute name:@"autofill_new_broadcasts" type:NSBooleanAttributeType],
@@ -38,7 +39,7 @@
 	];
 	
 	NSArray *relations = @[ 
-		[Relation name:@"photo" entity:[TGChatPhoto entity]],
+		[Relation name:@"photo" entity:tgphoto],
 	];
 	
 	NSEntityDescription *entity = 

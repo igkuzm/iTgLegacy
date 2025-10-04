@@ -5,7 +5,7 @@
 @implementation TGMessage 
 
 - (void)updateWithTLMessage:(const tl_message_t *)m{
-	self.messageType = kTGMessageTypeMessage;
+	self.messageType = m->_id;
 	self.out = m->out_;
 	self.mentioned = m->mentioned_;
 	self.media_unread = m->media_unread_;
@@ -47,7 +47,7 @@
 }
 
 - (void)updateWithTLMessageService:(const tl_messageService_t *)m{
-	self.messageType = kTGMessageTypeMessageService;
+	self.messageType = m->_id;
 	self.out = m->out_;
 	self.mentioned = m->mentioned_;
 	self.media_unread = m->media_unread_;
@@ -65,7 +65,7 @@
 }
 
 - (void)updateWithTLMessageEmpty:(const tl_messageEmpty_t *)m{
-	self.messageType = kTGMessageTypeEmplty;
+	self.messageType = m->_id;
 	self.id = m->id_;
 	self.peer_id = [TGPeer newWithTL:m->peer_id_];
 }
@@ -96,8 +96,10 @@
 	return obj;
 }
 
-+ (NSEntityDescription *)entity{
-	NSLog(@"%s: %s", __FILE__, __func__);
++ (NSEntityDescription *)
+	entityWitgTGPeer:(NSEntityDescription *)tgpeer
+{
+	NSLog(@"%s", __func__);
 
 	NSArray *attributes = @[ 
 		[Attribute name:@"messageType" type:NSInteger32AttributeType],
@@ -131,9 +133,9 @@
 	];
 	
 	NSArray *relations = @[ 
-		[Relation name:@"from_id" entity:[TGPeer entity]],
-		[Relation name:@"peer_id" entity:[TGPeer entity]],
-		[Relation name:@"saved_peer_id" entity:[TGPeer entity]],
+		[Relation name:@"from_id" entity:tgpeer],
+		[Relation name:@"peer_id" entity:tgpeer],
+		[Relation name:@"saved_peer_id" entity:tgpeer],
 	];
 	
 	NSEntityDescription *entity = 

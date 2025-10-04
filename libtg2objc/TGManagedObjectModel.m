@@ -9,14 +9,24 @@
 
 +(TGManagedObjectModel *)model
 {
-	NSLog(@"%s: %s", __FILE__, __func__);
+	NSLog(@"%s", __func__);
 	TGManagedObjectModel *model = [[TGManagedObjectModel alloc] init];
+	
+	NSEntityDescription *chatPhoto = [TGChatPhoto entity];
+	NSEntityDescription *folder = [TGFolder entityWithTGphoto:chatPhoto];
+	NSEntityDescription *peer = [TGPeer entity];
+	NSEntityDescription *dialog = [TGDialog
+		entityWithTGPeer:peer TGFolder:folder];
+	NSEntityDescription *message = [TGMessage
+		entityWitgTGPeer:peer];
+	
+
 	[model setEntities:[NSArray arrayWithObjects:
-		[TGPeer entity], 
-		[TGMessage entity], 
-		[TGFolder entity], 
-		[TGDialog entity], 
-		[TGChatPhoto entity], 
+		chatPhoto,
+		folder,
+		peer,
+		dialog,
+		message,
 		nil]];
 
 	return model;

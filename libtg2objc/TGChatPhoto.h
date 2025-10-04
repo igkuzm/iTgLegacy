@@ -3,30 +3,24 @@
 #import "../libtg2/tl/macro.h"
 
 
-@interface TGChatPhoto : NSManagedObject
+@interface TGChatPhoto : NSObject
 {
 }
 
 @property int chatPhotoType;
-#define TL_MACRO_chatPhoto_arg_true(name) \
-	@property Boolean name;
-#define TL_MACRO_chatPhoto_arg_long(name) \
-	@property long long mane;
-#define TL_MACRO_chatPhoto_arg_bytes(name) \
-	@property (strong) NSData *name;
-#define TL_MACRO_chatPhoto_arg_int(name) \
-	@property int name;
+@property Boolean has_video;
+@property long long photo_id;
+@property (strong) NSData *stripped_thumb;
+@property int dc_id;
 
-TL_MACRO_chatPhoto
+@property (strong) NSManagedObject *managedObject;
 
-#undef TL_MACRO_chatPhoto_arg_true
-#undef TL_MACRO_chatPhoto_arg_long
-#undef TL_MACRO_chatPhoto_arg_bytes
-#undef TL_MACRO_chatPhoto_arg_int
-	
 - (void)updateWithTL:(const tl_t *)tl;
 + (TGChatPhoto *)newWithTL:(const tl_t *)tl;
++ (TGChatPhoto *)newWithManagedObject:(NSManagedObject *)object;
 + (NSEntityDescription *)entity;
+- (NSManagedObject *)
+	newManagedObjectInContext:(NSManagedObjectContext *)context;
 @end
 
 // vim:ft=objc

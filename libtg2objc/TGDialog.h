@@ -3,17 +3,11 @@
 #import "TGPeer.h"
 #import "TGFolder.h"
 
-typedef NS_ENUM(NSUInteger, TGDialogType) {
-	kTGDialogTypeNil,
-	kTGDialogTypeDialog,
-	kTGDialogTypeDialogFolder,
-};
-
-@interface TGDialog : NSManagedObject
+@interface TGDialog : NSObject
 {
 }
 
-@property TGDialogType dialogType;
+@property int dialogType;
 @property Boolean pinned;
 @property Boolean unread_mark;
 @property Boolean view_forum_as_messages;
@@ -36,9 +30,16 @@ typedef NS_ENUM(NSUInteger, TGDialogType) {
 @property int unread_muted_messages_count;
 @property int unread_unmuted_messages_count;
 
+@property (strong) NSManagedObject *managedObject;
+
 - (void)updateWithTL:(const tl_t *)tl;
 + (TGDialog *)newWithTL:(const tl_t *)tl;
-+ (NSEntityDescription *)entity;
++ (TGDialog *)newWithManagedObject:(NSManagedObject *)object;
+- (NSManagedObject *)
+	newManagedObjectInContext:(NSManagedObjectContext *)context;
++ (NSEntityDescription *)
+	entityWithTGPeer:(NSEntityDescription *)tgpeer
+	TGFolder:(NSEntityDescription *)tgfolder;
 @end
 
 // vim:ft=objc

@@ -2,7 +2,7 @@
 #import "../libtg2/libtg.h"
 #import "TGChatPhoto.h"
 
-@interface TGFolder : NSManagedObject
+@interface TGFolder : NSObject
 {
 }
 
@@ -13,9 +13,14 @@
 @property (strong) NSString *title;
 @property (strong) TGChatPhoto *photo;
 
+@property (strong) NSManagedObject *managedObject;
+
 - (void)updateWithTL:(const tl_t *)tl;
 + (TGFolder *)newWithTL:(const tl_t *)tl;
-+ (NSEntityDescription *)entity;
++ (TGFolder *)newWithManagedObject:(NSManagedObject *)object;
+- (NSManagedObject *)
+	newManagedObjectInContext:(NSManagedObjectContext *)context;
++ (NSEntityDescription *)entityWithTGphoto:(NSEntityDescription *)tgphoto;
 @end
 
 // vim:ft=objc

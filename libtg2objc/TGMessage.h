@@ -2,18 +2,11 @@
 #import "../libtg2/libtg.h"
 #import "TGPeer.h"
 
-typedef NS_ENUM(NSUInteger, TGMessageType) {
-	kTGMessageTypeNil,
-	kTGMessageTypeEmplty,
-	kTGMessageTypeMessage,
-	kTGMessageTypeMessageService,
-};
-
-@interface TGMessage : NSManagedObject
+@interface TGMessage : NSObject
 {
 }
 
-@property TGMessageType messageType;
+@property int messageType;
 @property Boolean out;
 @property Boolean mentioned;
 @property Boolean media_unread;
@@ -57,9 +50,12 @@ typedef NS_ENUM(NSUInteger, TGMessageType) {
 // Service Message
 // @property (strong) TGMessageAction *action;
 
+@property (strong) NSManagedObject *managedObject;
+
 - (void)updateWithTL:(const tl_t *)tl;
 + (TGMessage *)newWithTL:(const tl_t *)tl;
-+ (NSEntityDescription *)entity;
++ (NSEntityDescription *)
+	entityWitgTGPeer:(NSEntityDescription *)tgpeer;
 @end
 
 // vim:ft=objc
