@@ -6,6 +6,7 @@
 
 +(TGPersistentStoreCoordinator *)coordinator
 {
+	NSLog(@"%s: %s", __FILE__, __func__);
 	TGPersistentStoreCoordinator *coordinator = [[super alloc]
 	 	initWithManagedObjectModel:[TGManagedObjectModel model]];
 		
@@ -37,6 +38,7 @@
 				error.description);
 		return NULL;
 	}
+	NSLog(@"%s: done!", __func__);
 
 	return coordinator;
 }

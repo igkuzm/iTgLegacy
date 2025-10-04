@@ -27,29 +27,18 @@
 }
 
 + (NSEntityDescription *)entity{
+	NSLog(@"%s: %s", __FILE__, __func__);
 
 	NSArray *attributes = @[ 
-		[NSAttributeDescription 
-			attributeWithName:@"autofill_new_broadcasts" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"autofill_public_groups" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"autofill_new_correspondents" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"id" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"title" 
-									 type:NSStringAttributeType],
+		[Attribute name:@"autofill_new_broadcasts" type:NSBooleanAttributeType],
+		[Attribute name:@"autofill_public_groups" type:NSBooleanAttributeType],
+		[Attribute name:@"autofill_new_correspondents" type:NSBooleanAttributeType],
+		[Attribute name:@"id" type:NSInteger32AttributeType],
+		[Attribute name:@"title" type:NSStringAttributeType],
 	];
 	
 	NSArray *relations = @[ 
-		[NSRelationshipDescription 
-			relationWithName:@"photo" 
-								entity:[TGChatPhoto entity]],
+		[Relation name:@"photo" entity:[TGChatPhoto entity]],
 	];
 	
 	NSEntityDescription *entity = 

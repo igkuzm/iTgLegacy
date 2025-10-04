@@ -26,23 +26,14 @@
 }
 
 + (NSEntityDescription *)entity{
+	NSLog(@"%s: %s", __FILE__, __func__);
 
 	NSArray *attributes = @[ 
-		[NSAttributeDescription 
-			attributeWithName:@"chatPhotoType" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"has_video" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"photo_id" 
-									 type:NSInteger64AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"stripped_thumb" 
-									 type:NSBinaryDataAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"dc_id" 
-									 type:NSInteger32AttributeType],
+		[Attribute name:@"chatPhotoType" type:NSInteger32AttributeType],
+		[Attribute name:@"has_video" type:NSBooleanAttributeType],
+		[Attribute name:@"photo_id" type:NSInteger64AttributeType],
+		[Attribute name:@"stripped_thumb" type:NSBinaryDataAttributeType],
+		[Attribute name:@"dc_id" type:NSInteger32AttributeType],
 	];
 	
 	NSArray *relations = @[ 

@@ -54,65 +54,30 @@
 }
 
 + (NSEntityDescription *)entity{
+	NSLog(@"%s: %s", __FILE__, __func__);
 
 	NSArray *attributes = @[ 
-		[NSAttributeDescription 
-			attributeWithName:@"dialogType" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"pinned" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"unread_mark" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"view_forum_as_messages" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"top_message" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"read_inbox_max_id" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"read_outbox_max_id" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"unread_count" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"unread_mentions_count" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"unread_reactions_count" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"pts" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"ttl_period" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"unread_muted_peers_count" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"unread_unmuted_peers_count" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"unread_muted_messages_count" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"unread_unmuted_messages_count" 
-									 type:NSInteger32AttributeType],
+		[Attribute name:@"dialogType" type:NSInteger32AttributeType],
+		[Attribute name:@"pinned" type:NSBooleanAttributeType],
+		[Attribute name:@"unread_mark" type:NSBooleanAttributeType],
+		[Attribute name:@"view_forum_as_messages" type:NSBooleanAttributeType],
+		[Attribute name:@"top_message" type:NSInteger32AttributeType],
+		[Attribute name:@"read_inbox_max_id" type:NSInteger32AttributeType],
+		[Attribute name:@"read_outbox_max_id" type:NSInteger32AttributeType],
+		[Attribute name:@"unread_count" type:NSInteger32AttributeType],
+		[Attribute name:@"unread_mentions_count" type:NSInteger32AttributeType],
+		[Attribute name:@"unread_reactions_count" type:NSInteger32AttributeType],
+		[Attribute name:@"pts" type:NSInteger32AttributeType],
+		[Attribute name:@"ttl_period" type:NSInteger32AttributeType],
+		[Attribute name:@"unread_muted_peers_count" type:NSInteger32AttributeType],
+		[Attribute name:@"unread_unmuted_peers_count" type:NSInteger32AttributeType],
+		[Attribute name:@"unread_muted_messages_count" type:NSInteger32AttributeType],
+		[Attribute name:@"unread_unmuted_messages_count" type:NSInteger32AttributeType],
 	];
 	
 	NSArray *relations = @[ 
-		[NSRelationshipDescription 
-			relationWithName:@"peer" 
-								entity:[TGPeer entity]],
-		[NSRelationshipDescription 
-			relationWithName:@"folder" 
-								entity:[TGFolder entity]],
+		[Relation name:@"peer" entity:[TGPeer entity]],
+		[Relation name:@"folder" entity:[TGFolder entity]],
 	];
 	
 	NSEntityDescription *entity = 

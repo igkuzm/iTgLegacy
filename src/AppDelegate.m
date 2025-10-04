@@ -54,6 +54,7 @@
 	
 	// init coordinator 
 	self.coordinator = [TGPersistentStoreCoordinator coordinator];
+	NSLog(@"%s: coordinator is loaded", __func__);
 
 	//self.syncData = [[NSOperationQueue alloc]init];
 	//self.syncData.maxConcurrentOperationCount = 1;

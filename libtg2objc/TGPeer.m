@@ -28,14 +28,11 @@
 }
 
 + (NSEntityDescription *)entity{
+	NSLog(@"%s: %s", __FILE__, __func__);
 
 	NSArray *attributes = @[ 
-		[NSAttributeDescription 
-			attributeWithName:@"peerType" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"id" 
-									 type:NSInteger32AttributeType],
+		[Attribute name:@"peerType" type:NSInteger32AttributeType],
+		[Attribute name:@"id" type:NSInteger32AttributeType],
 	];
 	
 	NSArray *relations = @[ 

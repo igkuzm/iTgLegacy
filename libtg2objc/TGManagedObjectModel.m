@@ -9,7 +9,8 @@
 
 +(TGManagedObjectModel *)model
 {
-	TGManagedObjectModel *model = [super init];
+	NSLog(@"%s: %s", __FILE__, __func__);
+	TGManagedObjectModel *model = [[TGManagedObjectModel alloc] init];
 	[model setEntities:[NSArray arrayWithObjects:
 		[TGPeer entity], 
 		[TGMessage entity], 

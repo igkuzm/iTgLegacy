@@ -97,104 +97,43 @@
 }
 
 + (NSEntityDescription *)entity{
+	NSLog(@"%s: %s", __FILE__, __func__);
 
 	NSArray *attributes = @[ 
-		[NSAttributeDescription 
-			attributeWithName:@"messageType" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"out" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"mentioned" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"media_unread" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"silent" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"post" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"from_scheduled" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"legacy" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"edit_hide" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"pinned" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"noforwards" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"invert_media" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"offline" 
-									 type:NSBooleanAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"id" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"from_boosts_applied" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"via_bot_id" 
-									 type:NSInteger64AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"via_business_bot_id" 
-									 type:NSInteger64AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"date" 
-									 type:NSDateAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"message" 
-									 type:NSStringAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"views" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"forwards" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"edit_date" 
-									 type:NSDateAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"post_author" 
-									 type:NSStringAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"grouped_id" 
-									 type:NSInteger64AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"ttl_period" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"timeToLive" 
-									 type:NSDateAttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"quick_reply_shortcut_id" 
-									 type:NSInteger32AttributeType],
-		[NSAttributeDescription 
-			attributeWithName:@"effect" 
-									 type:NSInteger64AttributeType],
+		[Attribute name:@"messageType" type:NSInteger32AttributeType],
+		[Attribute name:@"out" type:NSBooleanAttributeType],
+		[Attribute name:@"mentioned" type:NSBooleanAttributeType],
+		[Attribute name:@"media_unread" type:NSBooleanAttributeType],
+		[Attribute name:@"silent" type:NSBooleanAttributeType],
+		[Attribute name:@"post" type:NSBooleanAttributeType],
+		[Attribute name:@"from_scheduled" type:NSBooleanAttributeType],
+		[Attribute name:@"legacy" type:NSBooleanAttributeType],
+		[Attribute name:@"edit_hide" type:NSBooleanAttributeType],
+		[Attribute name:@"pinned" type:NSBooleanAttributeType],
+		[Attribute name:@"noforwards" type:NSBooleanAttributeType],
+		[Attribute name:@"invert_media" type:NSBooleanAttributeType],
+		[Attribute name:@"offline" type:NSBooleanAttributeType],
+		[Attribute name:@"id" type:NSInteger32AttributeType],
+		[Attribute name:@"from_boosts_applied" type:NSInteger32AttributeType],
+		[Attribute name:@"via_bot_id" type:NSInteger64AttributeType],
+		[Attribute name:@"via_business_bot_id" type:NSInteger64AttributeType],
+		[Attribute name:@"date" type:NSDateAttributeType],
+		[Attribute name:@"message" type:NSStringAttributeType],
+		[Attribute name:@"views" type:NSInteger32AttributeType],
+		[Attribute name:@"forwards" type:NSInteger32AttributeType],
+		[Attribute name:@"edit_date" type:NSDateAttributeType],
+		[Attribute name:@"post_author" type:NSStringAttributeType],
+		[Attribute name:@"grouped_id" type:NSInteger64AttributeType],
+		[Attribute name:@"ttl_period" type:NSInteger32AttributeType],
+		[Attribute name:@"timeToLive" type:NSDateAttributeType],
+		[Attribute name:@"quick_reply_shortcut_id" type:NSInteger32AttributeType],
+		[Attribute name:@"effect" type:NSInteger64AttributeType],
 	];
 	
 	NSArray *relations = @[ 
-		[NSRelationshipDescription 
-			relationWithName:@"from_id" 
-								entity:[TGPeer entity]],
-		[NSRelationshipDescription 
-			relationWithName:@"peer_id" 
-								entity:[TGPeer entity]],
-		[NSRelationshipDescription 
-			relationWithName:@"saved_peer_id" 
-								entity:[TGPeer entity]],
+		[Relation name:@"from_id" entity:[TGPeer entity]],
+		[Relation name:@"peer_id" entity:[TGPeer entity]],
+		[Relation name:@"saved_peer_id" entity:[TGPeer entity]],
 	];
 	
 	NSEntityDescription *entity = 

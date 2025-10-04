@@ -5,6 +5,7 @@
 
 + (NSData *)dataFromPhotoStripped:(buf_t)bytes
 {
+	NSLog(@"%s: %s", __FILE__, __func__);
 	NSData *data;
 	buf_t buf = image_from_photo_stripped(bytes);
 	

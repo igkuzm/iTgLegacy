@@ -4,6 +4,7 @@
 
 + (NSString *)sringWithTLString:(string_t)string
 {
+	NSLog(@"%s: %s", __FILE__, __func__);
 	NSString *nsstring;
 	if (string.size){
 		NSData *data = [NSData dataWithBytes:string.data 
