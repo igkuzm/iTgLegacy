@@ -7,8 +7,6 @@
  */
 
 #import <UIKit/UIKit.h>
-#include <stdio.h>
-#import "Reachability.h"
 #include "../libtg2/libtg.h"
 #import "../libtg2objc/TGPersistentStoreCoordinator.h"
 
@@ -26,7 +24,7 @@
 -(void)willResignActive;
 @end
 
-enum {
+typedef NS_ENUM(NSInteger, ALLERT_TYPE) {
 	ALLERT_TYPE_ASK_INPUT,
 	ALLERT_TYPE_YES_NO,
 };
@@ -36,15 +34,15 @@ enum {
 @property (strong) TGPersistentStoreCoordinator *coordinator;
 @property (strong, nonatomic) NSString *cacheDir;
 @property FILE *log;
+@property ALLERT_TYPE allertType;
+@property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
+@property (strong, nonatomic) void (^askYesNo_onYes)();
 
 //@property (strong, nonatomic) NSString *token;
 //@property (strong, nonatomic) NSTimer *timer;
 //@property (strong, nonatomic) UIWindow *window;
 //@property (strong,nonatomic) NSURL *url;
-//@property NSInteger allertType;
 //@property Boolean tokenAlreadyRequested;
-//@property (strong, nonatomic) void (^askInput_onDone)(NSString *text);
-//@property (strong, nonatomic) void (^askYesNo_onYes)();
 //@property (strong) NSOperationQueue *syncData;
 //@property tg_t *tg;
 //@property tl_user_t *authorizedUser;

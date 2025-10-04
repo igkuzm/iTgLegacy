@@ -16,6 +16,7 @@ typedef NS_ENUM(NSUInteger, TGPeerType) {
 @property int id;
 
 - (void)updateWithTL:(const tl_t *)tl;
++ (TGPeer *)newWithTL:(const tl_t *)tl;
 + (NSEntityDescription *)entity;
 @end
 

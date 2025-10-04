@@ -14,7 +14,7 @@
 @property (strong) TGChatPhoto *photo;
 
 - (void)updateWithTL:(const tl_t *)tl;
-
++ (TGFolder *)newWithTL:(const tl_t *)tl;
 + (NSEntityDescription *)entity;
 @end
 

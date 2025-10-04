@@ -37,7 +37,7 @@ typedef NS_ENUM(NSUInteger, TGDialogType) {
 @property int unread_unmuted_messages_count;
 
 - (void)updateWithTL:(const tl_t *)tl;
-
++ (TGDialog *)newWithTL:(const tl_t *)tl;
 + (NSEntityDescription *)entity;
 @end
 

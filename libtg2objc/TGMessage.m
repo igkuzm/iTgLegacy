@@ -19,10 +19,10 @@
 	self.invert_media = m->invert_media_;
 	self.offline = m->offline_;
 	self.id = m->id_;
-	self.from_id = [[TGPeer alloc]initWithTL:m->from_id_];
+	self.from_id = [TGPeer newWithTL:m->from_id_];
 	self.from_boosts_applied = m->from_boosts_applied_;
-	self.peer_id = [[TGPeer alloc]initWithTL:m->peer_id_];
-	self.saved_peer_id = [[TGPeer alloc]initWithTL:m->saved_peer_id_];
+	self.peer_id = [TGPeer newWithTL:m->peer_id_];
+	self.saved_peer_id = [TGPeer newWithTL:m->saved_peer_id_];
 	// fwd_from
 	self.via_bot_id = m->via_bot_id_;
 	self.via_business_bot_id = m->via_business_bot_id_;
@@ -55,8 +55,8 @@
 	self.post = m->post_;
 	self.legacy = m->legacy_;
 	self.id = m->id_;
-	self.from_id = [[TGPeer alloc] initWithTL:m->from_id_];
-	self.peer_id = [[TGPeer alloc]initWithTL:m->peer_id_];
+	self.from_id = [TGPeer newWithTL:m->from_id_];
+	self.peer_id = [TGPeer newWithTL:m->peer_id_];
 	// reply_to
 	self.date = [NSDate dateWithTimeIntervalSince1970:m->date_];
 	// action
@@ -67,27 +67,33 @@
 - (void)updateWithTLMessageEmpty:(const tl_messageEmpty_t *)m{
 	self.messageType = kTGMessageTypeEmplty;
 	self.id = m->id_;
-	self.peer_id = [[TGPeer alloc]initWithTL:m->peer_id_];
+	self.peer_id = [TGPeer newWithTL:m->peer_id_];
 }
 
 - (void)updateWithTL:(const tl_t *)tl{
 	if (tl->_id == id_message){
-		[self initWithTLMessage:(tl_message_t *)tl];
+		[self updateWithTLMessage:(tl_message_t *)tl];
 		return;
 	}
 	
 	if (tl->_id == id_messageService){
-		[self initWithTLMessageService:(tl_messageService_t *)tl];
+		[self updateWithTLMessageService:(tl_messageService_t *)tl];
 		return;
 	}
 
 	if (tl->_id == id_messageEmpty){
-		[self initWithTLMessageEmpty:(tl_messageEmpty_t *)tl];
+		[self updateWithTLMessageEmpty:(tl_messageEmpty_t *)tl];
 		return;
 	}
 
 	NSLog(@"tl is not message type: %s",
 			TL_NAME_FROM_ID(tl->_id));
+}
+
++ (TGMessage *)newWithTL:(const tl_t *)tl{
+	TGMessage *obj = [[TGMessage alloc] init];
+	[obj updateWithTL:tl];
+	return obj;
 }
 
 + (NSEntityDescription *)entity{

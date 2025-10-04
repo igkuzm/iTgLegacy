@@ -19,6 +19,12 @@
 			TL_NAME_FROM_ID(tl->_id));
 }
 
++ (TGChatPhoto *)newWithTL:(const tl_t *)tl{
+	TGChatPhoto *obj = [[TGChatPhoto alloc] init];
+	[obj updateWithTL:tl];
+	return obj;
+}
+
 + (NSEntityDescription *)entity{
 
 	NSArray *attributes = @[ 

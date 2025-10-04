@@ -12,12 +12,18 @@
 		self.autofill_new_correspondents = f->autofill_new_correspondents_;
 		self.id = f->id_;
 		self.title = [NSString sringWithTLString:f->title_]; 
-		self.photo = [[TGChatPhoto alloc]initWithTL:f->photo_];
+		self.photo = [TGChatPhoto newWithTL:f->photo_];
 		
 		return;
 	}
 	NSLog(@"tl is not folder type: %s",
 			TL_NAME_FROM_ID(tl->_id));
+}
+
++ (TGFolder *)newWithTL:(const tl_t *)tl{
+	TGFolder *obj = [[TGFolder alloc] init];
+	[obj updateWithTL:tl];
+	return obj;
 }
 
 + (NSEntityDescription *)entity{

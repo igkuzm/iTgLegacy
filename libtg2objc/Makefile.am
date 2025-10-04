@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = subdir-objects
-lib_LTLIBRARIES = libtlg2objc.la
+lib_LTLIBRARIES = libtg2objc.la
 
-libtlg2objc_la_SOURCES = \
+libtg2objc_la_SOURCES = \
 					 CoreDataTools.m \
 				   NSData+libtg2.m \
 				   NSString+libtg2.m \
@@ -14,8 +14,8 @@ libtlg2objc_la_SOURCES = \
 				   TGPeer.m \
 				   TGPersistentStoreCoordinator.m
 				   
-libtlg2objc_la_OBJCFLAGS = \
-	-fobjc-arc
+libtg2objc_la_OBJCFLAGS = \
+	-fobjc-arc -I../libtg2/essential
 
-libtlg2objc_la_LDFLAGS = \
+libtg2objc_la_LDFLAGS = \
 			-framework CoreData -framework Foundation

@@ -8,7 +8,7 @@
 	self.pinned = d->pinned_;
 	self.unread_mark = d->unread_mark_;
 	self.view_forum_as_messages = d->view_forum_as_messages_;
-	self.peer = [[TGPeer alloc] initWithTL:d->peer_];
+	self.peer = [TGPeer newWithTL:d->peer_];
 	self.top_message =  d->top_message_;
 	self.read_inbox_max_id = d->read_inbox_max_id_;
 	self.read_outbox_max_id = d->read_inbox_max_id_;
@@ -22,9 +22,9 @@
 }
 
 - (void)updateWithTLDialogFolder:(const tl_dialogFolder_t *)d{
-	self.folder = [[TGFolder alloc]initWithTL:d->folder_];
+	self.folder = [TGFolder newWithTL:d->folder_];
 	self.pinned = d->pinned_;
-	self.peer = [[TGPeer alloc] initWithTL:d->peer_];
+	self.peer = [TGPeer newWithTL:d->peer_];
 	self.top_message =  d->top_message_;
 	self.unread_muted_peers_count = d->unread_muted_peers_count_;
 	self.unread_unmuted_peers_count = d->unread_unmuted_peers_count_;
@@ -35,18 +35,23 @@
 - (void)updateWithTL:(const tl_t *)tl{
 		
 	if (tl->_id == id_dialog){
-		[self initWithTLDialog:(tl_dialog_t *)tl];
+		[self updateWithTLDialog:(tl_dialog_t *)tl];
 		return;
 	}
 	
 	if (tl->_id == id_dialogFolder){
-		[self initWithTLDialogFolder:(tl_dialogFolder_t *)tl];
+		[self updateWithTLDialogFolder:(tl_dialogFolder_t *)tl];
 		return;
 	}
 	NSLog(@"tl is not dialog type: %s",
 			TL_NAME_FROM_ID(tl->_id));
 }
 
++ (TGDialog *)newWithTL:(const tl_t *)tl{
+	TGDialog *obj = [[TGDialog alloc] init];
+	[obj updateWithTL:tl];
+	return obj;
+}
 
 + (NSEntityDescription *)entity{
 

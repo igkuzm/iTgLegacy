@@ -17,6 +17,7 @@ typedef NS_ENUM(NSUInteger, TGChatPhotoType) {
 @property int dc_id;
 
 - (void)updateWithTL:(const tl_t *)tl;
++ (TGChatPhoto *)newWithTL:(const tl_t *)tl;
 + (NSEntityDescription *)entity;
 @end
 

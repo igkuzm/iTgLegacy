@@ -58,7 +58,7 @@ typedef NS_ENUM(NSUInteger, TGMessageType) {
 // @property (strong) TGMessageAction *action;
 
 - (void)updateWithTL:(const tl_t *)tl;
-
++ (TGMessage *)newWithTL:(const tl_t *)tl;
 + (NSEntityDescription *)entity;
 @end
 

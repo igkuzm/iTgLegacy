@@ -21,6 +21,12 @@
 			TL_NAME_FROM_ID(tl->_id));
 }
 
++ (TGPeer *)newWithTL:(const tl_t *)tl{
+	TGPeer *obj = [[TGPeer alloc] init];
+	[obj updateWithTL:tl];
+	return obj;
+}
+
 + (NSEntityDescription *)entity{
 
 	NSArray *attributes = @[ 

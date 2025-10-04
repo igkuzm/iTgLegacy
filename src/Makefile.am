@@ -3,23 +3,22 @@ AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = iTgLegacy
 iTgLegacy_SOURCES = \
 		AppDelegate.m \
-		AppDelegate.m \
 		main.m
 
 iTgLegacy_CXXFLAGS = \
 		-std=gnu++11
 
 iTgLegacy_OBJCFLAGS = \
-	-Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus -fobjc-arc
+	-Iogg -Iogg/ogg -I../opus/include -I../opus/include/opus -fobjc-arc -I../libtg2/essential
 
 iTgLegacy_CFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -framework CoreLocation -framework MapKit -Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus -Ilibopusenc/include -Ilibopusenc/src
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -framework CoreLocation -framework MapKit -Iogg -Iogg/ogg -I../opus/include -I../opus/include/opus -I../libopusenc/include -I../libopusenc/src
 
 iTgLegacy_LDFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -framework CoreLocation -framework MapKit -Lopus/lib -lopus
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -framework CoreLocation -framework MapKit -L../opus/lib -lopus
 
 iTgLegacy_LDADD = \
-			-lssl -lcurl -L../libs -ltg -L../libtg/tg/.libs -Lopus/lib -lopus
+			-lssl -lcurl -L../libs -ltg -L../libtg2/tg/.libs -L../opus/lib -lopus -L../libtg2objc/.libs -ltg2objc
 
 bin_SCRIPTS = iTgLegacy.ipa
 CLEANiFILES = $(bin_SCRIPTS)
@@ -38,27 +37,33 @@ _images:
 	cp -f ../images/*.png iTgLegacy.app/.
 	cp -f ../images/*.jpg iTgLegacy.app/.
 	cp -f ../sounds/*.m4a iTgLegacy.app/.
-	cp -f BubbleView/images/*.png iTgLegacy.app/.
+#cp -f BubbleView/images/*.png iTgLegacy.app/.
 	cp -f LaunchScreen.nib iTgLegacy.app/.
 
 iTgLegacy.app: iTgLegacy _dir _plist _images
 	cp -f ../provision_profiles/iTgLegacydevelopment.mobileprovision telegram.mobileprovision 
 	cp -f ../provision_profiles/iTgLegacydevelopment.mobileprovision iTgLegacy.app/telegram.mobileprovision 
 	cp -f .libs/iTgLegacy iTgLegacy.app/. 
-	cp -f ../libtg/.libs/tgtest iTgLegacy.app/. 
-	cp -f ../libtg/pub.pkcs iTgLegacy.app/. 
+	cp -f ../libtg2/.libs/tgtest iTgLegacy.app/. 
+	cp -f ../libtg2/pub.pkcs iTgLegacy.app/. 
 	cp -r ../libs iTgLegacy.app/.
-	cp -f ../libtg/tg/.libs/*.dylib iTgLegacy.app/libs/.
+	cp -f ../libtg2/tg/.libs/*.dylib iTgLegacy.app/libs/.
+	cp -f ../libtg2objc/.libs/*.dylib iTgLegacy.app/libs/.
 	cd iTgLegacy.app; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib iTgLegacy; \
+		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib tgtest; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libssl.0.9.8.dylib @executable_path/libs/libssl.dylib iTgLegacy; \
+		$(INSTALL_NAME_TOOL) -change /usr/lib/libssl.0.9.8.dylib @executable_path/libs/libssl.dylib tgtest; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcurl.4.dylib @executable_path/libs/libcurl.dylib iTgLegacy; \
+		$(INSTALL_NAME_TOOL) -change /usr/lib/libcurl.4.dylib @executable_path/libs/libcurl.dylib tgtest; \
 		$(INSTALL_NAME_TOOL) -change /usr/local/lib/libtg.0.dylib @executable_path/libs/libtg.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/local/lib/libtg.0.dylib @executable_path/libs/libtg.dylib tgtest; \
-		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib tgtest; \
+		$(INSTALL_NAME_TOOL) -change /usr/local/lib/libtg2objc.0.dylib @executable_path/libs/libtg.dylib iTgLegacy; \
+		$(INSTALL_NAME_TOOL) -change /usr/local/lib/libtg2objc.0.dylib @executable_path/libs/libtg.dylib tgtest; \
 	cd libs; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libssl.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libtg.dylib; \
+		$(INSTALL_NAME_TOOL) -change /usr/lib/libcurl.4.dylib @executable_path/libs/libcurl.dylib libtg.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libssl.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libcrypto.dylib;
 
