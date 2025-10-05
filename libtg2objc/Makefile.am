@@ -5,12 +5,16 @@ libtg2objc_la_SOURCES = \
 					 CoreDataTools.m \
 				   NSData+libtg2.m \
 				   NSString+libtg2.m \
+				   TGObject.m \
 				   TGChatPhoto.m \
 				   TGDialog.m \
+				   TGDialogFolder.m \
 				   TGFolder.m \
 				   TGManagedObjectContext.m \
 				   TGManagedObjectModel.m \
 				   TGMessage.m \
+				   TGMessageService.m \
+				   TGMessageEmpty.m \
 				   TGPeer.m \
 				   TGPersistentStoreCoordinator.m
 				   

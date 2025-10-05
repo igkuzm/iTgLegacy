@@ -3,7 +3,7 @@
 
 @interface NSString (libtg2)
 
-+ (NSString *)sringWithTLString:(string_t)string;
++ (NSString *)stringWithTLString:(string_t)string;
 
 @end
 

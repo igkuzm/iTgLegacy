@@ -1,7 +1,11 @@
 #import "TGPeer.h"
 #import "CoreDataTools.h"
+
 @implementation TGPeer
 - (void)updateWithTL:(const tl_t *)tl{
+
+	self.objectType = tl->_id;
+
 	if (tl->_id == id_peerUser){
 		self.peerType = id_peerUser;
 		self.id = ((tl_peerUser_t *)tl)->user_id_;
@@ -31,6 +35,7 @@
 	NSLog(@"%s", __func__);
 
 	NSArray *attributes = @[ 
+		[Attribute name:@"objectType" type:NSInteger32AttributeType],
 		[Attribute name:@"peerType" type:NSInteger32AttributeType],
 		[Attribute name:@"id" type:NSInteger32AttributeType],
 	];
@@ -45,6 +50,40 @@
 												   relations:relations];
 
 	return entity;
+}
+
++ (TGPeer *)newWithManagedObject:(NSManagedObject *)mo
+{
+	if (![mo.entity.name isEqualToString:NSStringFromClass(self)])
+	{
+		NSLog(@"%s: wrong entity name: %@", __func__, 
+				mo.entity.name);
+
+		return NULL;
+	}
+
+	TGPeer *obj = [[TGPeer alloc] init];
+	obj.managedObject = mo;
+
+	obj.objectType = [[mo valueForKey:@"objectType"]intValue];
+	obj.peerType = [[mo valueForKey:@"peerType"]intValue];
+	obj.id = [[mo valueForKey:@"id"]intValue];
+	
+	return obj;
+}
+
+- (NSManagedObject *)
+	newManagedObjectInContext:(NSManagedObjectContext *)context
+{
+	NSManagedObject *mo = [NSEntityDescription 
+		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
+						 inManagedObjectContext:context];
+
+	[mo setValue:[NSNumber numberWithInt:self.objectType] forKey:@"objectType"];
+	[mo setValue:[NSNumber numberWithInt:self.peerType] forKey:@"peerType"];
+	[mo setValue:[NSNumber numberWithInt:self.id] forKey:@"id"];
+
+	return mo;
 }
 
 @end

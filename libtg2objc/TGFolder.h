@@ -1,25 +1,13 @@
-#import <CoreData/CoreData.h>
-#import "../libtg2/libtg.h"
+#import "TGObject.h"
 #import "TGChatPhoto.h"
 
-@interface TGFolder : NSObject
+@interface TGFolder : TGObject
 {
 }
 
-@property Boolean autofill_new_broadcasts;
-@property Boolean autofill_public_groups;
-@property Boolean autofill_new_correspondents;
-@property int id;
-@property (strong) NSString *title;
-@property (strong) TGChatPhoto *photo;
+#define TL_MACRO_EXE TL_MACRO_folder
+#include "macro_properties.h"
 
-@property (strong) NSManagedObject *managedObject;
-
-- (void)updateWithTL:(const tl_t *)tl;
-+ (TGFolder *)newWithTL:(const tl_t *)tl;
-+ (TGFolder *)newWithManagedObject:(NSManagedObject *)object;
-- (NSManagedObject *)
-	newManagedObjectInContext:(NSManagedObjectContext *)context;
 + (NSEntityDescription *)entityWithTGphoto:(NSEntityDescription *)tgphoto;
 @end
 

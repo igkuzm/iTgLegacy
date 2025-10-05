@@ -1,8 +1,10 @@
+#import "TGObject.h"
+#import "NSData+libtg2.h"
 #import "NSString+libtg2.h"
 
-@implementation NSString (libtg2)
+@implementation TGObject
 
-+ (NSString *)stringWithTLString:(string_t)string
++ (NSString *)sringWithTLString:(string_t)string
 {
 	//NSLog(@"%s", __func__);
 	NSString *nsstring;
@@ -20,4 +22,5 @@
 }
 
 @end
+
 // vim:ft=objc

@@ -4,16 +4,15 @@
 
 @implementation TGFolder
 - (void)updateWithTL:(const tl_t *)tl{
+	
+	self.objectType = tl->_id;
+	
 	if (tl->_id == id_folder){
-		tl_folder_t *f = (tl_folder_t *)tl;
+		tl_folder_t *tl = (tl_folder_t *)tl;
 
-		self.autofill_new_broadcasts = f->autofill_new_broadcasts_;
-		self.autofill_public_groups = f->autofill_public_groups_;
-		self.autofill_new_correspondents = f->autofill_new_correspondents_;
-		self.id = f->id_;
-		self.title = [NSString sringWithTLString:f->title_]; 
-		self.photo = [TGChatPhoto newWithTL:f->photo_];
-		
+#define TL_MACRO_EXE TL_MACRO_folder
+#include "macro_from_tl.h"
+
 		return;
 	}
 	NSLog(@"tl is not folder type: %s",
@@ -31,11 +30,9 @@
 	NSLog(@"%s", __func__);
 
 	NSArray *attributes = @[ 
-		[Attribute name:@"autofill_new_broadcasts" type:NSBooleanAttributeType],
-		[Attribute name:@"autofill_public_groups" type:NSBooleanAttributeType],
-		[Attribute name:@"autofill_new_correspondents" type:NSBooleanAttributeType],
-		[Attribute name:@"id" type:NSInteger32AttributeType],
-		[Attribute name:@"title" type:NSStringAttributeType],
+		[Attribute name:@"objectType" type:NSInteger32AttributeType],
+#define TL_MACRO_EXE TL_MACRO_folder
+#include "macro_attributes.h"
 	];
 	
 	NSArray *relations = @[ 
@@ -50,5 +47,40 @@
 
 	return entity;
 }
+
++ (TGFolder *)newWithManagedObject:(NSManagedObject *)mo
+{
+	if (![mo.entity.name isEqualToString:NSStringFromClass(self)])
+	{
+		NSLog(@"%s: wrong entity name: %@", __func__, 
+				mo.entity.name);
+
+		return NULL;
+	}
+
+	TGFolder *obj = [[TGFolder alloc] init];
+	obj.managedObject = mo;
+
+	obj.objectType = [[mo valueForKey:@"objectType"]intValue];
+#define TL_MACRO_EXE TL_MACRO_folder
+#include "macro_from_managed_object.h"
+	
+	return obj;
+}
+
+- (NSManagedObject *)
+	newManagedObjectInContext:(NSManagedObjectContext *)context
+{
+	NSManagedObject *mo = [NSEntityDescription 
+		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
+						 inManagedObjectContext:context];
+
+	[mo setValue:[NSNumber numberWithInt:self.objectType] forKey:@"objectType"];
+#define TL_MACRO_EXE TL_MACRO_folder
+#include "macro_to_managed_object.h"
+
+	return mo;
+}
+
 @end
 // vim:ft=objc
