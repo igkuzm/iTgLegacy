@@ -28,7 +28,7 @@
 	NSLog(@"%s", __func__);
 	NSEntityDescription *entity = [[NSEntityDescription alloc] init];
 	[entity setName:className];
-	[entity setManagedObjectClassName:@"NSManagedObject"];
+	[entity setManagedObjectClassName:className];
 	return entity;
 }
 

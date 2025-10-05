@@ -1,13 +1,13 @@
 #import "../libtg2/tl/macro.h"
 
 #define TL_MACRO_arg_true(n) \
-	@property Boolean n;
+	@property (strong) NSNumber *n;
 #define TL_MACRO_arg_int(n) \
-	@property int n;
+	@property (strong) NSNumber *n;
 #define TL_MACRO_arg_long(n) \
-	@property long long n;
+	@property (strong) NSNumber *n;
 #define TL_MACRO_arg_double(n) \
-	@property double n;
+	@property (strong) NSNumber *n;
 #define TL_MACRO_arg_string(n) \
 	@property (strong) NSString *n;
 #define TL_MACRO_arg_bytes(n) \

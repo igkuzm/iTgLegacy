@@ -1,19 +1,16 @@
 #import <CoreData/CoreData.h>
 #import "../libtg2/libtg.h"
 
-@interface TGObject : NSObject
+@interface TGObject : NSManagedObject
 {
 }
 
-@property int objectType;
-@property (strong) NSManagedObject *managedObject;
+@property (strong) NSNumber * tl_id;
 
-- (void)updateWithTL:(const tl_t *)tl;
-+ (id)newWithTL:(const tl_t *)tl;
-+ (id)newWithManagedObject:(NSManagedObject *)object;
-- (NSManagedObject *)
-	newManagedObjectInContext:(NSManagedObjectContext *)context;
+- (void)updateWithTL:(const tl_t *)tl
+				     context:(NSManagedObjectContext *)context;
++ (id)newWithTL:(const tl_t *)tl 
+				context:(NSManagedObjectContext *)context;
 	
 @end
-
 // vim:ft=objc

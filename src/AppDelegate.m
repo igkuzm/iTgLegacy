@@ -7,6 +7,9 @@
  */
 
 #import "AppDelegate.h"
+#include "Foundation/Foundation.h"
+#include "../libtg2objc/TGManagedObjectContext.h"
+#include "../libtg2objc/TGMessage.h"
 //#include "AVFoundation/AVFoundation.h"
 //#include <stdlib.h>
 //#include "DialogsViewController.h"

@@ -3,9 +3,11 @@
 #import "NSString+libtg2.h"
 
 @implementation TGFolder
-- (void)updateWithTL:(const tl_t *)tl{
-	
-	self.objectType = tl->_id;
+- (void)updateWithTL:(const tl_t *)tl
+				     context:(NSManagedObjectContext *)context;
+{
+	if (tl == NULL)
+		return;
 	
 	if (tl->_id == id_folder){
 		tl_folder_t *tl = (tl_folder_t *)tl;
@@ -15,13 +17,19 @@
 
 		return;
 	}
+	
 	NSLog(@"tl is not folder type: %s",
 			TL_NAME_FROM_ID(tl->_id));
 }
 
-+ (TGFolder *)newWithTL:(const tl_t *)tl{
-	TGFolder *obj = [[TGFolder alloc] init];
-	[obj updateWithTL:tl];
++ (TGFolder *)newWithTL:(const tl_t *)tl
+								context:(NSManagedObjectContext *)context
+{
+	TGFolder *obj = 
+		[NSEntityDescription 
+		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
+						 inManagedObjectContext:context];
+	[obj updateWithTL:tl context:context];
 	return obj;
 }
 
@@ -46,40 +54,6 @@
 												   relations:relations];
 
 	return entity;
-}
-
-+ (TGFolder *)newWithManagedObject:(NSManagedObject *)mo
-{
-	if (![mo.entity.name isEqualToString:NSStringFromClass(self)])
-	{
-		NSLog(@"%s: wrong entity name: %@", __func__, 
-				mo.entity.name);
-
-		return NULL;
-	}
-
-	TGFolder *obj = [[TGFolder alloc] init];
-	obj.managedObject = mo;
-
-	obj.objectType = [[mo valueForKey:@"objectType"]intValue];
-#define TL_MACRO_EXE TL_MACRO_folder
-#include "macro_from_managed_object.h"
-	
-	return obj;
-}
-
-- (NSManagedObject *)
-	newManagedObjectInContext:(NSManagedObjectContext *)context
-{
-	NSManagedObject *mo = [NSEntityDescription 
-		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
-						 inManagedObjectContext:context];
-
-	[mo setValue:[NSNumber numberWithInt:self.objectType] forKey:@"objectType"];
-#define TL_MACRO_EXE TL_MACRO_folder
-#include "macro_to_managed_object.h"
-
-	return mo;
 }
 
 @end

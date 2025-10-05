@@ -4,9 +4,11 @@
 #import "CoreDataTools.h"
 
 @implementation TGChatPhoto
-- (void)updateWithTL:(const tl_t *)tl{
-	
-	self.objectType = tl->_id;
+- (void)updateWithTL:(const tl_t *)tl
+				     context:(NSManagedObjectContext *)context;
+{
+	if (tl == NULL)
+		return;
 	
 	if (tl->_id != id_chatPhotoEmpty ||
 			tl->_id != id_chatPhoto)
@@ -16,7 +18,7 @@
 		return;
 	}
 	
-	self.objectType = id_chatPhotoEmpty;
+	self.tl_id = [NSNumber numberWithInt:id_chatPhotoEmpty];
 	
 	if (tl->_id == id_chatPhoto){
 		tl_chatPhoto_t *tl = (tl_chatPhoto_t *)tl;
@@ -29,12 +31,17 @@
 
 		return;
 	}
+
 }
 
 + (TGChatPhoto *)newWithTL:(const tl_t *)tl
+									 context:(NSManagedObjectContext *)context
 {
-	TGChatPhoto *obj = [[TGChatPhoto alloc] init];
-	[obj updateWithTL:tl];
+	TGChatPhoto *obj = 
+		[NSEntityDescription 
+		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
+						 inManagedObjectContext:context];
+	[obj updateWithTL:tl context:context];
 }
 
 + (NSEntityDescription *)entity{
@@ -58,6 +65,7 @@
 	return entity;
 }
 
+/*
 + (TGChatPhoto *)newWithManagedObject:(NSManagedObject *)mo
 {
 	if (![mo.entity.name isEqualToString:NSStringFromClass(self)])
@@ -93,6 +101,6 @@
 
 	return mo;
 }
-
+*/
 @end
 // vim:ft=objc

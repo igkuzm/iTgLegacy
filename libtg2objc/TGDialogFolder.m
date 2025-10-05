@@ -4,10 +4,12 @@
 
 @implementation TGDialogFolder 
 
-- (void)updateWithTL:(const tl_t *)tl{
-	
-	self.objectType = tl->_id;
-		
+- (void)updateWithTL:(const tl_t *)tl
+				     context:(NSManagedObjectContext *)context;
+{
+	if (tl == NULL)
+		return;
+
 	if (tl->_id == id_dialogFolder){
 		tl_dialogFolder_t *tl = (tl_dialogFolder_t *)tl;
 
@@ -21,9 +23,14 @@
 			TL_NAME_FROM_ID(tl->_id));
 }
 
-+ (TGDialogFolder *)newWithTL:(const tl_t *)tl{
-	TGDialogFolder *obj = [[TGDialogFolder alloc] init];
-	[obj updateWithTL:tl];
++ (TGDialogFolder *)newWithTL:(const tl_t *)tl
+									    context:(NSManagedObjectContext *)context
+{
+	TGDialogFolder *obj = 
+		[NSEntityDescription 
+		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
+						 inManagedObjectContext:context];
+	[obj updateWithTL:tl context:context];
 	return obj;
 }
 
@@ -51,43 +58,6 @@
 												   relations:relations];
 
 	return entity;
-}
-
-+ (TGDialogFolder *)newWithManagedObject:(NSManagedObject *)mo
-{
-	if (![mo.entity.name isEqualToString:NSStringFromClass(self)])
-	{
-		NSLog(@"%s: wrong entity name: %@", __func__, 
-				mo.entity.name);
-		
-		return NULL;
-	}
-
-	TGDialogFolder *obj = [[TGDialogFolder alloc] init];
-	obj.managedObject = mo;
-
-	obj.objectType = [[mo valueForKey:@"objectType"]intValue];
-#define TL_MACRO_EXE TL_MACRO_dialogFolder
-#include "macro_from_managed_object.h"
-
-	// notify_settings
-	// draft
-
-	return obj;
-}
-
-- (NSManagedObject *)
-	newManagedObjectInContext:(NSManagedObjectContext *)context
-{
-	NSManagedObject *mo = [NSEntityDescription 
-		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
-						 inManagedObjectContext:context];
-
-	[mo setValue:[NSNumber numberWithInt:self.objectType] forKey:@"objectType"];
-#define TL_MACRO_EXE TL_MACRO_dialogFolder
-#include "macro_to_managed_object.h"
-	
-	return mo;
 }
 
 @end

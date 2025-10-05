@@ -4,9 +4,11 @@
 
 @implementation TGMessageService 
 
-- (void)updateWithTL:(const tl_t *)tl{
-	
-	self.objectType = tl->_id;
+- (void)updateWithTL:(const tl_t *)tl
+				     context:(NSManagedObjectContext *)context;
+{
+	if (tl == NULL)
+		return;
 	
 	if (tl->_id == id_messageService){
 		tl_messageService_t *tl = (tl_messageService_t *)tl;
@@ -21,9 +23,14 @@
 			TL_NAME_FROM_ID(tl->_id));
 }
 
-+ (TGMessageService *)newWithTL:(const tl_t *)tl{
-	TGMessageService *obj = [[TGMessageService alloc] init];
-	[obj updateWithTL:tl];
++ (TGMessageService *)newWithTL:(const tl_t *)tl
+									      context:(NSManagedObjectContext *)context
+{
+	TGMessageService *obj = 
+		[NSEntityDescription 
+		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
+						 inManagedObjectContext:context];
+	[obj updateWithTL:tl context:context];
 	return obj;
 }
 
@@ -51,40 +58,6 @@
 												   relations:relations];
 
 	return entity;
-}
-
-+ (TGMessage *)newWithManagedObject:(NSManagedObject *)mo
-{
-	if (![mo.entity.name isEqualToString:NSStringFromClass(self)])
-	{
-		NSLog(@"%s: wrong entity name: %@", __func__, 
-				mo.entity.name);
-
-		return NULL;
-	}
-
-	TGMessageService *obj = [[TGMessageService alloc] init];
-	obj.managedObject = mo;
-
-	obj.objectType = [[mo valueForKey:@"objectType"]intValue];
-#define TL_MACRO_EXE TL_MACRO_messageService
-#include "macro_from_managed_object.h"
-	
-	return obj;
-}
-
-- (NSManagedObject *)
-	newManagedObjectInContext:(NSManagedObjectContext *)context
-{
-	NSManagedObject *mo = [NSEntityDescription 
-		insertNewObjectForEntityForName:NSStringFromClass(self.class) 
-						 inManagedObjectContext:context];
-
-	[mo setValue:[NSNumber numberWithInt:self.objectType] forKey:@"objectType"];
-#define TL_MACRO_EXE TL_MACRO_messageService
-#include "macro_to_managed_object.h"
-
-	return mo;
 }
 
 @end
