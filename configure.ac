@@ -1,9 +1,10 @@
-AC_INIT([iTgLegacy],[1.11])
+AC_INIT([iTgLegacy],[1.12])
 AM_INIT_AUTOMAKE
 
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_OBJC
+AC_PROG_OBJCXX
 
 AC_CONFIG_HEADER(libtg/config.h)
 

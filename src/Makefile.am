@@ -44,6 +44,9 @@ iTgLegacy_SOURCES = \
 		../libtg/tools/opus_to_wav.c \
 		main.m
 
+iTgLegacy_CXXFLAGS = \
+		-std=gnu++11
+
 iTgLegacy_OBJCFLAGS = \
 	-Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus -fobjc-arc
 

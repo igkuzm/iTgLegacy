@@ -1,0 +1,96 @@
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/entropy_coding.lo: \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/entropy_coding.c \
+ /usr/include/stdc-predef.h \
+ webrtc_dsp/common_audio/signal_processing/include/signal_processing_library.h \
+ /usr/include/string.h /usr/include/bits/libc-header-start.h \
+ /usr/include/features.h /usr/include/features-time64.h \
+ /usr/include/bits/wordsize.h /usr/include/bits/timesize.h \
+ /usr/include/sys/cdefs.h /usr/include/bits/long-double.h \
+ /usr/include/gnu/stubs.h /usr/include/gnu/stubs-lp64.h \
+ /usr/lib/gcc/aarch64-redhat-linux/13/include/stddef.h \
+ /usr/include/bits/types/locale_t.h /usr/include/bits/types/__locale_t.h \
+ /usr/include/strings.h \
+ webrtc_dsp/common_audio/signal_processing/dot_product_with_scale.h \
+ /usr/lib/gcc/aarch64-redhat-linux/13/include/stdint.h \
+ /usr/include/stdint.h /usr/include/bits/types.h \
+ /usr/include/bits/typesizes.h /usr/include/bits/time64.h \
+ /usr/include/bits/wchar.h /usr/include/bits/stdint-intn.h \
+ /usr/include/bits/stdint-uintn.h \
+ webrtc_dsp/common_audio/signal_processing/include/spl_inl.h \
+ webrtc_dsp/rtc_base/compile_assert_c.h \
+ webrtc_dsp/common_audio/third_party/spl_sqrt_floor/spl_sqrt_floor.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/entropy_coding.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/settings.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/structs.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/bandwidth_info.h \
+ webrtc_dsp/modules/third_party/fft/fft.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/arith_routines.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/spectrum_ar_model_tables.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/lpc_tables.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/pitch_gain_tables.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/pitch_lag_tables.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/encode_lpc_swb.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/lpc_shape_swb12_tables.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/lpc_shape_swb16_tables.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/lpc_gain_swb_tables.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/os_specific_inline.h \
+ /usr/include/math.h /usr/include/bits/math-vector.h \
+ /usr/include/bits/libm-simd-decl-stubs.h /usr/include/bits/floatn.h \
+ /usr/include/bits/floatn-common.h /usr/include/bits/flt-eval-method.h \
+ /usr/include/bits/fp-logb.h /usr/include/bits/fp-fast.h \
+ /usr/include/bits/mathcalls-helper-functions.h \
+ /usr/include/bits/mathcalls.h webrtc_dsp/rtc_base/system/arch.h
+/usr/include/stdc-predef.h:
+webrtc_dsp/common_audio/signal_processing/include/signal_processing_library.h:
+/usr/include/string.h:
+/usr/include/bits/libc-header-start.h:
+/usr/include/features.h:
+/usr/include/features-time64.h:
+/usr/include/bits/wordsize.h:
+/usr/include/bits/timesize.h:
+/usr/include/sys/cdefs.h:
+/usr/include/bits/long-double.h:
+/usr/include/gnu/stubs.h:
+/usr/include/gnu/stubs-lp64.h:
+/usr/lib/gcc/aarch64-redhat-linux/13/include/stddef.h:
+/usr/include/bits/types/locale_t.h:
+/usr/include/bits/types/__locale_t.h:
+/usr/include/strings.h:
+webrtc_dsp/common_audio/signal_processing/dot_product_with_scale.h:
+/usr/lib/gcc/aarch64-redhat-linux/13/include/stdint.h:
+/usr/include/stdint.h:
+/usr/include/bits/types.h:
+/usr/include/bits/typesizes.h:
+/usr/include/bits/time64.h:
+/usr/include/bits/wchar.h:
+/usr/include/bits/stdint-intn.h:
+/usr/include/bits/stdint-uintn.h:
+webrtc_dsp/common_audio/signal_processing/include/spl_inl.h:
+webrtc_dsp/rtc_base/compile_assert_c.h:
+webrtc_dsp/common_audio/third_party/spl_sqrt_floor/spl_sqrt_floor.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/entropy_coding.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/settings.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/structs.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/bandwidth_info.h:
+webrtc_dsp/modules/third_party/fft/fft.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/arith_routines.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/spectrum_ar_model_tables.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/lpc_tables.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/pitch_gain_tables.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/pitch_lag_tables.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/encode_lpc_swb.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/lpc_shape_swb12_tables.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/lpc_shape_swb16_tables.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/lpc_gain_swb_tables.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/os_specific_inline.h:
+/usr/include/math.h:
+/usr/include/bits/math-vector.h:
+/usr/include/bits/libm-simd-decl-stubs.h:
+/usr/include/bits/floatn.h:
+/usr/include/bits/floatn-common.h:
+/usr/include/bits/flt-eval-method.h:
+/usr/include/bits/fp-logb.h:
+/usr/include/bits/fp-fast.h:
+/usr/include/bits/mathcalls-helper-functions.h:
+/usr/include/bits/mathcalls.h:
+webrtc_dsp/rtc_base/system/arch.h:

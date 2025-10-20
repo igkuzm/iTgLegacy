@@ -1,0 +1,5 @@
+webrtc_dsp/common_audio/fir_filter_sse.lo: \
+ webrtc_dsp/common_audio/fir_filter_sse.cc /usr/include/stdc-predef.h \
+ webrtc_dsp/rtc_base/system/arch.h
+/usr/include/stdc-predef.h:
+webrtc_dsp/rtc_base/system/arch.h:

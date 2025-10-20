@@ -1,0 +1,46 @@
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/decode_bwe.lo: \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/decode_bwe.c \
+ /usr/include/stdc-predef.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/structs.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/bandwidth_info.h \
+ /usr/lib/gcc/aarch64-redhat-linux/13/include/stdint.h \
+ /usr/include/stdint.h /usr/include/bits/libc-header-start.h \
+ /usr/include/features.h /usr/include/features-time64.h \
+ /usr/include/bits/wordsize.h /usr/include/bits/timesize.h \
+ /usr/include/sys/cdefs.h /usr/include/bits/long-double.h \
+ /usr/include/gnu/stubs.h /usr/include/gnu/stubs-lp64.h \
+ /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+ /usr/include/bits/time64.h /usr/include/bits/wchar.h \
+ /usr/include/bits/stdint-intn.h /usr/include/bits/stdint-uintn.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/settings.h \
+ webrtc_dsp/modules/third_party/fft/fft.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/bandwidth_estimator.h \
+ /usr/lib/gcc/aarch64-redhat-linux/13/include/stddef.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/entropy_coding.h \
+ webrtc_dsp/modules/audio_coding/codecs/isac/main/source/codec.h
+/usr/include/stdc-predef.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/structs.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/bandwidth_info.h:
+/usr/lib/gcc/aarch64-redhat-linux/13/include/stdint.h:
+/usr/include/stdint.h:
+/usr/include/bits/libc-header-start.h:
+/usr/include/features.h:
+/usr/include/features-time64.h:
+/usr/include/bits/wordsize.h:
+/usr/include/bits/timesize.h:
+/usr/include/sys/cdefs.h:
+/usr/include/bits/long-double.h:
+/usr/include/gnu/stubs.h:
+/usr/include/gnu/stubs-lp64.h:
+/usr/include/bits/types.h:
+/usr/include/bits/typesizes.h:
+/usr/include/bits/time64.h:
+/usr/include/bits/wchar.h:
+/usr/include/bits/stdint-intn.h:
+/usr/include/bits/stdint-uintn.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/settings.h:
+webrtc_dsp/modules/third_party/fft/fft.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/bandwidth_estimator.h:
+/usr/lib/gcc/aarch64-redhat-linux/13/include/stddef.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/entropy_coding.h:
+webrtc_dsp/modules/audio_coding/codecs/isac/main/source/codec.h:

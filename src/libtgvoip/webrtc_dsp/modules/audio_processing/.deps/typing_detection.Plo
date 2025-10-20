@@ -1,0 +1,8 @@
+webrtc_dsp/modules/audio_processing/typing_detection.lo: \
+ webrtc_dsp/modules/audio_processing/typing_detection.cc \
+ /usr/include/stdc-predef.h \
+ webrtc_dsp/modules/audio_processing/typing_detection.h \
+ webrtc_dsp/rtc_base/system/rtc_export.h
+/usr/include/stdc-predef.h:
+webrtc_dsp/modules/audio_processing/typing_detection.h:
+webrtc_dsp/rtc_base/system/rtc_export.h:

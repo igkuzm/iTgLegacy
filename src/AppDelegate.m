@@ -489,6 +489,19 @@ static void on_log(void *d, const char *msg)
 	/* TODO: updates.getState - to have unread messages count <15-01-25, yourname> */
 }
 
+-(void)chechPassword:(NSString *)password 
+{
+	tl_user_t *user = tg_auth_check_password(
+			self.tg, 
+			[password UTF8String]);
+
+	if (user){
+		[self afteLoginUser:user];
+	} else {
+		[self showMessage:@"Passoword is incorrect!"];
+	}
+}
+
 -(void)signIn:(NSString *)phone_number 
 				 code:(NSString *)code 
 		 sentCode:(tl_auth_sentCode_t *)sentCode
@@ -502,6 +515,11 @@ static void on_log(void *d, const char *msg)
 	if (user){
 		[self afteLoginUser:user];
 	}
+	// check password
+	[self askInput:@"enter password" 
+						onDone:^(NSString *text){
+							[self chechPassword:text];
+						}];
 }
 
 -(void)sendCode:(NSString *)phone_number

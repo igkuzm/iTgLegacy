@@ -1,0 +1,6 @@
+webrtc_dsp/modules/audio_processing/aec3/echo_path_variability.lo: \
+ webrtc_dsp/modules/audio_processing/aec3/echo_path_variability.cc \
+ /usr/include/stdc-predef.h \
+ webrtc_dsp/modules/audio_processing/aec3/echo_path_variability.h
+/usr/include/stdc-predef.h:
+webrtc_dsp/modules/audio_processing/aec3/echo_path_variability.h:

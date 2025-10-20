@@ -1,4 +1,4 @@
 export PATH=/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin:$PATH
 export LD_LIBRARY_PATH=/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/lib:$LD_LIBRARY_PATH
 
-INSTALL_NAME_TOOL=arm-apple-darwin11-install_name_tool OBJC=arm-apple-darwin11-clang CC=arm-apple-darwin11-clang CXX=arm-apple-darwin11-clang++ ./configure --host arm-aple-darwin11 --with-tgtest
+INSTALL_NAME_TOOL=arm-apple-darwin11-install_name_tool OBJCXX=arm-apple-darwin11-clang++ OBJC=arm-apple-darwin11-clang CC=arm-apple-darwin11-clang CXX=arm-apple-darwin11-clang++ ./configure --host arm-aple-darwin11 --with-tgtest
