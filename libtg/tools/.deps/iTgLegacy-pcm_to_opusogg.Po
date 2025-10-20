@@ -1,0 +1,64 @@
+../libtg/tools/iTgLegacy-pcm_to_opusogg.o: \
+  ../libtg/tools/pcm_to_opusogg.c \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/assert.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/cdefs.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_symbol_aliasing.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_posix_availability.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdio.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/Availability.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/AvailabilityInternal.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/_types.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_types.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/machine/_types.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/arm/_types.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_stdio.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_common.h \
+  opus/include/opus/opusenc.h \
+  /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stddef.h \
+  /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/__stddef_max_align_t.h \
+  opus/include/opus/opus.h opus/include/opus/opus_types.h \
+  /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stdint.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdint.h \
+  opus/include/opus/opus_defines.h
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/assert.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/cdefs.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_symbol_aliasing.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_posix_availability.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdio.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/Availability.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/AvailabilityInternal.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/_types.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_types.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/machine/_types.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/arm/_types.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_stdio.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_common.h:
+
+opus/include/opus/opusenc.h:
+
+/home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stddef.h:
+
+/home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/__stddef_max_align_t.h:
+
+opus/include/opus/opus.h:
+
+opus/include/opus/opus_types.h:
+
+/home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stdint.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdint.h:
+
+opus/include/opus/opus_defines.h:

@@ -1,0 +1,16 @@
+2025-02-15 time diff fix
+2025-02-08 action message
+2025-01-17 send contact
+2025-01-15 DC migrate support
+2025-01-10 fix of packege send/receive via sockets
+2024-12-30 document_send
+2024-12-24 free tl
+2024-12-15 queue manager to send/receive via socket
+2024-12-14 message media support
+2024-12-06 tg_get_file - download file
+2024-12-02 messages_getHistory
+2024-12-01 async dialogs update to database
+2024-11-18 mtproto2 implimation
+2024-11-12 restore connection with authorized user
+2024-10-31 tg_connect - auth to Telegram
+2024-10-11 start of develop

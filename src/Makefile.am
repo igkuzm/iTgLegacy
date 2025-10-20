@@ -54,10 +54,10 @@ iTgLegacy_CFLAGS = \
 			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -framework CoreLocation -framework MapKit -Iogg -Iogg/ogg -Iopus/include -Iopus/include/opus -Ilibopusenc/include -Ilibopusenc/src
 
 iTgLegacy_LDFLAGS = \
-			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -framework CoreLocation -framework MapKit -Lopus/lib -lopus
+			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -framework CoreLocation -framework MapKit ../libtg/tg/*.o ../libtg/tl/*.o ../libtg/mtx/src/*.o
 
 iTgLegacy_LDADD = \
-			-lssl -lcurl -L../libs -ltg -L../libtg/tg/.libs -Lopus/lib -lopus
+			-L../libs -Lopus/lib -lopus -lc++ -lsqlite3 -lz -lcurl -lcrypto
 
 bin_SCRIPTS = iTgLegacy.ipa
 CLEANiFILES = $(bin_SCRIPTS)
@@ -82,13 +82,12 @@ _images:
 iTgLegacy.app: iTgLegacy _dir _plist _images
 	cp -f ../provision_profiles/iTgLegacydevelopment.mobileprovision telegram.mobileprovision 
 	cp -f ../provision_profiles/iTgLegacydevelopment.mobileprovision iTgLegacy.app/telegram.mobileprovision 
-	cp -f .libs/iTgLegacy iTgLegacy.app/. 
+	cp -f iTgLegacy iTgLegacy.app/. 
 	cp -f ../libtg/.libs/tgtest iTgLegacy.app/. 
 	cp -f ../libtg/pub.pkcs iTgLegacy.app/. 
-	cp -r ../libs iTgLegacy.app/.
-	cp -f ../libtg/tg/.libs/*.dylib iTgLegacy.app/libs/.
+	mkdir -p iTgLegacy.app/libs
+	cp -r ../libs/*.dylib iTgLegacy.app/libs/.
 	cd iTgLegacy.app; \
-		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libssl.0.9.8.dylib @executable_path/libs/libssl.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcurl.4.dylib @executable_path/libs/libcurl.dylib iTgLegacy; \
 		$(INSTALL_NAME_TOOL) -change /usr/local/lib/libtg.0.dylib @executable_path/libs/libtg.dylib iTgLegacy; \
@@ -99,6 +98,7 @@ iTgLegacy.app: iTgLegacy _dir _plist _images
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libtg.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libssl.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libcrypto.dylib;
+
 
 iTgLegacy.ipa: iTgLegacy.app
 	rm -fr app
