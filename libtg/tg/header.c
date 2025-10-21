@@ -242,6 +242,7 @@ buf_t tg_deheader(tg_t *tg, buf_t b, bool enc)
 		// check ssid
 		if (ssid != buf_get_ui64(tg->ssid)){
 			ON_ERR(tg, "%s: session id mismatch!", __func__);
+			//return d;
 		}
 			
 		// message_id
@@ -257,6 +258,7 @@ buf_t tg_deheader(tg_t *tg, buf_t b, bool enc)
 		// set data len without padding
 		b.size = msg_data_len;
 		
+  ON_LOG(tg, "%s: %d", __func__, __LINE__);
 		d = buf_cat(d, b);
   
 	} else {
@@ -287,7 +289,6 @@ buf_t tg_deheader(tg_t *tg, buf_t b, bool enc)
 					__func__, msg_data_len, b.size);
 		}
 	}
-    
 	/*ON_LOG_BUF(tg, d, "%s: ", __func__);*/
   return d;
 }

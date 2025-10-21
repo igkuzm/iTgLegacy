@@ -1,6 +1,7 @@
 #include "buf.h"
 #include "str.h"
 #include "alloc.h"
+#include <stdio.h>
 #include <zlib.h>
 char *gunzip_buf_err(int err){
 	struct str str;
@@ -62,7 +63,7 @@ int gunzip_buf(buf_t *dst, buf_t src){
 	// allocte data
 	buf_init(dst);
 	buf_realloc(dst, src.size * 10);
-	
+
 	z_stream s;
 	s.zalloc    = Z_NULL;
 	s.zfree     = Z_NULL;
@@ -83,6 +84,9 @@ int gunzip_buf(buf_t *dst, buf_t src){
 
 	inflateEnd(&s);
 	dst->size = s.total_out;
+	
+	fprintf(stderr, "%s gunziped len: %ld\n",
+		 	__func__, s.total_out);
 	
 	return 0;
 }

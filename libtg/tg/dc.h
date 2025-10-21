@@ -27,9 +27,9 @@ enum dc {
 };
 
 typedef struct dc_t {
-	enum dc dc;
-	int number;
-	int id;
+	enum dc dc;            // DC1, DC2, etc
+	int number;            // 1, 2, 3
+	int id;                // 00001, 00002
 	char name[16];
 	char ipv4[16];
 	char ipv6[32];

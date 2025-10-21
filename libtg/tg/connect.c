@@ -129,8 +129,8 @@ int tg_connect(
 	}
 
 	// check if need password
-	if (strcmp(t.error, "SESSION_PASSWORD_NEEDED") == 0)
-	{
+	//if (strcmp(t.error, "SESSION_PASSWORD_NEEDED") == 0)
+	//{
 		// ask user for password
 		char *password = 
 			_TG_CB(TG_AUTH_PASSWORD_NEEDED, sentCode, "enter password");
@@ -151,7 +151,7 @@ int tg_connect(
 		_TG_CB(TG_AUTH_ERROR, sentCode, 
 				"password is incorrect!");
 		return 1;
-	}
+	/*}*/
 
 	/* TODO: AUTH_RESTART, PHONE_CODE_EXPIRED, 
 	 * PHONE_NUMBER_UNOCCUPIED */

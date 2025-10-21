@@ -352,7 +352,7 @@ top_srcdir = @top_srcdir@
 SUBDIRS = tl_generator mtx tl tg
 ACLOCAL_AMFLAGS = -I m4
 tgtest_SOURCES = test.c
-tgtest_LDADD = tg/libtg.la -lstdc++ -lsqlite3 -lz
+tgtest_LDADD = tg/libtg.la -lstdc++ -lsqlite3 -lz -lcurl
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

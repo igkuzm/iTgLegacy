@@ -26,6 +26,7 @@ libtg_la_SOURCES = tg.c \
 				   http.c \
 				   ds.c \
 				   2fa.c \
+				   errors.c \
 				   prepare_query.c \
 					 ../crypto/pbkdf2.c \
            ../crypto/hsh.c \

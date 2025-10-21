@@ -1,5 +1,5 @@
 libtg_la-aes.lo: ../crypto/aes.c ../crypto/cry.h ../crypto/../libtg.h \
-  ../../libtg/tl/buf.h \
+  ../crypto/../tl/buf.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdio.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/cdefs.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_symbol_aliasing.h \
@@ -14,11 +14,12 @@ libtg_la-aes.lo: ../crypto/aes.c ../crypto/cry.h ../crypto/../libtg.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_common.h \
   /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stdint.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdint.h \
-  ../../libtg/tl/libtl.h ../../libtg/tl/tl.h \
+  ../crypto/../tl/libtl.h ../crypto/../tl/tl.h \
   /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stdbool.h \
-  ../../libtg/tl/api_layer.h ../../libtg/tl/id.h ../../libtg/tl/names.h \
-  ../../libtg/tl/struct.h ../../libtg/tl/types.h \
-  ../../libtg/tl/methods.h ../../libtg/tl/deserialize.h \
+  ../crypto/../tl/api_layer.h ../crypto/../tl/id.h \
+  ../crypto/../tl/names.h ../crypto/../tl/struct.h \
+  ../crypto/../tl/types.h ../crypto/../tl/methods.h \
+  ../crypto/../tl/deserialize.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/time.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/_structs.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_structs.h \
@@ -34,7 +35,7 @@ libtg_la-aes.lo: ../crypto/aes.c ../crypto/cry.h ../crypto/../libtg.h \
 
 ../crypto/../libtg.h:
 
-../../libtg/tl/buf.h:
+../crypto/../tl/buf.h:
 
 /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdio.h:
 
@@ -64,25 +65,25 @@ libtg_la-aes.lo: ../crypto/aes.c ../crypto/cry.h ../crypto/../libtg.h \
 
 /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdint.h:
 
-../../libtg/tl/libtl.h:
+../crypto/../tl/libtl.h:
 
-../../libtg/tl/tl.h:
+../crypto/../tl/tl.h:
 
 /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stdbool.h:
 
-../../libtg/tl/api_layer.h:
+../crypto/../tl/api_layer.h:
 
-../../libtg/tl/id.h:
+../crypto/../tl/id.h:
 
-../../libtg/tl/names.h:
+../crypto/../tl/names.h:
 
-../../libtg/tl/struct.h:
+../crypto/../tl/struct.h:
 
-../../libtg/tl/types.h:
+../crypto/../tl/types.h:
 
-../../libtg/tl/methods.h:
+../crypto/../tl/methods.h:
 
-../../libtg/tl/deserialize.h:
+../crypto/../tl/deserialize.h:
 
 /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/time.h:
 

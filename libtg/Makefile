@@ -280,17 +280,17 @@ OTOOL64 = :
 PACKAGE = itglegacy
 PACKAGE_BUGREPORT = 
 PACKAGE_NAME = iTgLegacy
-PACKAGE_STRING = iTgLegacy 1.12
+PACKAGE_STRING = iTgLegacy 1.13.1
 PACKAGE_TARNAME = itglegacy
 PACKAGE_URL = 
-PACKAGE_VERSION = 1.12
+PACKAGE_VERSION = 1.13.1
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SED = /usr/bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
-VERSION = 1.12
+VERSION = 1.13.1
 ZIP = /usr/bin/zip
 ZSIGN = /usr/local/bin/zsign
 abs_builddir = /home/kuzmich/src/iTgLegacy.sav/libtg
@@ -352,7 +352,7 @@ top_srcdir = ..
 SUBDIRS = tl_generator mtx tl tg
 ACLOCAL_AMFLAGS = -I m4
 tgtest_SOURCES = test.c
-tgtest_LDADD = tg/libtg.la -lstdc++ -lsqlite3 -lz
+tgtest_LDADD = tg/libtg.la -lstdc++ -lsqlite3 -lz -lcurl
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

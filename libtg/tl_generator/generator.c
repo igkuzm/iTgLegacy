@@ -694,13 +694,13 @@ int append_deserialize_table(
 					, m->args[i].name, m->args[i].name)
 					, g->deserialize_table_c);
 					
-					//fputs(STR(buf, BLEN,
-						//"\t\tprintf(\"\\tvector len: %%d\\n\", obj->%s_len);\n"
-					//, m->args[i].name)
-					//, g->deserialize_table_c);
+					fputs(STR(buf, BLEN,
+						"\t\tprintf(\"\\tvector len: %%d\\n\", obj->%s_len);\n"
+					, m->args[i].name)
+					, g->deserialize_table_c);
 
 					fputs(STR(buf, BLEN,
-					  "\t\tif (obj->%s_len < 0 || obj->%s_len > 100) {printf(\"vector len error\\n\"); return (tl_t*)obj;}; // some error\n"
+					  "\t\tif (obj->%s_len < 0 || obj->%s_len > 10000) {printf(\"vector len error\\n\"); return (tl_t*)obj;}; // some error\n"
 					, m->args[i].name, m->args[i].name)
 					, g->deserialize_table_c);
 

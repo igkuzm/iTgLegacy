@@ -42,18 +42,18 @@ buf_t tg_pbkdf2_sha512(
 			}
 		}
 	}
-//#else
-//	fprintf(stderr, "use PKCS5_PBKDF2_HMAC\n");
-//	if (PKCS5_PBKDF2_HMAC(
-//			(char *)password.data, password.size, 
-//			salt.data, salt.size, 
-//			iteration_count, evp_md, 
-//			hash_size, dest.data) != 1)
-//	{
-//		perror("Failed to HMAC");
-//		return dest; 
-//	}
-//#endif
+/*#else*/
+	/*fprintf(stderr, "use PKCS5_PBKDF2_HMAC\n");*/
+	/*if (PKCS5_PBKDF2_HMAC(*/
+			/*(char *)password.data, password.size, */
+			/*salt.data, salt.size, */
+			/*iteration_count, evp_md, */
+			/*hash_size, dest.data) != 1)*/
+	/*{*/
+		/*perror("Failed to HMAC");*/
+		/*return dest; */
+	/*}*/
+/*#endif*/
 	
 	dest.size = hash_size;
 	return dest; 

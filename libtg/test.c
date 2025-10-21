@@ -222,7 +222,7 @@ int photo_callback2(void *data, const char *photo)
 
 int dialogs_callback(void *data, const tg_dialog_t *d)
 {
-	printf("DIALOG: %s\n", d->name);
+	/*printf("DIALOG: %s\n", d->name);*/
 	/*tg_t *tg = data;*/
 	//printf("%lld: %lld\n", d->peer_id, d->photo_id);
 	//tg_dialog_t *dialog = data;
@@ -384,16 +384,16 @@ int main(int argc, char *argv[])
 	/*tg_get_dialogs_from_database(tg, tg, */
 			/*dialogs_callback);*/
 
-	/*int count = tg_get_dialogs(tg, 40,*/
-			 /*time(NULL),*/
-			 /*NULL, NULL,*/
-			 /*NULL, dialogs_callback);*/
-	/*printf("GOT %d dialogs\n", count);*/
-
-	tg_get_dialogs_async(tg,100,
+	int count = tg_get_dialogs(tg, 40,
 			 time(NULL),
 			 NULL, NULL,
-			 NULL, dialogs_callback, on_done);
+			 NULL, dialogs_callback);
+	printf("GOT %d dialogs\n", count);
+
+	/*tg_get_dialogs_async(tg,100,*/
+			 /*time(NULL),*/
+			 /*NULL, NULL,*/
+			 /*NULL, dialogs_callback, on_done);*/
 
 
 
@@ -430,22 +430,22 @@ int main(int argc, char *argv[])
 			//messages_callback_document);
 
 	/*for (int i = 0; i < 10; ++i) {*/
-	char s[20];
+	//char s[20];
 	/*sprintf(s, "ID: %d", i);*/
 		
-	tg_messages_get_history_async(
-			tg,
-			peer, 
-			0, 
-			time(NULL), 
-			0, 
-			20, 
-			0, 
-			0, 
-			NULL, 
-			strdup(s), 
-			messages_callback_no_log,
-			on_done);
+	/*tg_messages_get_history_async(*/
+			/*tg,*/
+			/*peer, */
+			/*0, */
+			/*time(NULL), */
+			/*0, */
+			/*20, */
+			/*0, */
+			/*0, */
+			/*NULL, */
+			/*strdup(s), */
+			/*messages_callback_no_log,*/
+			/*on_done);*/
 	
 	/*tg_get_dialogs_async(tg, 40,*/
 			 /*time(NULL),*/

@@ -263,6 +263,9 @@ tl_t *tg_tl_from_gzip(tg_t *tg, tl_t *tl)
 	tl_gzip_packed_t *gzip =
 		(tl_gzip_packed_t *)tl;
 
+	ON_LOG(tg, "try to gunzip buffer with len: %d", 
+			gzip->packed_data_.size);
+
 	buf_t buf;
 	int _e = 
 		gunzip_buf(&buf, gzip->packed_data_);

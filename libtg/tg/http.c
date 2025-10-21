@@ -6,8 +6,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/select.h>
+#include <unistd.h>
 #include "transport.h"
 #include "answer.h"
+#include "errors.h"
 
 #define VERIFY_SSL 0
 
@@ -197,12 +199,14 @@ tl_t * tg_http_send_query_with_progress(
 	
 	//debug
 	/*curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);*/
+
+	const char *ipv4 = DCs[dc-1].ipv4;
 		
 	char url[BUFSIZ];
 	/*snprintf(url, BUFSIZ-1, URI, */
 			/*DCs[dc].name, maximum_limit?"-1":"", port, test?"_test":"");*/
 	snprintf(url, BUFSIZ-1, URI_IP, 
-			SERVER_IP, port, "");
+			ipv4, port, "");
 	
 	ON_LOG(tg, "%s: open url: %s", __func__, url);
 	
@@ -274,6 +278,8 @@ tl_t * tg_http_send_query_with_progress(
 	
 	ON_LOG(tg, "%s: uploaded: %ld", __func__, usize);
 	ON_LOG(tg, "%s: downloaded: %ld", __func__, dsize);
+
+	//ON_LOG_BUF(tg, buf, "GOT DATA: ");
 	
 	/* always cleanup */
 	curl_easy_cleanup(curl);
@@ -281,11 +287,12 @@ tl_t * tg_http_send_query_with_progress(
 
 
 	// deheader message
-	encrypted = tg_deheader(tg, buf, true); 
+	headered = tg_decrypt(tg, buf, true); 
 	buf_free(buf);
 
 	// decrypt message
-	buf_t payload = tg_decrypt(tg, encrypted, true);
+	buf_t payload = tg_deheader(tg, headered, true);
+	buf_free(headered);
 
 // deserialize 
 	tl_t *tl = tl_deserialize(&payload);
@@ -318,6 +325,33 @@ tl_t * tg_http_send_query_with_progress(
 		return tg_http_send_query_with_progress(
 				tg, dc, port, maximum_limit, query, 
 				progressp, progress);
+	}
+
+	// handle errors
+	if (tl->_id == id_rpc_error){
+		ON_LOG(tg, "%s: got rpc error", __func__);
+		tl_rpc_error_t *error =
+			(tl_rpc_error_t *)tl;
+
+		// check file migrate
+		const dc_t *migrate = 
+			tg_error_file_migrate(tg, RPC_ERROR(tl)); 
+		if (migrate){
+			// resend requests with new dc
+			return tg_http_send_query_with_progress(
+					tg, migrate->number, port, maximum_limit, query, 
+					progressp, progress);
+		}
+
+		// check flood wait
+		int wait = tg_error_flood_wait(tg, RPC_ERROR(tl));
+		if (wait){
+			// wait and resend query
+			sleep(wait);
+			return tg_http_send_query_with_progress(
+					tg, dc, port, maximum_limit, query, 
+					progressp, progress);
+		}
 	}
 
 	return tl;

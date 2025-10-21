@@ -2,7 +2,7 @@
  * File              : dialogs.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 29.11.2024
- * Last Modified Date: 24.02.2025
+ * Last Modified Date: 21.10.2025
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "channel.h"
@@ -68,92 +68,104 @@ static int tg_dialogs_from_tl(
 	if ((tl->_id == id_messages_dialogsSlice) ||
 	    (tl->_id == id_messages_dialogs))
 	{
-		tl_messages_dialogs_t md;
+		tl_messages_dialogs_t *md;
+		bool free_md = false;
 
 		if (tl->_id == id_messages_dialogsSlice)
 		{
 			tl_messages_dialogsSlice_t *mds = 
 				(tl_messages_dialogsSlice_t *)tl;
 			ON_LOG(tg, "DIALOG SLISE len: %d", mds->count_);
-			md.dialogs_ = mds->dialogs_; 
-			md.dialogs_len = mds->dialogs_len; 
-			md.chats_ = mds->chats_;
-			md.chats_len = mds->chats_len;
-			md.messages_ = mds->messages_;
-			md.messages_len = mds->messages_len;
-			md.users_ = mds->users_;
-			md.users_len = mds->users_len;
+			ON_LOG(tg, "DIALOG SLISE dialogs: %d", mds->dialogs_len);
+			ON_LOG(tg, "DIALOG SLISE chats: %d", mds->chats_len);
+			ON_LOG(tg, "DIALOG SLISE users: %d", mds->users_len);
+
+			md = NEW(tl_messages_dialogs_t, return 0;);
+			free_md = true;
+
+			md->dialogs_ = mds->dialogs_;
+			md->dialogs_len = mds->dialogs_len;
+			md->chats_ = mds->chats_;
+			md->chats_len = mds->chats_len;
+			md->messages_ = mds->messages_;
+			md->messages_len = mds->messages_len;
+			md->users_ = mds->users_;
+			md->users_len = mds->users_len;
 		}
 
 		if (tl->_id == id_messages_dialogs)
 		{
-			md = *(tl_messages_dialogs_t *)tl;
+			md = (tl_messages_dialogs_t *)tl;
 		}
 
-		if (md.dialogs_ == NULL){
+		if (md->dialogs_ == NULL){
 			ON_ERR(tg, "dialogs pointer is NULL!");
 			return 0;
 		}
 		
-		ON_LOG(tg, "%s: got %d dialogs", 
-				__func__, md.dialogs_len);
+		ON_LOG(tg, 
+				"%s: got %d dialogs with %d messages, %d chats and %d users", 
+				__func__, md->dialogs_len, md->messages_len, 
+				md->chats_len, md->users_len);
 
 		// update users
-		tg_users_save(tg, md.users_len, md.users_);
+		tg_users_save(tg, md->users_len, md->users_);
 		// update chats
-		tg_chats_save(tg, md.chats_len, md.chats_);
+		tg_chats_save(tg, md->chats_len, md->chats_);
 		
-		for (i = 0; i < md.dialogs_len; ++i) {
-			if (md.dialogs_[i] == NULL)
+		for (i = 0; i < md->dialogs_len; ++i) {
+			if (md->dialogs_[i] == NULL)
 				continue;
 
 			ON_LOG(tg, "dialog #%d: %s\n", 
-					i, TL_NAME_FROM_ID(md.dialogs_[i]->_id));
+					i, TL_NAME_FROM_ID(md->dialogs_[i]->_id));
 			// handle dialogs
 			tg_dialog_t d;
 			memset(&d, 0, sizeof(d));
 			
-			tl_dialog_t dialog;
-			memset(&d, 0, sizeof(tl_dialog_t));
+			tl_dialog_t *dialog = NULL;
+			bool free_dialog = false;
 
 			tl_peerChat_t *peer = NULL;
 			tl_peerNotifySettings_t *pns = NULL; 
 			
-			
-			if (md.dialogs_[i]->_id == id_dialogFolder){
+			if (md->dialogs_[i]->_id == id_dialogFolder){
 				tl_dialogFolder_t *df = 
-					(tl_dialogFolder_t *)md.dialogs_[i];
+					(tl_dialogFolder_t *)md->dialogs_[i];
 				tl_folder_t *folder = 
 					(tl_folder_t *)df->folder_;
 
-				dialog.peer_ = df->peer_;
-				dialog.top_message_ = df->top_message_;
-				dialog.pinned_ = df->pinned_;
-				dialog.unread_count_ = df->unread_unmuted_messages_count_;
-				dialog.folder_id_ = folder->id_;
+				dialog = NEW(tl_dialog_t, return 0;);
+				free_dialog = true;
+
+				dialog->peer_ = df->peer_;
+				dialog->top_message_ = df->top_message_;
+				dialog->pinned_ = df->pinned_;
+				dialog->unread_count_ = df->unread_unmuted_messages_count_;
+				dialog->folder_id_ = folder->id_;
 				peer = (tl_peerChat_t *)df->peer_;
 
-			} else if (md.dialogs_[i]->_id != id_dialog){
+			} else if (md->dialogs_[i]->_id != id_dialog){
 				ON_LOG(tg, "%s: unknown dialog type: %.8x",
-						__func__, md.dialogs_[i]->_id);
+						__func__, md->dialogs_[i]->_id);
 				continue;
 			
 			} else {
-				dialog = *(tl_dialog_t *)md.dialogs_[i];	
-				peer = (tl_peerChat_t *)dialog.peer_;
-				pns = (tl_peerNotifySettings_t *)dialog.notify_settings_;
+				dialog = (tl_dialog_t *)md->dialogs_[i];	
+				peer = (tl_peerChat_t *)dialog->peer_;
+				pns = (tl_peerNotifySettings_t *)dialog->notify_settings_;
 			}
 
-			d.top_message_id = dialog.top_message_;
+			d.top_message_id = dialog->top_message_;
 			
-			d.pinned = dialog.pinned_;
-			d.unread_mark = dialog.unread_mark_;
-			d.read_inbox_max_id = dialog.read_inbox_max_id_;
-			d.read_outbox_max_id = dialog.read_outbox_max_id_;
-			d.unread_count = dialog.unread_count_;
-			d.unread_mentions_count = dialog.unread_mentions_count_;
-			d.unread_reactions_count = dialog.unread_reactions_count_;
-			d.folder_id = dialog.folder_id_;
+			d.pinned = dialog->pinned_;
+			d.unread_mark = dialog->unread_mark_;
+			d.read_inbox_max_id = dialog->read_inbox_max_id_;
+			d.read_outbox_max_id = dialog->read_outbox_max_id_;
+			d.unread_count = dialog->unread_count_;
+			d.unread_mentions_count = dialog->unread_mentions_count_;
+			d.unread_reactions_count = dialog->unread_reactions_count_;
+			d.folder_id = dialog->folder_id_;
 			
 			if (peer){
 				d.peer_id = peer->chat_id_;
@@ -167,16 +179,22 @@ static int tg_dialogs_from_tl(
 			int k;
 
 			// iterate users
-			for (k = 0; k < md.users_len; ++k) {
+			for (k = 0; k < md->users_len; ++k) {
 				// skip on NULL
-				if (!md.users_[k])
+				if (!md->users_){
+					ON_ERR(tg, "%s line: %d: object is NULL!", __func__, __LINE__);
+					break;
+				}
+				if (!md->users_[k]){
+					ON_LOG(tg, "%s line: %d: object is NULL!", __func__, __LINE__);
 					continue;
+				}
 
-				switch (md.users_[k]->_id) {
+				switch (md->users_[k]->_id) {
 					case id_user:
 						{
 							tl_user_t *user = 
-								(tl_user_t *)md.users_[k];
+								(tl_user_t *)md->users_[k];
 							
 							if (d.peer_id == user->id_)
 							{
@@ -204,16 +222,22 @@ static int tg_dialogs_from_tl(
 			}
 
 			// iterate chats
-			for (k = 0; k < md.chats_len; ++k) {
+			for (k = 0; k < md->chats_len; ++k) {
 				// skip on NULL
-				if (md.chats_[k] == NULL)
+				if (!md->chats_){
+					ON_ERR(tg, "%s line: %d: object is NULL!", __func__, __LINE__);
+					break;
+				}
+				if (!md->chats_[k]){
+					ON_LOG(tg, "%s line: %d: object is NULL!", __func__, __LINE__);
 					continue;
+				}
 			
-				switch (md.chats_[k]->_id) {
+				switch (md->chats_[k]->_id) {
 					case id_channel:
 						{
 							tl_channel_t *channel = 
-								(tl_channel_t *)md.chats_[k];
+								(tl_channel_t *)md->chats_[k];
 							if (d.peer_id == channel->id_)
 							{
 								d.access_hash = channel->access_hash_;
@@ -235,7 +259,7 @@ static int tg_dialogs_from_tl(
 					case id_chat:
 						{
 							tl_chat_t *chat = 
-								(tl_chat_t *)md.chats_[k];
+								(tl_chat_t *)md->chats_[k];
 							if (d.peer_id == chat->id_)
 							{
 								d.peer_type = TG_PEER_TYPE_CHAT;
@@ -267,12 +291,19 @@ static int tg_dialogs_from_tl(
 			}
 
 			// iterate messages
-			for (k = 0; k < md.messages_len; ++k){
-				if (md.messages_[k] && 
-						md.messages_[k]->_id == id_message)
+			for (k = 0; k < md->messages_len; ++k){
+				if (!md->messages_){
+					ON_ERR(tg, "%s line: %d: object is NULL!", __func__, __LINE__);
+					break;;
+				}
+				if (!md->messages_[k]){
+					ON_LOG(tg, "%s line: %d: object is NULL!", __func__, __LINE__);
+					continue;
+				}
+				if (md->messages_[k]->_id == id_message)
 				{
 					tl_message_t *message = 
-						(tl_message_t *)md.messages_[k];
+						(tl_message_t *)md->messages_[k];
 					if (message->id_ == d.top_message_id){
 						
 						// save message to database
@@ -469,7 +500,8 @@ int tg_get_dialogs(
 				limit,
 				hash?*hash:0);
 
-	tl_t *tl = tg_send_query(tg, &getDialogs);
+	/*tl_t *tl = tg_send_query(tg, &getDialogs);*/
+	tl_t *tl = tg_http_send_query(tg, &getDialogs);
 	buf_free(getDialogs);
 	if (tl == NULL){
 		ON_ERR(tg, "%s: tl is NULL", __func__);
