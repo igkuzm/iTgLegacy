@@ -16,30 +16,56 @@ static int tg_error_get_num(
 }
 
 const dc_t * 
-tg_error_phone_migrate(tg_t *tg, const char *error)
+tg_error_migrate(tg_t *tg, const char *error)
 {
 	if (!error)
 		return NULL;
 
-	int n = tg_error_get_num(error, "PHONE_MIGRATE_");
+	int n = tg_error_get_num(error, "MIGRATE_");
 	if (n)
-		return &DCs[n - 1];
+		return &DCs[n];
 
 	return NULL;
 }
 
-const dc_t * 
-tg_error_file_migrate(tg_t *tg, const char *error)
-{
-	if (!error)
-		return NULL;
+//const dc_t * 
+//tg_error_phone_migrate(tg_t *tg, const char *error)
+//{
+	//if (!error)
+		//return NULL;
 
-	int n = tg_error_get_num(error, "FILE_MIGRATE_");
-	if (n)
-		return &DCs[n - 1];
+	//int n = tg_error_get_num(error, "PHONE_MIGRATE_");
+	//if (n)
+		//return &DCs[n];
 
-	return NULL;
-}
+	//return NULL;
+//}
+
+//const dc_t * 
+//tg_error_user_migrate(tg_t *tg, const char *error)
+//{
+	//if (!error)
+		//return NULL;
+
+	//int n = tg_error_get_num(error, "USER_MIGRATE_");
+	//if (n)
+		//return &DCs[n];
+
+	//return NULL;
+//}
+
+//const dc_t * 
+//tg_error_file_migrate(tg_t *tg, const char *error)
+//{
+	//if (!error)
+		//return NULL;
+
+	//int n = tg_error_get_num(error, "FILE_MIGRATE_");
+	//if (n)
+		//return &DCs[n];
+
+	//return NULL;
+//}
 
 int 
 tg_error_flood_wait(tg_t *tg, const char *error)

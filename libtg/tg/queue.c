@@ -70,10 +70,10 @@ static int flood_wait_for_seconds(
 	return 0;
 }
 
-static int file_migrate_to_dc(
+static int migrate_to_dc(
 		tg_queue_t *queue, const struct dc_t *dc)
 {
-	ON_LOG(queue->tg, "%s: FILE MIGRATE TO: %d", 
+	ON_LOG(queue->tg, "%s: MIGRATE TO: %d", 
 			__func__, dc->number);
 
 	// resend queue
@@ -188,11 +188,12 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 				tl_rpc_error_t *rpc_error = 
 					(tl_rpc_error_t *)tl;
 
-				// check file migrate
+				// check file/user/phone migrate
 				const struct dc_t *dc = 
-					tg_error_file_migrate(tg, RPC_ERROR(tl));
+					tg_error_migrate(tg, RPC_ERROR(tl));
 				if (dc){
-					file_migrate_to_dc(queue, dc);
+					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
+					migrate_to_dc(queue, dc);
 					queue->loop = false; // stop receive data!
 					pthread_mutex_unlock(&queue->m); // unlock
 					return; // do not run on_done!
@@ -201,6 +202,7 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 				// check flood wait
 				int wait = tg_error_flood_wait(tg, RPC_ERROR(tl));
 				if (wait){
+					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
 					flood_wait_for_seconds(queue, wait);
 					queue->loop = false; // stop receive data!
 					pthread_mutex_unlock(&queue->m); // unlock
