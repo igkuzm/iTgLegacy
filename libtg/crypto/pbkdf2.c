@@ -15,8 +15,8 @@ buf_t tg_pbkdf2_sha512(
 	buf_t dest = buf_new();
 	dest.size = hash_size;
 	
-//#if OPENSSL_VERSION_NUMBER < 0x10000000L
-	fprintf(stderr, "use HMAC_CTX\n");
+/*#if OPENSSL_VERSION_NUMBER < 0x10000000L*/
+#ifdef __APPLE__
 	HMAC_CTX ctx;
   HMAC_CTX_init(&ctx);
   unsigned char counter[4] = {0, 0, 0, 1};
@@ -42,18 +42,17 @@ buf_t tg_pbkdf2_sha512(
 			}
 		}
 	}
-/*#else*/
-	/*fprintf(stderr, "use PKCS5_PBKDF2_HMAC\n");*/
-	/*if (PKCS5_PBKDF2_HMAC(*/
-			/*(char *)password.data, password.size, */
-			/*salt.data, salt.size, */
-			/*iteration_count, evp_md, */
-			/*hash_size, dest.data) != 1)*/
-	/*{*/
-		/*perror("Failed to HMAC");*/
-		/*return dest; */
-	/*}*/
-/*#endif*/
+#else
+	if (PKCS5_PBKDF2_HMAC(
+			(char *)password.data, password.size, 
+			salt.data, salt.size, 
+			iteration_count, evp_md, 
+			hash_size, dest.data) != 1)
+	{
+		perror("Failed to HMAC");
+		return dest; 
+	}
+#endif
 	
 	dest.size = hash_size;
 	return dest; 
