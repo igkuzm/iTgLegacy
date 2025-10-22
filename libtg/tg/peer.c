@@ -48,7 +48,7 @@ tg_peer_t tg_peer_by_phone(tg_t *tg, const char *phone){
 	tg_peer_t peer = {0, 0, 0};
 
 	buf_t query = tl_contacts_resolvePhone(phone);
-	tl_t *tl = tg_send_query_sync(tg, &query);
+	tl_t *tl = tg_send_query(tg, &query);
 	buf_free(query);
 	if (tl != NULL && tl->_id == id_contacts_resolvedPeer)
 	{
@@ -159,7 +159,7 @@ int tg_get_peer_profile_colors(tg_t *tg, uint32_t hash,
 {
 	ON_LOG(tg, "%s: start", __func__);
 	buf_t query = tl_help_getPeerProfileColors(0);
-	tl_t *tl = tg_send_query_sync(tg, &query);
+	tl_t *tl = tg_send_query(tg, &query);
 	buf_free(query);
 	if (tl == NULL) {
 		ON_ERR(tg, "%s: tl is NULL", __func__);
@@ -228,7 +228,7 @@ int tg_get_peer_colors(tg_t *tg, uint32_t hash,
 {
 	ON_LOG(tg, "%s: start", __func__);
 	buf_t query = tl_help_getPeerColors(0);
-	tl_t *tl = tg_send_query_sync(tg, &query);
+	tl_t *tl = tg_send_query(tg, &query);
 	buf_free(query);
 	if (tl == NULL) {
 		ON_ERR(tg, "%s: tl is NULL", __func__);

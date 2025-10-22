@@ -734,7 +734,7 @@ int tg_messages_get_history(
 	buf_free(peer_);
 
 	//tl_t * tl = tg_send_query_sync(tg, &getHistory);
-	tl_t *tl = tg_http_send_query(tg, &getHistory);
+	tl_t *tl = tg_send_query(tg, &getHistory);
 	buf_free(getHistory);
 
 	c = parse_tl(
@@ -843,7 +843,7 @@ int tg_get_messages(tg_t *tg, int nmsgids, uint32_t *msgids,
 	for (i = 0; i < nmsgids; ++i) 
 		buf_free(im[i]);
 
-	tl_t * tl = tg_send_query_sync(tg, &query);
+	tl_t * tl = tg_send_query(tg, &query);
 	buf_free(query);
 
 	c = parse_tl(
@@ -876,7 +876,7 @@ int tg_get_channel_messages(tg_t *tg, tg_peer_t *channel,
 	for (i = 0; i < nmsgids; ++i) 
 		buf_free(im[i]);
 
-	tl_t * tl = tg_send_query_sync(tg, &query);
+	tl_t * tl = tg_send_query(tg, &query);
 	buf_free(query);
 
 	c = parse_tl(
@@ -916,7 +916,7 @@ int tg_message_send(tg_t *tg, tg_peer_t peer_, const char *message)
 	buf_free(peer);
 	buf_free(random_id);
 
-	tl_t *tl = tg_send_query_sync(tg, &m);
+	tl_t *tl = tg_send_query(tg, &m);
 	buf_free(m);
 
 	if (tl == NULL)
@@ -1183,7 +1183,7 @@ int tg_messages_set_typing(tg_t *tg, tg_peer_t peer_, bool typing)
 	buf_free(peer);
 	buf_free(action);
 
-	tg_send_query_sync(tg, &setTyping);
+	tg_send_query(tg, &setTyping);
 	buf_free(setTyping);
 	return 0;
 }
@@ -1196,7 +1196,7 @@ int tg_messages_set_read(tg_t *tg, tg_peer_t peer, uint32_t max_id)
 			&inputPeer, max_id);
 	buf_free(inputPeer);
 	
-	tg_send_query_sync(tg, &readHistory);
+	tg_send_query(tg, &readHistory);
 	buf_free(readHistory);
 
 	// update database
@@ -1222,7 +1222,7 @@ int tg_messages_get_read_date(
 			&inputPeer, msg_id);
 	buf_free(inputPeer);
 
-	tl_t *tl = tg_send_query_sync(tg, &query);
+	tl_t *tl = tg_send_query(tg, &query);
 	buf_free(query);
 	
 	if (tl == NULL)

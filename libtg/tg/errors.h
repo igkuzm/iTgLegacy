@@ -1,6 +1,6 @@
 #ifndef TG_ERRORS_H
 #define TG_ERRORS_H
-#include "auth.h"
+/*#include "auth.h"*/
 #include "dc.h"
 #include "tg.h"
 

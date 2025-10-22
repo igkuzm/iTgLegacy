@@ -393,7 +393,7 @@ int tg_channel_search_global(tg_t *tg, const char *query,
 			limit);
 	buf_free(inputPeer);
 
-	tl_t *tl = tg_send_query_sync(tg, &search);
+	tl_t *tl = tg_send_query(tg, &search);
 	buf_free(search);
 
 	if (tl == NULL)
@@ -456,7 +456,7 @@ int tg_channel_set_read(tg_t *tg, tg_peer_t peer, uint32_t max_id)
 			&inputChannel, max_id);
 	buf_free(inputChannel);
 	
-	tg_send_query_sync(
+	tg_send_query(
 			tg, &query);
 	buf_free(query);
 	

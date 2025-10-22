@@ -20,6 +20,7 @@
 	DC(3t, 10003, "aurora", "149.154.175.117",  "2001:b28:f23d:f003::e","MIA, Miami FL, USA TEST") \
 
 enum dc {
+	DCNULL = 0,
 #define DC(n, ...) DC##n,
 	DCS
 #undef DC
@@ -38,6 +39,7 @@ typedef struct dc_t {
 
 static const dc_t DCs[] = 
 {
+	DCNULL, 0, 0, "NULL", "0", "0", "NULL",
 #define DC(n, num, dcname, ip4, ip6, desc) DC##n, num, DC##n, dcname, ip4, ip6, desc,
 	DCS
 #undef DC

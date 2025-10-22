@@ -82,9 +82,10 @@ int tg_get_file_with_progress(
 				limit);
 			
 		// net send
-		tl_t *tl = tg_send_query_sync_with_progress(
-				tg, &getFile,
-				progressp, progress);
+		//tl_t *tl = tg_send_query_sync_with_progress(
+				//tg, &getFile,
+				//progressp, progress);
+		tl_t *tl = tg_send_query(tg, &getFile);
 		buf_free(getFile);
 
 		if (tl == NULL)
@@ -400,7 +401,7 @@ tg_document_send_with_progress_saveBigFilePart:;
 					&bytes);
 			buf_free(saveFilePart);
 
-			tl_t *tl = tg_send_query_sync(
+			tl_t *tl = tg_send_query(
 					tg, 
 					&saveFilePart); 
 			
@@ -456,7 +457,7 @@ tg_document_send_with_progress_saveFilePart:;
 					file_part, 
 					&bytes);
 
-			tl_t *tl = tg_send_query_sync(
+			tl_t *tl = tg_send_query(
 					tg, 
 					&saveFilePart); 
 			buf_free(saveFilePart);
@@ -612,7 +613,7 @@ tg_document_send_with_progress_saveFilePart:;
 	buf_free(peer_);
 	buf_free(random_id);
 
-	tl_t *tl = tg_send_query_sync(tg, &sendMedia);
+	tl_t *tl = tg_send_query(tg, &sendMedia);
 	buf_free(sendMedia);
 
 	if (tl == NULL)
@@ -724,7 +725,7 @@ int tg_contact_send(
 	buf_free(inputPeer);
 	buf_free(random_id);
 
-	tl_t *tl = tg_send_query_sync(tg, &sendMedia);
+	tl_t *tl = tg_send_query(tg, &sendMedia);
 	buf_free(sendMedia);
 
 	if (tl == NULL)
@@ -777,7 +778,7 @@ int tg_send_geopoint(tg_t *tg, tg_peer_t *peer,
 	buf_free(inputPeer);
 	buf_free(random_id);
 
-	tl_t *tl = tg_send_query_sync(tg, &sendMedia);
+	tl_t *tl = tg_send_query(tg, &sendMedia);
 	buf_free(sendMedia);
 
 	if (tl == NULL)
@@ -815,7 +816,7 @@ int tg_get_document_hashes(tg_t *tg,
 		tl_upload_getFileHashes(&location, 0);
 	buf_free(location);
 	
-	tl_t *tl = tg_send_query_sync(tg, &getFileHashes); 
+	tl_t *tl = tg_send_query(tg, &getFileHashes); 
 	buf_free(getFileHashes);
 	
 	if (tl == NULL)

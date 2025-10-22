@@ -11,14 +11,16 @@
     #error "Environment not 32 or 64-bit."
 #endif
 
-void tg_parse_answer(tg_t *tg, tl_t *tl, uint64_t msg_id,
+// return 1 if msgid mismatch
+int tg_parse_answer(tg_t *tg, tl_t *tl, uint64_t msg_id,
 		void *ptr, int (*callback)(void *ptr, const tl_t *tl))
 {
+	int ret = 1;
 	ON_LOG(tg, "%s: %s", __func__,
 			tl?TL_NAME_FROM_ID(tl->_id):"NULL");
 
 	if (tl == NULL){
-		return;
+		return ret;
 	}
 
 	switch (tl->_id) {
@@ -36,6 +38,7 @@ void tg_parse_answer(tg_t *tg, tl_t *tl, uint64_t msg_id,
 					rpc_result->req_msg_id_); 
 				if (msg_id == rpc_result->req_msg_id_){
 					// got result!
+					ret = 0;
 					ON_LOG(tg, "OK! We have result: %s", 
 						result?TL_NAME_FROM_ID(result->_id):"NULL");
 					if (callback)
@@ -61,15 +64,18 @@ void tg_parse_answer(tg_t *tg, tl_t *tl, uint64_t msg_id,
 					msg_id_ = ((tl_msg_new_detailed_info_t *)tl)->answer_msg_id_;
 				if (msg_id == msg_id_){
 					ON_LOG(tg, "answer has been already sended!");
+					ret = 0;
+					// add to ack
+					tg_add_msgid(tg, msg_id_);
+					
 					if (callback)
 						if (callback(ptr, tl))
 							break;
+
 				} else {
 					ON_ERR(tg, "%s: %s for wrong msgid: "_LD_"",
 							__func__, TL_NAME_FROM_ID(tl->_id), msg_id_);
 				}
-				// add to ack
-				tg_add_msgid(tg, msg_id_);
 			}
 			break;
 		
@@ -139,6 +145,7 @@ void tg_parse_answer(tg_t *tg, tl_t *tl, uint64_t msg_id,
 				int i;
 				for (i = 0; i < ack->msg_ids_len; ++i) {
 					if (msg_id == ack->msg_ids_[i]){
+						ret = 0;
 						ON_LOG(tg, "ACK for result!");
 						if (callback)
 							if (callback(ptr, tl))
@@ -153,4 +160,6 @@ void tg_parse_answer(tg_t *tg, tl_t *tl, uint64_t msg_id,
 					TL_NAME_FROM_ID(tl->_id));
 			break;
 	}
+
+	return ret;
 }

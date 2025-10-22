@@ -13,6 +13,8 @@
 #define SERVER_PORT 443
 #define DEFAULT_DC 2
 
+typedef int socet_t;
+
 struct tg_ {
 	int id;
 	int apiId;
@@ -25,6 +27,8 @@ struct tg_ {
 	list_t *queue;
 	pthread_mutex_t queuem;
 	pthread_mutex_t send_query;
+	socet_t socket;
+	pthread_mutex_t socket_mutex;
 	tl_config_t *config;
 	void *on_err_data;
 	void (*on_err)(void *on_err_data, const char *err);

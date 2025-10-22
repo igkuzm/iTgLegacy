@@ -2,7 +2,7 @@
  * File              : send_query.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 03.02.2025
- * Last Modified Date: 09.02.2025
+ * Last Modified Date: 22.10.2025
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -183,6 +183,7 @@ tl_t *tg_send_query_via_with_progress(tg_t *tg, buf_t *query,
 		void *progressp, 
 		void (*progress)(void *progressp, int size, int total))
 {
+	tl_t *tl = NULL;
 	assert(tg && query && ip);
 	ON_LOG(tg, "%s: %s: %d", __func__, ip, port);
 
@@ -204,6 +205,7 @@ tl_t *tg_send_query_via_with_progress(tg_t *tg, buf_t *query,
 	if (pthread_mutex_lock(&tg->send_query))
 	{
 		ON_ERR(tg, "%s: can't lock mutex", __func__);
+		tg_net_close(tg, socket);
 		return NULL;
 	}
 	ON_LOG(tg, "%s: %s: %d: catched mutex!", __func__, ip, port);
@@ -211,21 +213,20 @@ tl_t *tg_send_query_via_with_progress(tg_t *tg, buf_t *query,
 	// send query
 	uint64_t msg_id = tg_send(tg, query, &socket);
 	if (msg_id == 0){
-		pthread_mutex_unlock(&tg->send_query);
-		return NULL;
+		goto end;
 	}
 
 recevive_data:;
+	tl = NULL;
 	// reseive
 	buf_t r;
 	if (tg_receive(tg, &socket, &fdset, &r, progressp, progress))
 	{
-		pthread_mutex_unlock(&tg->send_query);
-		return NULL;
+		goto end;
 	}
 
 	// deserialize 
-	tl_t *tl = tl_deserialize(&r);
+	tl = tl_deserialize(&r);
 	buf_free(r);
 
 	tl_t *answer = NULL;
@@ -237,8 +238,7 @@ recevive_data:;
 	}
 	
 	if (tl == NULL){
-		pthread_mutex_unlock(&tg->send_query);
-		return NULL;
+		goto end;
 	}
 
 	// check gzip
@@ -266,6 +266,7 @@ recevive_data:;
 		goto recevive_data;
 	}
 
+
 	// check detailed info
 	//if (tl->_id == id_msg_detailed_info ||
 			//tl->_id == id_msg_new_detailed_info)
@@ -276,21 +277,23 @@ recevive_data:;
 	//}
 	
 	// check other
-	switch (tl->_id) {
-		case id_updatesTooLong: case id_updateShort:
-		case id_updateShortMessage: case id_updateShortChatMessage:
-		case id_updateShortSentMessage: case id_updatesCombined:
-		case id_updates:
-			// get data again
-			tl_free(tl);
-			goto recevive_data;
-			break;
+	/*switch (tl->_id) {*/
+		/*case id_updatesTooLong: case id_updateShort:*/
+		/*case id_updateShortMessage: case id_updateShortChatMessage:*/
+		/*case id_updateShortSentMessage: case id_updatesCombined:*/
+		/*case id_updates:*/
+			/*// get data again*/
+			/*tl_free(tl);*/
+			/*goto recevive_data;*/
+			/*break;*/
 			
-		default:
-			break;
-	}
+		/*default:*/
+			/*break;*/
+	/*}*/
 
+end:
 	pthread_mutex_unlock(&tg->send_query);
+	tg_net_close(tg, socket);
 	return tl;
 }
 
@@ -311,13 +314,16 @@ tl_t *tg_send_query_with_progress(tg_t *tg, buf_t *query,
 			progressp, progress);
 }
 
-tl_t *tg_send_query(tg_t *tg, buf_t *query)
-{
-	return tg_send_query_via_with_progress(
-			tg, query, tg->ip, tg->port, 
-			NULL, NULL);
-}
+/*tl_t *tg_send_query(tg_t *tg, buf_t *query)*/
+/*{*/
+	/*return tg_send_query_via_with_progress(*/
+			/*tg, query, tg->ip, tg->port, */
+			/*NULL, NULL);*/
+	/*[>return tg_http_send_query(tg, query);<]*/
+/*}*/
 
 //tl_t *tg_send_query_sync(tg_t *tg, buf_t *query){
-	//return tg_send_query(tg, query);
+	//return tg_send_query_via_with_progress(
+			//tg, query, tg->ip, tg->port, 
+			//NULL, NULL);
 //}

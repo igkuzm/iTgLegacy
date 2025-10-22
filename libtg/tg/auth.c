@@ -48,7 +48,7 @@ tg_is_authorized(tg_t *tg)
 		buf_t init = initConnection(tg, getConfig);
 		buf_free(getConfig);
 		
-		tl_t *tl = tg_send_query_sync(tg, &init); 
+		tl_t *tl = tg_send_query(tg, &init); 
 		buf_free(init);
 
 		if (tl == NULL || tl->_id !=id_config){
@@ -68,7 +68,7 @@ tg_is_authorized(tg_t *tg)
 		/*ON_LOG_BUF(tg, getUsers, "%s: getUsers: ", __func__);*/
 		buf_free(iuser);
 
-		tl = tg_send_query_sync(tg, &getUsers); 
+		tl = tg_send_query(tg, &getUsers); 
 		buf_free(getUsers);
 
 		if (tl == NULL){
@@ -103,7 +103,7 @@ tg_auth_sendCode(tg_t *tg, const char *phone_number)
 	buf_t init = initConnection(tg, getConfig);
 	buf_free(getConfig);
 	
-	tl = tg_send_query_sync(tg, &init); 
+	tl = tg_send_query(tg, &init); 
 	buf_free(init);
 
 	if (tl == NULL || tl->_id !=id_config){
@@ -148,7 +148,7 @@ tg_auth_sendCode(tg_t *tg, const char *phone_number)
 			/*"%s: sendCode: ", __func__);*/
 	buf_free(codeSettings);
 
-	tl = tg_send_query_sync(tg, &sendCode); 
+	tl = tg_send_query(tg, &sendCode); 
 	buf_free(sendCode);
 
 	if (tl == NULL){
@@ -195,7 +195,7 @@ tg_auth_signIn(tg_t *tg, tl_auth_sentCode_t *sentCode,
 				NULL);
 	
 	tl_t *tl = 
-		tg_send_query_sync(tg, &signIn);
+		tg_send_query(tg, &signIn);
 	buf_free(signIn);
 	
 	if (tl && tl->_id == id_auth_authorization){

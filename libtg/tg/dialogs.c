@@ -500,8 +500,7 @@ int tg_get_dialogs(
 				limit,
 				hash?*hash:0);
 
-	/*tl_t *tl = tg_send_query(tg, &getDialogs);*/
-	tl_t *tl = tg_http_send_query(tg, &getDialogs);
+	tl_t *tl = tg_send_query(tg, &getDialogs);
 	buf_free(getDialogs);
 	if (tl == NULL){
 		ON_ERR(tg, "%s: tl is NULL", __func__);

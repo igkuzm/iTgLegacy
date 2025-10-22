@@ -694,10 +694,10 @@ int append_deserialize_table(
 					, m->args[i].name, m->args[i].name)
 					, g->deserialize_table_c);
 					
-					fputs(STR(buf, BLEN,
-						"\t\tprintf(\"\\tvector len: %%d\\n\", obj->%s_len);\n"
-					, m->args[i].name)
-					, g->deserialize_table_c);
+					//fputs(STR(buf, BLEN,
+						//"\t\tprintf(\"\\tvector len: %%d\\n\", obj->%s_len);\n"
+					//, m->args[i].name)
+					//, g->deserialize_table_c);
 
 					fputs(STR(buf, BLEN,
 					  "\t\tif (obj->%s_len < 0 || obj->%s_len > 10000) {printf(\"vector len error\\n\"); return (tl_t*)obj;}; // some error\n"
@@ -1474,7 +1474,9 @@ int append_methods(
 
 			fputs(
 					STR(buf, BLEN, 
-						"\t\tbuf = buf_cat(buf, serialize_bytes(%s_->data, %s_->size));\n", 
+						"\t\tbuf_t _bytes = serialize_bytes(%s_->data, %s_->size);\n" 
+						"\t\tbuf = buf_cat(buf, _bytes);\n" 
+						"\t\tbuf_free(_bytes);\n", 
 						m->args[i].name, m->args[i].name), 
 					g->methods_c);
 
@@ -1499,7 +1501,9 @@ int append_methods(
 
 			fputs(
 					STR(buf, BLEN, 
-						"\t\tbuf = buf_cat(buf, serialize_string(%s_));\n", 
+							"\t\tbuf_t _string = serialize_string(%s_);\n" 
+							"\t\tbuf = buf_cat(buf, _string);\n"
+							"\t\tbuf_free(_string);\n", 
 						m->args[i].name), 
 					g->methods_c);
 
@@ -1539,14 +1543,18 @@ int append_methods(
 			if (strcmp(type, "bytes")  == 0)
 				fputs(
 						STR(buf, BLEN, 
-							"\t\t\tbuf = buf_cat(buf, serialize_bytes(%s_[i].data, %s_[i].size));\n", 
+							"\t\t\tbuf_t _bytes = serialize_bytes(%s_[i].data, %s_[i].size);\n"
+							"\t\t\tbuf = buf_cat(buf, _bytes);\n" 
+							"\t\t\tbuf_free(_bytes);\n", 
 							m->args[i].name, m->args[i].name), 
 						g->methods_c);
 
 			else if (strcmp(type, "string")  == 0)
 				fputs(
 						STR(buf, BLEN, 
-							"\t\t\tbuf = buf_cat(buf, serialize_string(%s_[i]));\n", 
+							"\t\t\tbuf_t _string = serialize_string(%s_[i]);\n" 
+							"\t\t\tbuf = buf_cat(buf, _string);\n"
+							"\t\t\tbuf_free(_string);\n", 
 							m->args[i].name), 
 						g->methods_c);
 

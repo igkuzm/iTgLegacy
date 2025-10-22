@@ -23,7 +23,6 @@ libtg_la_SOURCES = tg.c \
 				   send_query.c \
 				   answer.c \
 				   queue.c \
-				   http.c \
 				   ds.c \
 				   2fa.c \
 				   errors.c \

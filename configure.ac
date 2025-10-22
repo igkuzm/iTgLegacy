@@ -1,4 +1,4 @@
-AC_INIT([iTgLegacy],[1.13.2])
+AC_INIT([iTgLegacy],[1.13.8])
 AM_INIT_AUTOMAKE
 
 AC_PROG_CC

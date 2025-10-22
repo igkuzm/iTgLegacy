@@ -544,9 +544,11 @@ static int tg_send(void *data)
 	if (s < 0){
 		ON_ERR(queue->tg, "%s: socket error: %d", __func__, s);
 		buf_free(b);
+		tg_net_close(queue->tg, queue->socket);
 		return 1;
 	}
-
+		
+	/*tg_net_close(queue->tg, queue->socket);*/
 	return 0;
 }
 
@@ -594,7 +596,7 @@ static void * tg_run_queue(void * data)
 		if (res == RTL_RS)
 		{	
 			if (tg_send(data))
-				break;
+				continue;
 		}
 
 		if (res == RTL_EX || res == RTL_ER)
@@ -798,4 +800,8 @@ int tg_queue_cancell_queue(tg_t *tg, uint64_t msg_id){
 	pthread_mutex_unlock(&queue->m); // unlock
 	
 	return 0;
+}
+
+tl_t *tg_send_query(tg_t *tg, buf_t *query){
+	return tg_send_query_sync(tg, query);
 }
