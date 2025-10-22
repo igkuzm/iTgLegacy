@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include "stb_ds.h"
+#include "errors.h"
 #if INTPTR_MAX == INT32_MAX
     #define THIS_IS_32_BIT_ENVIRONMENT
 		#define _LD_ "%lld"
@@ -45,48 +46,48 @@ static int cmp_msgid(void *msgidp, void *itemp)
 	return 0;
 }
 
-static int handle_file_migrate(
-		tg_queue_t *queue, tl_rpc_error_t *error)
+static int flood_wait_for_seconds(
+		tg_queue_t *queue, int seconds)
 {
-	if (!error || !error->error_message_.data)
-		return 1;
+	ON_ERR(queue->tg, 
+					"You are blocked for flooding. Wait %.2d:%.2d:%2d",
+					seconds/3600, seconds%3600/60, seconds%3600%60);
+					
+	// sleep and resend query
+	sleep(seconds);
 
-	ON_LOG(queue->tg, "%s: %s", __func__, error->error_message_.data);
+	// resend queue
+	tg_queue_new(
+			queue->tg, 
+			&queue->query, 
+			queue->ip,
+			queue->port,
+			queue->userdata, 
+			queue->on_done, 
+			queue->progressp, 
+			queue->progress);
+	
+	return 0;
+}
 
-	char *str;
-	str = strstr(
-			(char *)error->error_message_.data, 
-			"FILE_MIGRATE_");
-	if (str){
-		str += strlen("FILE_MIGRATE_");
-		int dc = atoi(str);
-		const char *ip = tg_ip_address_for_dc(queue->tg, dc); 
-		if (ip == NULL)
-			return 1;
-		
-		// export auth to dc
-		buf_t export_auth = 
-			tl_auth_exportAuthorization(dc);
-		tl_t *ea = 
-			tg_send_query_sync(queue->tg, &export_auth);
-		buf_free(export_auth);
-		// handle answer
-		/* TODO: handle tl answer <16-01-25, kuzmich> */
-		// resend queue
-		tg_queue_new(
-				queue->tg, 
-				&queue->query, 
-				queue->ip,
-				queue->port,
-				queue->userdata, 
-				queue->on_done, 
-				queue->progressp, 
-				queue->progress);
-		
-		return 0;
-	}
+static int file_migrate_to_dc(
+		tg_queue_t *queue, const struct dc_t *dc)
+{
+	ON_LOG(queue->tg, "%s: FILE MIGRATE TO: %d", 
+			__func__, dc->number);
 
-	return 1;
+	// resend queue
+	tg_queue_new(
+			queue->tg, 
+			&queue->query, 
+			dc->ipv4,
+			queue->port,
+			queue->userdata, 
+			queue->on_done, 
+			queue->progressp, 
+			queue->progress);
+	
+	return 0;
 }
 
 static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
@@ -186,19 +187,31 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 			{
 				tl_rpc_error_t *rpc_error = 
 					(tl_rpc_error_t *)tl;
-				
-				/*handle_file_migrate(queue, rpc_error);*/
-				//if (handle_file_migrate(queue, rpc_error))
-				//{
-					char *err = tg_strerr(tl);
-					ON_ERR(queue->tg, "%s: %s", __func__, err);
-					free(err);
-					break; // run on_done
-				//}
 
-				//queue->loop = false; // stop receive data!
-				//pthread_mutex_unlock(&queue->m); // unlock
-				//return; // do not run on_done!
+				// check file migrate
+				const struct dc_t *dc = 
+					tg_error_file_migrate(tg, RPC_ERROR(tl));
+				if (dc){
+					file_migrate_to_dc(queue, dc);
+					queue->loop = false; // stop receive data!
+					pthread_mutex_unlock(&queue->m); // unlock
+					return; // do not run on_done!
+				}
+
+				// check flood wait
+				int wait = tg_error_flood_wait(tg, RPC_ERROR(tl));
+				if (wait){
+					flood_wait_for_seconds(queue, wait);
+					queue->loop = false; // stop receive data!
+					pthread_mutex_unlock(&queue->m); // unlock
+					return; // do not run on_done!
+				}
+				
+				// frint error
+				char *err = tg_strerr(tl);
+				ON_ERR(queue->tg, "%s: %s", __func__, err);
+				free(err);
+				break; // run on_done
 			}
 			break;
 		
