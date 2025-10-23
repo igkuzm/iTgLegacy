@@ -155,11 +155,11 @@ void tg_set_on_log(tg_t *tg,
 
 void tg_set_server_address(tg_t *tg, const char *ip, int port)
 {
-	if (tg){
-		strncpy(tg->ip, ip,
-			 	sizeof(tg->ip) - 1);
-		tg->port = port;
-	}
+	tg_mutex_lock(tg, &tg->databasem, return);
+	strncpy(tg->ip, ip,
+			sizeof(tg->ip) - 1);
+	tg->port = port;
+	tg_mutex_unlock(&tg->databasem);
 }
 
 void update_hash(uint64_t *hash, uint32_t msg_id){

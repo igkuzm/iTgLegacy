@@ -193,6 +193,13 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 					tg_error_migrate(tg, RPC_ERROR(tl));
 				if (dc){
 					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
+					// check if user/phone migrate
+					if (tg_error_file_migrate(tg, RPC_ERROR(tl)) == NULL)
+					{
+						// change main ip address
+						tg_set_server_address(tg, dc->ipv4, tg->port);
+						ip_address_to_database(tg, dc->ipv4);
+					}
 					migrate_to_dc(queue, dc);
 					queue->loop = false; // stop receive data!
 					pthread_mutex_unlock(&queue->m); // unlock

@@ -145,4 +145,13 @@ tl_t *tg_tl_from_gzip(tg_t *tg, tl_t *tl);
 
 time_t ntp_time_diff();
 
+#define tg_mutex_lock(_tg, _mutex, _ret) \
+	if (pthread_mutex_lock(_mutex)){ \
+		ON_ERR(_tg, "%s: can't lock mutex: %s", __func__, #_mutex);\
+		_ret; \
+	}
+
+#define tg_mutex_unlock(_mutex) \
+	pthread_mutex_unlock(_mutex);
+
 #endif /* ifndef TG_H_ */

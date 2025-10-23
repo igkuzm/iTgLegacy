@@ -16,6 +16,7 @@ iTgLegacy_SOURCES = \
 		TGDialog.m \
 		TGMessage.m \
 		TGVideoPlayer.m \
+		DownloadManager.m \
 		ChatBox.m \
 		InputToolBar.m \
 		UIInputToolbar/BHExpandingTextView.m \

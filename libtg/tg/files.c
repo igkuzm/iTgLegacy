@@ -82,40 +82,13 @@ int tg_get_file_with_progress(
 				limit);
 			
 		// net send
-		//tl_t *tl = tg_send_query_sync_with_progress(
-				//tg, &getFile,
-				//progressp, progress);
-		tl_t *tl = tg_send_query(tg, &getFile);
+		tl_t *tl = tg_send_query_sync_with_progress(
+				tg, &getFile,
+				progressp, progress);
 		buf_free(getFile);
 
 		if (tl == NULL)
 			return 1;
-
-		//if (tl->_id == id_rpc_error){
-			//ON_LOG(tg, "%s: check FILE_MIGRATE", __func__);
-			//// check FILE MIGRATE
-			//tl_rpc_error_t *error =
-				//(tl_rpc_error_t *)tl;
-
-			//char *str;
-			//str = strstr(
-				//(char *)error->error_message_.data, 
-				//"FILE_MIGRATE_");
-			//if (str){
-				//str += strlen("FILE_MIGRATE_");
-				//int dc = atoi(str);
-				//tl_free(tl);
-				//const char *ip = tg_ip_address_for_dc(tg, dc); 
-				//if (ip == NULL){
-					//return 0;
-				//}
-				//strcpy(ip_address, ip);
-				//// resend query
-				//offset = 0;
-				//continue;
-			//}
-			//return offset;
-		//}
 
 		if (tl->_id != id_upload_file){
 			tl_free(tl);

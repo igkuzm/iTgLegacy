@@ -10,14 +10,14 @@
 const dc_t * 
 tg_error_migrate(tg_t *tg, const char *error);
 
-//const dc_t * 
-//tg_error_phone_migrate(tg_t*, const char *);
+const dc_t * 
+tg_error_phone_migrate(tg_t*, const char *);
 
-//const dc_t * 
-//tg_error_user_migrate(tg_t*, const char *);
+const dc_t * 
+tg_error_user_migrate(tg_t*, const char *);
 
-//const dc_t * 
-//tg_error_file_migrate(tg_t*, const char *);
+const dc_t * 
+tg_error_file_migrate(tg_t*, const char *);
 
 int tg_error_flood_wait(tg_t *tg, const char *error);
 

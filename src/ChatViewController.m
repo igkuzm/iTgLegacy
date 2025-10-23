@@ -43,6 +43,7 @@
 #import <AddressBookUI/AddressBookUI.h>
 #import <CoreLocation/CoreLocation.h>
 #import <MapKit/MapKit.h>
+#import "DownloadManager.h"
 
 #define kStatusBarHeight 20
 #define kDefaultToolbarHeight 40
@@ -1227,43 +1228,18 @@ static int messages_callback(void *d, const tg_message_t *m){
 }
 
 #pragma mark <Files Handler>
-int get_document_cb(void *d, const tg_file_t *f){
-	NSDictionary *dict = (__bridge NSDictionary *)d;
-	ChatViewController *self = [dict objectForKey:@"self"];
-	NSMutableData *data = [dict objectForKey:@"d"];
-
-	// write data
-	[data appendBytes:f->bytes_.data length:f->bytes_.size];
-	
-	// update progress view
-	self.progressCurrent += f->bytes_.size;
-
-	// video
-	//NSUUID *uuid = [[NSUUID alloc]init];
-	//NSString *tmp = [NSTemporaryDirectory() 
-		//stringByAppendingPathComponent:uuid.UUIDString];
-	//NSData *dd = [NSData dataWithBytes:f->bytes_.data 
-															//length:f->bytes_.size];
-	//[dd writeToFile:tmp atomically:YES];
+//int download_progress(void *d, int size, int total){
+	//ChatViewController *self = (__bridge ChatViewController *)d;
 	//dispatch_sync(dispatch_get_main_queue(), ^{
-			//[self.videoPlayer addUrl:[NSURL fileURLWithPath:tmp]];
+		//int downloaded = self.progressCurrent + size;
+		//float fl = (float)downloaded / self.progressTotal;
+		//[self.inputToolbar.progressView setProgress:fl];
+		//self.inputToolbar.progressLabel.text = 
+			//[NSString stringWithFormat:@"%d /\n%d",
+				//downloaded, self.progressTotal];
 	//});
-			
-	return 0;
-}
-
-int download_progress(void *d, int size, int total){
-	ChatViewController *self = (__bridge ChatViewController *)d;
-	dispatch_sync(dispatch_get_main_queue(), ^{
-		int downloaded = self.progressCurrent + size;
-		float fl = (float)downloaded / self.progressTotal;
-		[self.inputToolbar.progressView setProgress:fl];
-		self.inputToolbar.progressLabel.text = 
-			[NSString stringWithFormat:@"%d /\n%d",
-				downloaded, self.progressTotal];
-	});
-	return self.stopTransfer;
-}
+	//return self.stopTransfer;
+//}
 
 int upload_progress(void *d, int size, int total){
 	ChatViewController *self = (__bridge ChatViewController *)d;
@@ -1411,100 +1387,35 @@ int upload_progress(void *d, int size, int total){
 
 -(void)getDoc:(NSBubbleData *)data{
 	TGMessage *m = data.message;
+
+	NSString * __block path = nil;
 	
-	NSString *filepath;
-	if (m.isVoice){
-		filepath = [self.appDelegate.filesCache 
-				stringByAppendingPathComponent:
-					[NSString stringWithFormat:@"%lld.ogg", 
-		m.docId]];
-	} else if (m.isVideo){
-		filepath = [self.appDelegate.filesCache 
-				stringByAppendingPathComponent:
-					[NSString stringWithFormat:@"%lld.mp4", 
-		m.docId]];
-	} else {
-		filepath = [self.appDelegate.filesCache 
-				stringByAppendingPathComponent:
-					[NSString stringWithFormat:@"%lld.%@", 
-		m.docId, m.docFileName]];
+	// check connection
+	if (!self.appDelegate.isOnLineAndAuthorized){
+		[self.appDelegate showMessage:@"no network"];
 	}
-	
-	NSURL *url = [NSURL fileURLWithPath:filepath];
-	
-	unsigned long long fileSize = 
-				[[[NSFileManager defaultManager] 
-					attributesOfItemAtPath:filepath error:nil] fileSize];
 
 	[data.spinner startAnimating];
-			
-	if ([NSFileManager.defaultManager fileExistsAtPath:filepath] 
-			//&&
-			//fileSize >= data.message.docSize
-			// check hashes
-			)
-	{
-		[self openUrl:url data:data];
-	} else {
-		// check connection
-		if (!self.appDelegate.isOnLineAndAuthorized){
-			dispatch_sync(dispatch_get_main_queue(), ^{
-				[self.appDelegate showMessage:@"no network"];
-			});
-		}
-
-		// download file
-		[self.inputToolbar setToolbarWithProgress];
-		[self.inputToolbar.progressView setProgress:0.0];
-		[self.inputToolbar.progressLabel 
+	[self.inputToolbar setToolbarWithProgress];
+	[self.inputToolbar.progressView setProgress:0.0];
+	[self.inputToolbar.progressLabel 
 			setText:[NSString stringWithFormat:@"%d /\n%lld",
 			0, m.docSize]];
 		
-		[self.download addOperationWithBlock:^{
-		
-			// remove file
-			[NSFileManager.defaultManager removeItemAtPath:filepath 
-																						 error:nil];
-
-			[NSFileManager.defaultManager createFileAtPath:filepath 
-								                            contents:nil 
-							                            attributes:nil];
-
-			// open stream
-			NSMutableData *d = [NSMutableData data];
-			NSDictionary *dict = @{@"self":self, @"d":d};
-
-			self.progressTotal = m.docSize;
-			self.progressCurrent = 0;
-			self.stopTransfer = NO;
-			int err = tg_get_document(
-					self.appDelegate.tg, 
-					m.docId,
-					m.docSize, 
-					m.docAccessHash, 
-					[m.docFileReference UTF8String], 
-					(__bridge void *)dict, 
-					get_document_cb,
-					(__bridge void *)self,
-					download_progress);
-
-			if (err){
-				NSLog(@"document download error");
-			} else {
-				[d writeToFile:filepath atomically:YES];
-			}
-			
-			dispatch_sync(dispatch_get_main_queue(), ^{
+	[self.download addOperationWithBlock:^{
+		DownloadManager *dm = [DownloadManager downloadManager];
+		[dm setDelegate:self];
+		NSString *path = [dm downloadFileForMessage:m];	
+		dispatch_sync(dispatch_get_main_queue(), ^{
 				if (self.dialog.broadcast)
 					[self.inputToolbar setToolbarEmpty];
 				else
 					[self.inputToolbar setToolbarDefault];
 
-				if (!err)
-					[self openUrl:url data:data];
+				if (path)
+					[self openUrl:[NSURL fileURLWithPath:path] data:data];
 			});
-		}];
-	}
+	}];
 	[data.spinner stopAnimating];
 }
 
@@ -2641,6 +2552,7 @@ didScroll:(UIScrollView *)scrollView
     return self.inputAccessoryToolbar;
 }
 
+#pragma mark <DownloadManagerDelegate Functions>
 
 
 @end
