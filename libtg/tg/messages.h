@@ -34,6 +34,16 @@
 	TG_MESSAGE_REPLY_HEADER_ARG(uint32_t, quote_offset_, "INT", "quote_offset") \
 	TG_MESSAGE_REPLY_HEADER_FWD(tg_message_fwd_header_t, reply_from_) \
 
+#define TG_MESSAGE_ENTITY_ARGS\
+	TG_MESSAGE_ENTITY_ARG(uint32_t, entityType, "INT", "entityType") \
+	TG_MESSAGE_ENTITY_ARG(uint32_t, offset_, "INT", "offset") \
+	TG_MESSAGE_ENTITY_ARG(uint32_t, length_, "INT", "length") \
+	TG_MESSAGE_ENTITY_ARG(uint64_t, user_id_, "INT", "user_id") \
+	TG_MESSAGE_ENTITY_ARG(uint64_t, document_id_, "INT", "document_id") \
+	TG_MESSAGE_ENTITY_ARG(bool, collapsed_, "INT", "collapsed") \
+	TG_MESSAGE_ENTITY_STR(char*, language_, "INT", "language") \
+	TG_MESSAGE_ENTITY_STR(char*, url_, "INT", "url") \
+
 #define TG_MESSAGE_ARGS\
 	TG_MESSAGE_ARG(bool,     out_, "INT", "out") \
 	TG_MESSAGE_ARG(bool,     mentioned_, "INT", "mentioned") \
@@ -138,7 +148,16 @@ typedef struct tg_message_reply_header_ {
 	#undef TG_MESSAGE_REPLY_HEADER_FWD
 } tg_message_reply_header_t;
 
+typedef struct tg_message_entiry_ {
+	#define TG_MESSAGE_ENTITY_ARG(t, arg, ...) t arg;
+	#define TG_MESSAGE_ENTITY_STR(t, arg, ...) t arg;
+	TG_MESSAGE_ENTITY_ARGS
+	#undef TG_MESSAGE_ENTITY_ARG
+	#undef TG_MESSAGE_ENTITY_STR
+} tg_message_entity_t;
+
 typedef struct tg_message_ {
+	buf_t message_data;
 	#define TG_MESSAGE_ARG(t, arg, ...) t arg;
 	#define TG_MESSAGE_STR(t, arg, ...) t arg;
 	#define TG_MESSAGE_PER(t, arg, ...) t arg; int type_##arg; 
@@ -152,6 +171,8 @@ typedef struct tg_message_ {
 	#undef TG_MESSAGE_SPA
 	#undef TG_MESSAGE_SPS
 	#undef TG_MESSAGE_RPL
+	tg_message_entity_t *entities;
+	int entities_len;
 } tg_message_t;
 
 void tg_message_free(tg_message_t*);
@@ -209,7 +230,12 @@ pthread_t tg_messages_get_history_async(
 
 /* get messeges from database, return number of messages
  * return non-null in callback to stop function execution */ 
-int tg_get_messages_from_database(tg_t *tg, tg_peer_t peer, void *data,
+int tg_get_messages_from_database(
+		tg_t *tg, 
+		tg_peer_t peer, 
+		int offset_date,
+		int limit,
+		void *data,
 		int (*callback)(void *data, const tg_message_t *message));
 
 /* send text message and update local database 

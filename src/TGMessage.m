@@ -7,6 +7,10 @@
 #include "Foundation/Foundation.h"
 #import "Base64/Base64.h"
 
+@implementation TGMessageEntity
+
+@end
+
 @implementation TGMessage
 - (id)initWithMessage:(const tg_message_t *)m dialog:(const TGDialog *)d{
 	if (self = [super init]) {
@@ -88,6 +92,37 @@
 		if (d.peerType == TG_PEER_TYPE_CHANNEL && !d.broadcast){
 			if (!self.mine)
 				self.mine = (m->from_id_ == 0);	
+		}
+
+		// url
+		self.weburl = nil;
+		if (m->web_url){
+			self.weburl = 
+				[NSURL URLWithString:[NSString stringWithUTF8String:m->web_url]];
+
+			self.message = 
+				[self.message stringByAppendingFormat:@"\n[%@]", self.weburl];
+		}
+
+		// entities
+		if (m->entities_len > 0){
+			NSMutableArray *entities = [NSMutableArray array];
+			int i;
+			for (i=0; i<m->entities_len; ++i){
+				TGMessageEntity *entity = [[TGMessageEntity alloc]init];
+				entity.entityType = m->entities[i].entityType;
+				entity.offset = m->entities[i].offset_;
+				entity.length = m->entities[i].length_;
+				if (m->entities[i].url_)
+					entity.url = [NSURL URLWithString:
+						 [NSString stringWithUTF8String:m->entities[i].url_]];
+				if (m->entities[i].language_)
+					entity.language = 
+						[NSString stringWithUTF8String:m->entities[i].language_];
+
+				[entities addObject:entity];
+			}
+			self.entities = entities;
 		}
 
 		// photo

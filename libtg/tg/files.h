@@ -3,6 +3,7 @@
 
 #include "tg.h"
 #include "peer.h"
+#include <openssl/md5.h>
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -144,5 +145,7 @@ int tg_contact_send(
 
 int tg_send_geopoint(tg_t *tg, tg_peer_t *peer, 
 		double lat, double lon, const char *message);
+
+const unsigned char *tg_file_hash(tg_t *, const char *filepath);
 
 #endif /* ifndef TG_FILES_H */

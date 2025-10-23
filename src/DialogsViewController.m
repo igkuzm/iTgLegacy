@@ -285,7 +285,7 @@
 		[self.syncData addOperationWithBlock:^{
 				tg_get_dialogs(
 						self.appDelegate.tg, 
-						20, 
+						40, 
 						[date timeIntervalSince1970], 
 						//&_hash, 
 						0, 

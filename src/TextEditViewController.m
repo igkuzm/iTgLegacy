@@ -25,7 +25,9 @@
 	self.navigationItem.rightBarButtonItems=@[save];	 
 
 	self.scrollView = [[UIScrollView alloc]initWithFrame:self.view.bounds];
-	//self.scrollView.contentSize=CGSizeMake(self.view.frame.size.width, self.view.frame.size.height);
+	self.scrollView.autoresizingMask = 
+		UIViewAutoresizingFlexibleHeight|UIViewAutoresizingFlexibleWidth;
+	self.scrollView.contentSize=CGSizeMake(self.view.frame.size.width, self.view.frame.size.height);
 	[self.scrollView setBackgroundColor:[UIColor whiteColor]];
 	[self.view addSubview:self.scrollView];
 
@@ -36,7 +38,7 @@
 	//self.textView.delegate=self;
 	[self.scrollView addSubview:self.textView];
 	if (self.text)
-		[self.textView setText:self.text];	
+		[self.textView setAttributedText:self.text];	
 }
 
 -(void)keyboardWillShow:(NSNotification *)notification{

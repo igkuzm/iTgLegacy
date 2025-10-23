@@ -56,8 +56,10 @@
 @property (strong) UIColor *defaultBarColor;
 @property float toolbarOrigY;
 @property int numLines;
+@property Boolean isPlayerOpened;
 @property CGRect toolbarOrigFrame;
-@property TGVideoPlayer *videoPlayer;
+//@property TGVideoPlayer *videoPlayer;
+@property DownloadManager *downloadManager;
 @end
 
 @implementation ChatViewController
@@ -84,9 +86,12 @@ Someone = {1, 15, 11, 10};
 
 	self.mpc = 
 		[[MPMoviePlayerController alloc]init];
+	
 	//self.videoPlayer = [[TGVideoPlayer alloc]initWithView:self.view];
 	
-
+	self.downloadManager = [DownloadManager downloadManager];
+	self.downloadManager.delegate = self;
+	
 	self.locationManager = [[CLLocationManager alloc] init];
 	
 	// system sound
@@ -141,135 +146,31 @@ Someone = {1, 15, 11, 10};
 		forControlEvents:UIControlEventValueChanged];
 	[self.bubbleTableView addSubview:self.refreshControl];
 
-	// footer
-	//UIView* footerView = 
-		//[[UIView alloc] initWithFrame:CGRectMake(
-				//0, 0, 320, 50)];
-	//[footerView setBackgroundColor:[UIColor 
-					 //colorWithPatternImage:[UIImage 
-											//imageNamed:@"refreshImage.png"]]];
-	//self.bubbleTableView.tableFooterView = footerView;
-	//self.bubbleTableView.tableFooterView.hidden = YES;
+	// resize bubbleview
+	CGRect frame = self.bubbleTableView.frame;
+	frame.size.height -= kDefaultToolbarHeight;
+	self.bubbleTableView.frame = frame;
 
-	// ToolBar
-	//self.navigationController.toolbar.tintColor = [UIColor lightGrayColor];
-	//self.textFieldIsEditable = YES; // testing
-	//self.textField = [[UITextField alloc]
-	////self.textField = [[UITextView alloc]
-		//initWithFrame:CGRectMake(
-				//0,0,
-				//self.navigationController.toolbar.frame.size.width - 110, 
-				////34)];
-				//30)];
-	//self.textField.autoresizingMask = 
-		//UIViewAutoresizingFlexibleWidth|
-		//UIViewAutoresizingFlexibleHeight;
-	//[self.textField setBorderStyle:UITextBorderStyleRoundedRect];
-	////[self.textField.layer setCornerRadius:12.0f];
-	//self.textField.delegate = self;
-	////self.textField.font = [UIFont systemFontOfSize:14];
-	////self.textField.inputAccessoryView = self.navigationController.toolbar;
-	//self.numLines = 1;
-	//self.textFieldItem = [[UIBarButtonItem alloc] 
-		//initWithCustomView:self.textField];
-	
-	//self.flexibleSpace = [[UIBarButtonItem alloc] 
-		//initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
-		//target:nil action:nil];
-		
-	//self.attach = [[UIBarButtonItem alloc]
-		//initWithImage:[UIImage imageNamed:@"InputAttachmentsSeparatorAttachments"]	
-		//style:UIBarButtonItemStylePlain 
-		//target:self action:@selector(onAdd:)];
-
-	//self.send = [[UIBarButtonItem alloc]
-		//initWithImage:[UIImage imageNamed:@"Send"]	
-		//style:UIBarButtonItemStyleDone 
-		//target:self action:@selector(onSend:)];
-	//self.send.customView.autoresizingMask = 
-		//UIViewAutoresizingFlexibleTopMargin;
-
-	//UISwitch *record = [[UISwitch alloc] initWithFrame:
-		//CGRectMake(0, 0, 30, 30)];
-	//[record setOffImage:[UIImage imageNamed:@"record"]];
-	//[record addTarget:self 
-						 //action:@selector(recordSwitch:) 
-	 //forControlEvents:UIControlEventValueChanged];
-
-	//self.record = [[UIBarButtonItem alloc]
-		//initWithCustomView:record];
-	
-	//self.record = [[UIBarButtonItem alloc]
-		//initWithImage:[UIImage imageNamed:@"ios-mic-32"] 
-						//style:UIBarButtonItemStyleBordered
-					 //target:self action:@selector(recordSwitch:)];
-		//self.add = [[UIBarButtonItem alloc]
-		//initWithImage:[UIImage imageNamed:@"UIButtonBarAction"] 
-						//style:UIBarButtonItemStylePlain
-						//target:self action:@selector(onAdd:)];
-	
-	//self.cancel = [[UIBarButtonItem alloc]
-		//initWithBarButtonSystemItem:UIBarButtonSystemItemCancel 
-		//target:self action:@selector(onCancel:)];
-
-	//self.progressLabel = [[UILabel alloc]
-		//initWithFrame:CGRectMake(0, 0, 60, 40)];
-	//self.progressLabel.numberOfLines = 2;
-	//self.progressLabel.lineBreakMode = NSLineBreakByCharWrapping;
-	//self.progressLabel.backgroundColor = [UIColor clearColor];
-	//self.progressLabel.font = [UIFont systemFontOfSize:8];
-	//self.label = [[UIBarButtonItem alloc]
-		//initWithCustomView:self.progressLabel];
-
-	//self.progressView = [[UIProgressView alloc]
-		//initWithProgressViewStyle:UIProgressViewStyleBar];
-	//self.progressView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-	//self.progress = [[UIBarButtonItem alloc]
-		//initWithCustomView:self.progressView];
-
-	////[self.navigationController setToolbarHidden:NO];
-	//[self toolbarAsEntry];
-    
-		// resize bubbleview
-		CGRect frame = self.bubbleTableView.frame;
-		frame.size.height -= kDefaultToolbarHeight;
-		self.bubbleTableView.frame = frame;
-
-		keyboardIsVisible = NO;
-		/* Calculate screen size */
-		//CGRect screenFrame = [[UIScreen mainScreen] applicationFrame];
-		self.inputToolbar = [[BHInputToolbar alloc] 
-			initWithFrame:CGRectMake(0, 
-					self.view.bounds.size.height -
-						 kDefaultToolbarHeight, 
-					self.view.bounds.size.width, 
-					kDefaultToolbarHeight)];
-		[self.view addSubview:self.inputToolbar];
-		self.inputToolbar.inputDelegate = self;
-		self.inputToolbar.autoresizingMask =
-			UIViewAutoresizingFlexibleTopMargin|
-			UIViewAutoresizingFlexibleWidth;
-		self.inputAccessoryToolbar = self.inputToolbar;
+	keyboardIsVisible = NO;
+	/* Calculate screen size */
+	//CGRect screenFrame = [[UIScreen mainScreen] applicationFrame];
+	self.inputToolbar = [[BHInputToolbar alloc] 
+		initWithFrame:CGRectMake(0, 
+				self.view.bounds.size.height -
+					 kDefaultToolbarHeight, 
+				self.view.bounds.size.width, 
+				kDefaultToolbarHeight)];
+	[self.view addSubview:self.inputToolbar];
+	self.inputToolbar.inputDelegate = self;
+	self.inputToolbar.autoresizingMask =
+		UIViewAutoresizingFlexibleTopMargin|
+		UIViewAutoresizingFlexibleWidth;
+	self.inputAccessoryToolbar = self.inputToolbar;
 	
 	if (self.dialog.broadcast)
 		[self.inputToolbar setToolbarEmpty];
 	else
 		[self.inputToolbar setToolbarDefault];
-
-	//ChatBox *cb = [[ChatBox alloc]init];
-	//cb.frame = CGRectMake(
-			//0, self.view.bounds.size.height - 100, 
-			//self.view.bounds.size.width, 
-			//40);
-	//[self.view addSubview:cb];
-	
-	// keyboard
-	//[[NSNotificationCenter defaultCenter] 
-		//addObserver:self selector:@selector(keyboardWillHide:)
-		//name:UIKeyboardWillHideNotification object:nil];
-	//[[NSNotificationCenter defaultCenter] 
-		//addObserver:self selector:@selector(keyboardWillShow:)
-		//name:UIKeyboardWillShowNotification object:nil];
 
 	// load data
 	[self reloadData];
@@ -277,7 +178,6 @@ Someone = {1, 15, 11, 10};
 
 - (void)viewDidUnload
 {
-  //[[NSNotificationCenter defaultCenter] removeObserver:self];
   [super viewDidUnload];
 }
 
@@ -307,12 +207,6 @@ Someone = {1, 15, 11, 10};
 
 	// show navigation bar
 	[self.navigationController setNavigationBarHidden:NO animated:YES];
-
-	// hide toolbar if channel
-	//if (self.dialog.broadcast)
-	//{
-		//[self toolbarForChannel];
-	//}
 
 	// set icon
 	//self.icon = [[UIImageView alloc]
@@ -367,50 +261,6 @@ Someone = {1, 15, 11, 10};
 	//[self.download cancelAllOperations];
 }
 
-//-(void)toolbarForChannel{
-	//[self 
-		//setToolbarItems:nil 
-		//animated: YES];
-//}
-
-//-(void)toolbarAsEntry{
-	//[self 
-		//setToolbarItems:@[
-											//self.flexibleSpace,
-											//self.attach, 
-											//self.flexibleSpace,
-											//self.textFieldItem, 
-											//self.flexibleSpace,
-											//self.record,
-											//self.flexibleSpace]
-		//animated:YES];
-//}
-
-//-(void)toolbarAsEntryTyping{
-	//[self 
-		//setToolbarItems:@[
-											//self.flexibleSpace,
-											//self.attach, 
-											//self.flexibleSpace,
-											//self.textFieldItem, 
-											//self.flexibleSpace,
-											//self.send,
-											//self.flexibleSpace]
-		//animated:YES];
-//}
-
-//-(void)toolbarAsProgress{
-	//[self.navigationController.topViewController.view
-		//addSubview:self.progressView];
-	////[self 
-		////setToolbarItems:@[self.progress, 
-											////self.label, 
-											////self.flexibleSpace,
-											////self.cancel,
-											////self.flexibleSpace]
-		////animated:YES];
-//}
-
 -(void)timer:(id)sender{
 	// do timer funct
 	//[self cancelAll];
@@ -418,7 +268,7 @@ Someone = {1, 15, 11, 10};
 	{
 		[self.syncData addOperationWithBlock:^{
 			[self appendDataFrom:0 date:[NSDate date] 
-						scrollToBottom:NO];
+						scrollToBottom:NO local:NO];
 		}];
 	}
 }
@@ -466,6 +316,7 @@ Someone = {1, 15, 11, 10};
 	if (drop){
 		[self.download cancelAllOperations];
 		self.stopTransfer = YES;
+		[self.downloadManager stopTransfer];
 	}
 
 	if (self.dialog.broadcast)
@@ -474,43 +325,49 @@ Someone = {1, 15, 11, 10};
 		[self.inputToolbar setToolbarDefault];
 }
 
--(void)loadMoreMessages:(id)sender{
+-(void)moreMessagesLocal:(Boolean)local
+{
 	NSInteger count = self.bubbleDataArray.count;
 	// load more messages
-	[self.syncData addOperationWithBlock:^{
-		[self appendMessagesFrom:count date:[NSDate date] scrollToBottom:NO];
-		[self.bubbleTableView reloadData];
-		NSInteger delta = self.bubbleDataArray.count - count;
-		// now scroll delta messages from top
-			int i = 0;
-			NSInteger section = 0;
-			for (NSArray *s in self.bubbleTableView.bubbleSection)
-			{
-				NSInteger row = 0;
-				for (NSBubbleData *d in s){
-					i++;
-					if (i == delta){
-						NSIndexPath *indexPath = 
-							[NSIndexPath indexPathForRow:row inSection:section]; 
-						dispatch_sync(dispatch_get_main_queue(), ^{
-							[self.bubbleTableView scrollToRowAtIndexPath:indexPath
-								atScrollPosition:UITableViewScrollPositionTop 
-								animated:NO];
-						});
+	[self appendMessagesFrom:count date:[NSDate date] scrollToBottom:NO local:local];
+	[self.bubbleTableView reloadData];
+	NSInteger delta = self.bubbleDataArray.count - count;
+	// now scroll delta messages from top
+		int i = 0;
+		NSInteger section = 0;
+		for (NSArray *s in self.bubbleTableView.bubbleSection)
+		{
+			NSInteger row = 0;
+			for (NSBubbleData *d in s){
+				i++;
+				if (i == delta){
+					NSIndexPath *indexPath = 
+						[NSIndexPath indexPathForRow:row inSection:section]; 
+					dispatch_sync(dispatch_get_main_queue(), ^{
+						[self.bubbleTableView scrollToRowAtIndexPath:indexPath
+							atScrollPosition:UITableViewScrollPositionTop 
+							animated:NO];
+					});
 
-						return;
-					}
-					
-					row++;
+					return;
 				}
-
-				section++;
+				
+				row++;
 			}
 
-			// if no messages - just reload data
-			dispatch_sync(dispatch_get_main_queue(), ^{
-				[self.bubbleTableView reloadData];
-			});
+			section++;
+		}
+
+		// if no messages - just reload data
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[self.bubbleTableView reloadData];
+		});
+}
+
+-(void)loadMoreMessages:(id)sender{
+	[self.syncData addOperationWithBlock:^{
+		[self moreMessagesLocal:YES];
+		[self moreMessagesLocal:NO];
 	}];
 }
 
@@ -779,7 +636,7 @@ Someone = {1, 15, 11, 10};
 }
 
 - (void)appendMessagesFrom:(int)offset date:(NSDate *)date 
-		scrollToBottom:(Boolean)scrollToBottom
+						scrollToBottom:(Boolean)scrollToBottom local:(Boolean)local
 {
 	//[self.syncData cancelAllOperations];
 	
@@ -813,49 +670,67 @@ Someone = {1, 15, 11, 10};
 	NSDictionary *dict = 
 		@{@"self":self, @"update": @1, @"scroll": [NSNumber numberWithBool:scrollToBottom]};
 
-	tg_messages_get_history(
-			self.appDelegate.tg, 
-			peer, 
-			0, 
-			date?[date timeIntervalSince1970]:0, 
-			offset, 
-			limit, 
-			0, 
-			0, 
-			NULL, 
-			(__bridge void*)dict, 
-			messages_callback);
-
-	// on done
-	dispatch_sync(dispatch_get_main_queue(), ^{
-				[self.refreshControl endRefreshing];
-				[self.spinner stopAnimating];
-	});
-
-	// set read history
-	if (peer.type == TG_PEER_TYPE_CHANNEL){
-		tg_channel_set_read(
+	if (local){
+		tg_get_messages_from_database(
 				self.appDelegate.tg, 
 				peer, 
-				0);
-	} else {
-		tg_messages_set_read(
-				self.appDelegate.tg, 
-				peer, 
-				0);
+				date?[date timeIntervalSince1970]:0, 
+				20, 
+				(__bridge void*)dict, 
+				messages_callback);
+
+
+		// on done
+		dispatch_sync(dispatch_get_main_queue(), ^{
+					[self.refreshControl endRefreshing];
+					[self.spinner stopAnimating];
+		});
 	}
+	else {
+		tg_messages_get_history(
+				self.appDelegate.tg, 
+				peer, 
+				0, 
+				date?[date timeIntervalSince1970]:0, 
+				offset, 
+				limit, 
+				0, 
+				0, 
+				NULL, 
+				(__bridge void*)dict, 
+				messages_callback);
 
-	self.dialog.unread_count = 0;
-	[self.appDelegate removeUnredId:self.dialog.peerId];
+		// on done
+		dispatch_sync(dispatch_get_main_queue(), ^{
+					[self.refreshControl endRefreshing];
+					[self.spinner stopAnimating];
+		});
+
+		// set read history
+		if (peer.type == TG_PEER_TYPE_CHANNEL){
+			tg_channel_set_read(
+					self.appDelegate.tg, 
+					peer, 
+					0);
+		} else {
+			tg_messages_set_read(
+					self.appDelegate.tg, 
+					peer, 
+					0);
+		}
+
+		self.dialog.unread_count = 0;
+		[self.appDelegate removeUnredId:self.dialog.peerId];
+	}
 }
 
 - (void)appendDataFrom:(int)offset date:(NSDate *)date 
-		scrollToBottom:(Boolean)scrollToBottom
+				scrollToBottom:(Boolean)scrollToBottom local:(Boolean)local
 {
 	Boolean scrollAnimated = self.bubbleDataArray.count?YES:NO;
 
 	[self appendMessagesFrom:offset 
-											date:date scrollToBottom:scrollToBottom];
+											date:date scrollToBottom:scrollToBottom local:local];
 	
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		[self.bubbleTableView reloadData];
@@ -901,7 +776,10 @@ Someone = {1, 15, 11, 10};
 
 		// update data
 		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:YES];
+					scrollToBottom:YES local:YES];
+		
+		[self appendDataFrom:0 date:[NSDate date] 
+					scrollToBottom:YES local:NO];
 		
 	}];
 }
@@ -1228,19 +1106,6 @@ static int messages_callback(void *d, const tg_message_t *m){
 }
 
 #pragma mark <Files Handler>
-//int download_progress(void *d, int size, int total){
-	//ChatViewController *self = (__bridge ChatViewController *)d;
-	//dispatch_sync(dispatch_get_main_queue(), ^{
-		//int downloaded = self.progressCurrent + size;
-		//float fl = (float)downloaded / self.progressTotal;
-		//[self.inputToolbar.progressView setProgress:fl];
-		//self.inputToolbar.progressLabel.text = 
-			//[NSString stringWithFormat:@"%d /\n%d",
-				//downloaded, self.progressTotal];
-	//});
-	//return self.stopTransfer;
-//}
-
 int upload_progress(void *d, int size, int total){
 	ChatViewController *self = (__bridge ChatViewController *)d;
 	dispatch_sync(dispatch_get_main_queue(), ^{
@@ -1253,8 +1118,6 @@ int upload_progress(void *d, int size, int total){
 	});
 	return self.stopTransfer;
 }
-
-
 
 -(void)openUrl:(NSURL *)url data:(NSBubbleData *)bubbleData{
 	
@@ -1388,11 +1251,10 @@ int upload_progress(void *d, int size, int total){
 -(void)getDoc:(NSBubbleData *)data{
 	TGMessage *m = data.message;
 
-	NSString * __block path = nil;
-	
 	// check connection
 	if (!self.appDelegate.isOnLineAndAuthorized){
 		[self.appDelegate showMessage:@"no network"];
+		return;
 	}
 
 	[data.spinner startAnimating];
@@ -1403,20 +1265,19 @@ int upload_progress(void *d, int size, int total){
 			0, m.docSize]];
 		
 	[self.download addOperationWithBlock:^{
-		DownloadManager *dm = [DownloadManager downloadManager];
-		[dm setDelegate:self];
-		NSString *path = [dm downloadFileForMessage:m];	
+		self.isPlayerOpened = NO;
+		NSURL *url = [self.downloadManager downloadFileForMessage:m];	
 		dispatch_sync(dispatch_get_main_queue(), ^{
-				if (self.dialog.broadcast)
-					[self.inputToolbar setToolbarEmpty];
-				else
-					[self.inputToolbar setToolbarDefault];
+			[data.spinner stopAnimating];
+			if (self.dialog.broadcast)
+				[self.inputToolbar setToolbarEmpty];
+			else
+				[self.inputToolbar setToolbarDefault];
 
-				if (path)
-					[self openUrl:[NSURL fileURLWithPath:path] data:data];
-			});
+			if (url)
+				[self openUrl:url data:data];
+		});
 	}];
-	[data.spinner stopAnimating];
 }
 
 -(void)getContact:(NSBubbleData *)data{
@@ -1513,7 +1374,34 @@ int upload_progress(void *d, int size, int total){
 	NSBubbleData *data = bubbleData;
 	TGMessage *m = data.message;
 	TextEditViewController *vc = [[TextEditViewController alloc]init];
-	vc.text = m.message; 
+	NSMutableAttributedString *attributedString = 
+		[[NSMutableAttributedString alloc]initWithString:m.message];
+
+	UIFont *bold = [UIFont boldSystemFontOfSize:[UIFont systemFontSize]];
+	UIFont *italic = [UIFont italicSystemFontOfSize:[UIFont systemFontSize]];
+
+	for (TGMessageEntity *entity in m.entities){
+		// handle attributes
+		if (entity.entityType == id_messageEntityBold){
+			[attributedString addAttribute:NSFontAttributeName 
+															 value:bold 
+															 range:NSMakeRange(entity.offset, entity.length)];
+		}
+		if (entity.entityType == id_messageEntityItalic){
+			[attributedString addAttribute:NSFontAttributeName 
+															 value:italic 
+															 range:NSMakeRange(entity.offset, entity.length)];
+		}
+		if (entity.entityType == id_messageEntityTextUrl){
+			NSString *url = 
+				[NSString stringWithFormat:@" [%@] ", entity.url];
+			NSAttributedString *as = [[NSAttributedString alloc]initWithString:url];
+			[attributedString 
+				insertAttributedString:as 
+											 atIndex:entity.offset + entity.length];
+		}
+	}
+	vc.text = attributedString; 
 	vc.title = @"Message";
 	[self.navigationController pushViewController:vc animated:YES];
 	vc.textView.dataDetectorTypes = UIDataDetectorTypeAll;
@@ -1589,52 +1477,14 @@ didScroll:(UIScrollView *)scrollView
 {
 	[self.syncData addOperationWithBlock:^{
 		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:NO];
+					scrollToBottom:NO local:NO];
 	}];
 }
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
 				didEndDecelerationgToTop:(Boolean)top
 {
-	// get top data
-	//NSBubbleData *data = nil;
-	//NSArray *section = [self.bubbleTableView.bubbleSection 
-		//objectAtIndex:0];
-	//if (section){
-		//data = [section objectAtIndex:1];
-	//}
-	//NSInteger count = self.bubbleDataArray.count;
-	//// load more messages
-	//[self.syncData addOperationWithBlock:^{
-		//[self appendMessagesFrom:count date:[NSDate date] scrollToBottom:NO];
-		//[self.bubbleTableView reloadData];
-		//NSInteger delta = self.bubbleDataArray.count - count;
-		//// now scroll delta messages from top
-			//int i = 0;
-			//NSInteger section = 0;
-			//for (NSArray *s in self.bubbleTableView.bubbleSection)
-			//{
-				//NSInteger row = 0;
-				//for (NSBubbleData *d in s){
-					//i++;
-					//if (i == delta){
-						//NSIndexPath *indexPath = 
-							//[NSIndexPath indexPathForRow:row inSection:section]; 
-						//dispatch_sync(dispatch_get_main_queue(), ^{
-							//[self.bubbleTableView scrollToRowAtIndexPath:indexPath
-								//atScrollPosition:UITableViewScrollPositionTop 
-								//animated:NO];
-						//});
-
-						//break;;
-					//}
-					
-					//row++;
-				//}
-
-				//section++;
-			//}
-	//}];
+	[self loadMoreMessages:nil];
 }
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView 
@@ -2293,7 +2143,7 @@ didScroll:(UIScrollView *)scrollView
 				[self.inputToolbar setToolbarDefault];
 		});
 		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:YES];
+					scrollToBottom:YES local:NO];
 	}];
 }
 
@@ -2325,7 +2175,7 @@ didScroll:(UIScrollView *)scrollView
 }
 -(void)authorizedAs:(tl_user_t *)user{
 	[self appendDataFrom:0 date:[NSDate date] 
-				scrollToBottom:YES];
+				scrollToBottom:YES local:NO];
 }
 
 #pragma mark <FilePickerController Delegate>
@@ -2416,7 +2266,7 @@ didScroll:(UIScrollView *)scrollView
 					NULL);
 			
 			[self appendDataFrom:0 date:[NSDate date] 
-						scrollToBottom:YES];
+						scrollToBottom:YES local:NO];
 		}];
 		[peoplePicker dismissViewControllerAnimated:true completion:nil];
 	}];
@@ -2485,7 +2335,7 @@ didScroll:(UIScrollView *)scrollView
 						NULL);
 
 				[self appendDataFrom:0 date:[NSDate date] 
-							scrollToBottom:YES];
+							scrollToBottom:YES local:NO];
 			}];
 		} else {
 			[self.appDelegate showMessage:@"no network!"];
@@ -2535,7 +2385,7 @@ didScroll:(UIScrollView *)scrollView
 				//});
 			//} else {
 				[self appendDataFrom:0 date:[NSDate date] 
-							scrollToBottom:YES];
+							scrollToBottom:YES local:NO];
 			//}
 		}];
 	} else {
@@ -2553,7 +2403,38 @@ didScroll:(UIScrollView *)scrollView
 }
 
 #pragma mark <DownloadManagerDelegate Functions>
+-(void)downloadManagerProgress:(int)size
+												 total:(int)total
+{
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		float fl = (float)size / total;
+		[self.inputToolbar.progressView setProgress:fl];
+		self.inputToolbar.progressLabel.text = 
+			[NSString stringWithFormat:@"%d /\n%d", size, total];
+	});
+}
 
+-(void)downloadManagerStart:(NSURL *)url
+{
+	/*
+	if (self.isPlayerOpened == NO){
+		NSLog(@"INIT MOVIE PLAYER WITH URL: %@", url);
+		self.isPlayerOpened = YES;
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			MPMoviePlayerViewController *mpc = 
+					[[MPMoviePlayerViewController alloc]initWithContentURL:url];
+			[self presentMoviePlayerViewControllerAnimated:mpc];
+			[mpc.moviePlayer prepareToPlay];
+			[mpc.moviePlayer play];
+		});
+	}
+	*/
+}
+
+
+-(void)downloadManagerDownloading:(NSURL *)url
+{
+}
 
 @end
 // vim:ft=objc

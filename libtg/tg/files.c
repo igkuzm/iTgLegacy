@@ -15,6 +15,8 @@
 
 #define BUF2STR(_b) strndup((char*)_b.data, _b.size)
 
+static const unsigned char md5_buf[MD5_DIGEST_LENGTH];
+
 static void tg_file_from_tl(tg_file_t *f, const tl_t *tl)
 {
 	fprintf(stderr, "%s\n", __func__);
@@ -820,3 +822,30 @@ int tg_get_document_hashes(tg_t *tg,
 	tl_free(tl);
 	return n;
 }	
+
+const unsigned char *tg_file_hash(tg_t *tg, const char *filepath)
+{
+	int i;
+	size_t size = 0;
+	char md5_checksum[MD5_DIGEST_LENGTH*sizeof(char)] = {0};
+	FILE *fp = fopen(filepath, "r");
+
+	memset(md5_buf, 0, sizeof(md5_buf));
+	
+	if (fp == NULL){
+		ON_ERR(tg, "%s: can't open file: %s", __func__, filepath);
+		return NULL;
+	}
+	fseek(fp, 0, SEEK_END);
+	size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	char *buf = MALLOC(size, return NULL);
+	assert(MD5(buf, size, md5_buf));
+	for (i = 0; i < MD5_DIGEST_LENGTH; ++i) {
+		sprintf(md5_checksum, "%s%02x", md5_checksum, md5_buf[i]); 
+	}
+	ON_LOG(tg, "%s: file MD5 hash: %s", __func__, md5_checksum);
+
+	return md5_buf;
+}

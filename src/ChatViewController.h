@@ -12,6 +12,7 @@
 #import <MapKit/MapKit.h>
 #import "TextEditViewController.h"
 #import "UIInputToolbar/BHInputToolbar.h"
+#import "DownloadManager.h"
 
 enum {
 	ActionSheetAttach,
@@ -27,7 +28,8 @@ enum {
 	FilePickerControllerDelegate, UITextViewDelegate,
 	ABPeoplePickerNavigationControllerDelegate,
 	CLLocationManagerDelegate, NSBubbleDataDelegate,
-	TextEditViewControllerDelegate, BHInputToolbarDelegate>
+	TextEditViewControllerDelegate, BHInputToolbarDelegate,
+	DownloadManagerDelegate>
 {
 	BHInputToolbar *inputToolbar;
     
@@ -47,7 +49,6 @@ enum {
 
 @property (strong) AVAudioRecorder *audioRecorder;
 @property (strong) NSMutableDictionary *recordSettings;
-
 
 @property SystemSoundID recordStart;
 

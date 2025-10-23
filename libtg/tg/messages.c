@@ -174,6 +174,8 @@ void tg_message_from_tl(
 {
 	//ON_LOG(tg, "%s: start...", __func__);
 	memset(tgm, 0, sizeof(tg_message_t));
+
+	tgm->message_data = buf_add_buf(tlm->_buf);
 	
 	#define TG_MESSAGE_ARG(t, arg, ...) \
 		tgm->arg = tlm->arg;
@@ -202,6 +204,65 @@ void tg_message_from_tl(
 	#undef TG_MESSAGE_SPS
 	#undef TG_MESSAGE_SPB
 	#undef TG_MESSAGE_RPL
+
+	// handle entities
+	tgm->entities_len = tlm->entities_len;
+	if (tgm->entities_len > 0){
+		tgm->entities = 
+			MALLOC(sizeof(tg_message_entity_t) * tgm->entities_len, return);
+		int i;
+		for (i = 0; i < tgm->entities_len; ++i) {
+			tgm->entities[i].entityType = tlm->entities_[i]->_id;	
+			switch (tlm->entities_[i]->_id) {
+				case id_messageEntityTextUrl:
+					{
+						tl_messageEntityTextUrl_t *entity = 
+							(tl_messageEntityTextUrl_t *)tlm->entities_[i];
+						tgm->entities[i].offset_ = entity->offset_;
+						tgm->entities[i].length_ = entity->length_;
+						tgm->entities[i].url_ = buf_strdup(entity->url_);
+
+					}
+					break;
+				case id_messageEntityBlockquote:
+					{
+						tl_messageEntityBlockquote_t *entity = 
+							(tl_messageEntityBlockquote_t *)tlm->entities_[i];
+						tgm->entities[i].offset_ = entity->offset_;
+						tgm->entities[i].length_ = entity->length_;
+						tgm->entities[i].collapsed_ = entity->collapsed_;
+					}
+					break;
+				case id_messageEntityMentionName:
+					{
+						tl_messageEntityMentionName_t *entity = 
+							(tl_messageEntityMentionName_t *)tlm->entities_[i];
+						tgm->entities[i].offset_ = entity->offset_;
+						tgm->entities[i].length_ = entity->length_;
+						tgm->entities[i].user_id_ = entity->user_id_;
+					}
+					break;
+				case id_messageEntityCustomEmoji:
+					{
+						tl_messageEntityCustomEmoji_t *entity = 
+							(tl_messageEntityCustomEmoji_t *)tlm->entities_[i];
+						tgm->entities[i].offset_ = entity->offset_;
+						tgm->entities[i].length_ = entity->length_;
+						tgm->entities[i].document_id_ = entity->document_id_;
+					}
+					break;
+				default:
+					{
+						tl_messageEntityUnknown_t *entity = 
+							(tl_messageEntityUnknown_t *)tlm->entities_[i];
+						tgm->entities[i].offset_ = entity->offset_;
+						tgm->entities[i].length_ = entity->length_;
+					}
+					break;
+					
+			}
+		}
+	}
 
 	// handle with media
 	if (tlm->media_){
@@ -384,6 +445,8 @@ void tg_message_from_tl_service(
 {
 	//ON_LOG(tg, "%s: start...", __func__);
 	memset(tgm, 0, sizeof(tg_message_t));
+
+	tgm->message_data = buf_add_buf(tlm->_buf);
 
 	tgm->is_service = true;
 	tgm->out_ = tlm->out_;
@@ -596,9 +659,10 @@ static int parse_msgs(
 			continue;
 				
 		tg_message_t m;
-		//tg_message_from_tl(tg, &m, (tl_message_t *)argv[i]);
 		tg_message_from_tl_unknown(tg, &m, argv[i]);
 		
+		tg_message_to_database(tg, &m);
+
 		// save message to database
 		/*
 		if (peer_id && tg_message_to_database(tg, &m) == 0)
@@ -733,7 +797,6 @@ int tg_messages_get_history(
 				h);
 	buf_free(peer_);
 
-	//tl_t * tl = tg_send_query_sync(tg, &getHistory);
 	tl_t *tl = tg_send_query(tg, &getHistory);
 	buf_free(getHistory);
 
@@ -947,66 +1010,80 @@ int tg_message_send(tg_t *tg, tg_peer_t peer_, const char *message)
 
 int tg_message_to_database(tg_t *tg, const tg_message_t *m)
 {
-	ON_LOG(tg, "%s: disabled", __func__);
-	return 0;
-
+	pthread_mutex_lock(&tg->databasem); // lock
 	ON_LOG(tg, "%s", __func__);
 	// save message to database
-	pthread_mutex_lock(&tg->databasem); // lock
-	struct str s;
-	str_init(&s);
-
-	str_appendf(&s,
+	char sql[BUFSIZ];
+	sprintf(sql,
 		"INSERT INTO \'messages\' (\'msg_id\') "
 		"SELECT %d "
 		"WHERE NOT EXISTS (SELECT 1 FROM \'messages\' WHERE msg_id = %d);\n"
-		, m->id_, m->id_);
+			, m->id_, m->id_);
+	tg_sqlite3_exec(tg, sql);
 
-	str_appendf(&s, "UPDATE \'messages\' SET ");
+	sqlite3 *db =	tg_sqlite3_open(tg);
+	if (db){
+		sprintf(sql, 
+				"UPDATE \'messages\' SET id = %d, date = %d, "
+				"peer_id = "_LD_", message_data = (?) "
+				"WHERE msg_id = %d;", 
+				tg->id, m->date_, m->peer_id_, m->id_);
 	
-	#define TG_MESSAGE_STR(t, n, type, name) \
-	if (m->n && m->n[0]){\
-		str_appendf(&s, "\'" name "\'" " = \'"); \
-		str_append(&s, (char*)m->n, strlen((char*)m->n)); \
-		str_appendf(&s, "\', "); \
-	}
+	//#define TG_MESSAGE_STR(t, n, type, name) \
+	//if (m->n && m->n[0]){\
+		//str_appendf(&s, "\'" name "\'" " = \'"); \
+		//str_append(&s, (char*)m->n, strlen((char*)m->n)); \
+		//str_appendf(&s, "\', "); \
+	//}
 		
-	#define TG_MESSAGE_ARG(t, n, type, name) \
-		str_appendf(&s, "\'" name "\'" " = "_LD_", ", (uint64_t)m->n);
+	//#define TG_MESSAGE_ARG(t, n, type, name) \
+		//str_appendf(&s, "\'" name "\'" " = "_LD_", ", (uint64_t)m->n);
 	
-	#define TG_MESSAGE_PER(t, n, type, name) \
-		str_appendf(&s, "\'" name "\'" " = "_LD_", ", (uint64_t)m->n); \
-		str_appendf(&s, "\'type_%s\' = "_LD_", ", name, (uint64_t)m->type_##n);
+	//#define TG_MESSAGE_PER(t, n, type, name) \
+		//str_appendf(&s, "\'" name "\'" " = "_LD_", ", (uint64_t)m->n); \
+		//str_appendf(&s, "\'type_%s\' = "_LD_", ", name, (uint64_t)m->type_##n);
 	
-	#define TG_MESSAGE_SPA(t, n, type, name) \
-		str_appendf(&s, "\'" name "\'" " = "_LD_", ", (uint64_t)m->n);
+	//#define TG_MESSAGE_SPA(t, n, type, name) \
+		//str_appendf(&s, "\'" name "\'" " = "_LD_", ", (uint64_t)m->n);
 	
-	#define TG_MESSAGE_SPS(t, n, type, name) \
-	if (m->n && m->n[0]){\
-		str_appendf(&s, "\'" name "\'" " = \'"); \
-		str_append(&s, (char*)m->n, strlen((char*)m->n)); \
-		str_appendf(&s, "\', "); \
+	//#define TG_MESSAGE_SPS(t, n, type, name) \
+	//if (m->n && m->n[0]){\
+		//str_appendf(&s, "\'" name "\'" " = \'"); \
+		//str_append(&s, (char*)m->n, strlen((char*)m->n)); \
+		//str_appendf(&s, "\', "); \
+	//}
+	//#define TG_MESSAGE_RPL(t, n)
+
+	//TG_MESSAGE_ARGS
+	//#undef TG_MESSAGE_ARG
+	//#undef TG_MESSAGE_STR
+	//#undef TG_MESSAGE_PER
+	//#undef TG_MESSAGE_SPA
+	//#undef TG_MESSAGE_SPS
+	//#undef TG_MESSAGE_RPL
+
+	/*str_appendf(&s, "id = %d WHERE msg_id = %d;\n"*/
+			/*, tg->id, m->id_);*/
+
+		sqlite3_stmt *stmt;
+		sqlite3_prepare_v2(db, sql, -1,
+			 	&stmt, NULL);
+		sqlite3_bind_blob(stmt, 1, 
+				m->message_data.data, 
+				m->message_data.size, SQLITE_TRANSIENT);
+		if((sqlite3_step(stmt)) != SQLITE_DONE){
+			ON_ERR(tg, "SQLITE: %s", sqlite3_errmsg(db));
+		}
+		sqlite3_step(stmt);
+		sqlite3_finalize(stmt);
+		sqlite3_close(db);
 	}
-	#define TG_MESSAGE_RPL(t, n)
 
-	TG_MESSAGE_ARGS
-	#undef TG_MESSAGE_ARG
-	#undef TG_MESSAGE_STR
-	#undef TG_MESSAGE_PER
-	#undef TG_MESSAGE_SPA
-	#undef TG_MESSAGE_SPS
-	#undef TG_MESSAGE_RPL
-
-	str_appendf(&s, "id = %d WHERE msg_id = %d;\n"
-			, tg->id, m->id_);
-	
-	ON_LOG(tg, "%s: msg_id: %d", __func__, m->id_);
-	int ret = tg_sqlite3_exec(tg, s.str);
-	
-	free(s.str);
+	/*ON_LOG(tg, "%s: msg_id: %d", __func__, m->id_);*/
+	/*int ret = tg_sqlite3_exec(tg, s.str);*/
 	
 	pthread_mutex_unlock(&tg->databasem); // unlock
-	return ret;
+	return 0;
 }
 
 void tg_messages_create_table(tg_t *tg){
@@ -1018,43 +1095,58 @@ void tg_messages_create_table(tg_t *tg){
 	ON_LOG(tg, "%s", sql);
 	tg_sqlite3_exec(tg, sql);	
 	
-	#define TG_MESSAGE_ARG(t, n, type, name) \
-		sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\
-				"\'" name "\' " type ";");\
-		ON_LOG(tg, "%s", sql);\
-		tg_sqlite3_exec(tg, sql);	
-	#define TG_MESSAGE_STR(t, n, type, name) \
-		sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\
-				"\'" name "\' " type ";");\
-		ON_LOG(tg, "%s", sql);\
-		tg_sqlite3_exec(tg, sql);	
-	#define TG_MESSAGE_PER(t, n, type, name) \
-		sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\
-				"\'" name "\' " type ";");\
-		ON_LOG(tg, "%s", sql);\
-		tg_sqlite3_exec(tg, sql);	\
-		sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\
-				"\'type_%s\' " type ";", name);\
-		ON_LOG(tg, "%s", sql);\
-		tg_sqlite3_exec(tg, sql);	
-	#define TG_MESSAGE_SPA(t, n, type, name) \
-		sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\
-				"\'" name "\' " type ";");\
-		ON_LOG(tg, "%s", sql);\
-		tg_sqlite3_exec(tg, sql);
-	#define TG_MESSAGE_SPS(t, n, type, name) \
-		sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\
-				"\'" name "\' " type ";");\
-		ON_LOG(tg, "%s", sql);\
-		tg_sqlite3_exec(tg, sql);
-	#define TG_MESSAGE_RPL(t, n)
-	TG_MESSAGE_ARGS
-	#undef TG_MESSAGE_ARG
-	#undef TG_MESSAGE_STR
-	#undef TG_MESSAGE_PER
-	#undef TG_MESSAGE_SPA
-	#undef TG_MESSAGE_SPS
-	#undef TG_MESSAGE_RPL
+	sprintf(sql,
+		"ALTER TABLE \'messages\' ADD COLUMN \'message_data\' BLOB; ");
+	ON_LOG(tg, "%s", sql);
+	tg_sqlite3_exec(tg, sql);	
+	
+	sprintf(sql,
+		"ALTER TABLE \'messages\' ADD COLUMN \'date\' INT; ");
+	ON_LOG(tg, "%s", sql);
+	tg_sqlite3_exec(tg, sql);	
+
+	sprintf(sql,
+		"ALTER TABLE \'messages\' ADD COLUMN \'peer_id\' INT; ");
+	ON_LOG(tg, "%s", sql);
+	tg_sqlite3_exec(tg, sql);	
+	
+	/*#define TG_MESSAGE_ARG(t, n, type, name) \*/
+		/*sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\*/
+				/*"\'" name "\' " type ";");\*/
+		/*ON_LOG(tg, "%s", sql);\*/
+		/*tg_sqlite3_exec(tg, sql);	*/
+	/*#define TG_MESSAGE_STR(t, n, type, name) \*/
+		/*sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\*/
+				/*"\'" name "\' " type ";");\*/
+		/*ON_LOG(tg, "%s", sql);\*/
+		/*tg_sqlite3_exec(tg, sql);	*/
+	/*#define TG_MESSAGE_PER(t, n, type, name) \*/
+		/*sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\*/
+				/*"\'" name "\' " type ";");\*/
+		/*ON_LOG(tg, "%s", sql);\*/
+		/*tg_sqlite3_exec(tg, sql);	\*/
+		/*sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\*/
+				/*"\'type_%s\' " type ";", name);\*/
+		/*ON_LOG(tg, "%s", sql);\*/
+		/*tg_sqlite3_exec(tg, sql);	*/
+	/*#define TG_MESSAGE_SPA(t, n, type, name) \*/
+		/*sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\*/
+				/*"\'" name "\' " type ";");\*/
+		/*ON_LOG(tg, "%s", sql);\*/
+		/*tg_sqlite3_exec(tg, sql);*/
+	/*#define TG_MESSAGE_SPS(t, n, type, name) \*/
+		/*sprintf(sql, "ALTER TABLE \'messages\' ADD COLUMN "\*/
+				/*"\'" name "\' " type ";");\*/
+		/*ON_LOG(tg, "%s", sql);\*/
+		/*tg_sqlite3_exec(tg, sql);*/
+	/*#define TG_MESSAGE_RPL(t, n)*/
+	/*TG_MESSAGE_ARGS*/
+	/*#undef TG_MESSAGE_ARG*/
+	/*#undef TG_MESSAGE_STR*/
+	/*#undef TG_MESSAGE_PER*/
+	/*#undef TG_MESSAGE_SPA*/
+	/*#undef TG_MESSAGE_SPS*/
+	/*#undef TG_MESSAGE_RPL*/
 } 
 
 void tg_message_free(tg_message_t *m)
@@ -1072,98 +1164,137 @@ void tg_message_free(tg_message_t *m)
 	#undef TG_MESSAGE_SPA
 	#undef TG_MESSAGE_SPS
 	#undef TG_MESSAGE_RPL
+
+	int i;
+	for (i = 0; i < m->entities_len; ++i) {
+		if (m->entities && m->entities[i].url_)
+			free(m->entities[i].url_);
+		if (m->entities && m->entities[i].language_)
+			free(m->entities[i].language_);
+	}
+
+	buf_free(m->message_data);
 }
 
-int tg_get_messages_from_database(tg_t *tg, tg_peer_t peer, void *data,
+int tg_get_messages_from_database(
+		tg_t *tg, 
+		tg_peer_t peer, 
+		int offset_date,
+		int limit,
+		void *data,
 		int (*callback)(void *data, const tg_message_t *message))
 {
 	ON_LOG(tg, "%s", __func__);
-	//pthread_mutex_lock(&tg->databasem); // lock
-	struct str s;
-	str_init(&s);
-	str_appendf(&s, "SELECT ");
-	
-	#define TG_MESSAGE_ARG(t, n, type, name) \
-		str_appendf(&s, name ", ");
-	#define TG_MESSAGE_STR(t, n, type, name) \
-		str_appendf(&s, name ", ");
-	#define TG_MESSAGE_PER(t, n, type, name) \
-		str_appendf(&s, name ", type_%s, ", name);
-	#define TG_MESSAGE_SPA(t, n, type, name) \
-		str_appendf(&s, name ", ");
-	#define TG_MESSAGE_SPS(t, n, type, name) \
-		str_appendf(&s, name ", ");
-	#define TG_MESSAGE_RPL(t, n)
-	TG_MESSAGE_ARGS
-	#undef TG_MESSAGE_ARG
-	#undef TG_MESSAGE_STR
-	#undef TG_MESSAGE_PER
-	#undef TG_MESSAGE_SPA
-	#undef TG_MESSAGE_SPS
-	#undef TG_MESSAGE_RPL
-		
-	str_appendf(&s, 
-			"id FROM messages WHERE id = %d AND peer_id = "_LD_" "
-			"ORDER BY \'date\';", tg->id, peer.id);
-	
-	//"ORDER BY \'date\' DESC LIMIT 20;", tg->id, peer.id);
+	char sql[BUFSIZ];
+	sprintf(sql, "SELECT message_data "
+			"from \'messages\' "
+			"WHERE id = %d AND peer_id = "_LD_" "
+			"AND date < %d AND date > 0 "
+			"ORDER BY \'date\' DESC LIMIT %d;"
+			, tg->id, peer.id, offset_date, limit);
 
-	int i = 0;
-	tg_sqlite3_for_each(tg, s.str, stmt){
-		tg_message_t m;
-		memset(&m, 0, sizeof(m));
+	tg_sqlite3_for_each(tg, sql, stmt){
+		// read message data
+		buf_t buf = buf_add(
+			(uint8_t*)sqlite3_column_blob(stmt, 0),
+			sqlite3_column_bytes(stmt, 0));
 		
-		int col = 0;
-		#define TG_MESSAGE_ARG(t, n, type, name) \
-			m.n = sqlite3_column_int64(stmt, col++);
-		#define TG_MESSAGE_STR(t, n, type, name) \
-			if (sqlite3_column_bytes(stmt, col) > 0){ \
-				m.n = strndup(\
-					(char *)sqlite3_column_text(stmt, col),\
-					sqlite3_column_bytes(stmt, col));\
-			}\
-			col++;
-		#define TG_MESSAGE_PER(t, n, type, name) \
-			m.n = sqlite3_column_int64(stmt, col); \
-			m.type_##n = sqlite3_column_int64(stmt, col); \
-			col++; col++;
-		#define TG_MESSAGE_SPA(t, n, type, name) \
-			m.n = sqlite3_column_int64(stmt, col++);
-		#define TG_MESSAGE_SPS(t, n, type, name) \
-			if (sqlite3_column_bytes(stmt, col) > 0){ \
-				m.n = strndup(\
-					(char *)sqlite3_column_text(stmt, col),\
-					sqlite3_column_bytes(stmt, col));\
-			}\
-			col++;
-		#define TG_MESSAGE_RPL(t, n)
-		TG_MESSAGE_ARGS
-
-		#undef TG_MESSAGE_ARG
-		#undef TG_MESSAGE_STR
-		#undef TG_MESSAGE_PER
-		#undef TG_MESSAGE_SPA
-		#undef TG_MESSAGE_SPS
-		#undef TG_MESSAGE_RPL
-
-		i++;
-		
-		if (callback){
-			int ret = callback(data, &m);
-			if (ret){
-				tg_message_free(&m);
-				sqlite3_close(db);
-				//pthread_mutex_unlock(&tg->databasem); // unlock
-				return i;
-			}
+		tl_t *tl = tl_deserialize(&buf);
+		if (tl){
+			tg_message_t tgm;
+			memset(&tgm, 0, sizeof(tgm));
+			tg_message_from_tl_unknown(tg, &tgm, tl);
+			if (callback)
+				callback(data, &tgm);
 		}
-		// free data
-		tg_message_free(&m);
-	}	
+	}
+
+	//pthread_mutex_lock(&tg->databasem); // lock
+	/*struct str s;*/
+	/*str_init(&s);*/
+	/*str_appendf(&s, "SELECT ");*/
 	
-	//pthread_mutex_unlock(&tg->databasem); // unlock
-	free(s.str);
-	return i;
+	/*#define TG_MESSAGE_ARG(t, n, type, name) \*/
+		/*str_appendf(&s, name ", ");*/
+	/*#define TG_MESSAGE_STR(t, n, type, name) \*/
+		/*str_appendf(&s, name ", ");*/
+	/*#define TG_MESSAGE_PER(t, n, type, name) \*/
+		/*str_appendf(&s, name ", type_%s, ", name);*/
+	/*#define TG_MESSAGE_SPA(t, n, type, name) \*/
+		/*str_appendf(&s, name ", ");*/
+	/*#define TG_MESSAGE_SPS(t, n, type, name) \*/
+		/*str_appendf(&s, name ", ");*/
+	/*#define TG_MESSAGE_RPL(t, n)*/
+	/*TG_MESSAGE_ARGS*/
+	/*#undef TG_MESSAGE_ARG*/
+	/*#undef TG_MESSAGE_STR*/
+	/*#undef TG_MESSAGE_PER*/
+	/*#undef TG_MESSAGE_SPA*/
+	/*#undef TG_MESSAGE_SPS*/
+	/*#undef TG_MESSAGE_RPL*/
+		
+	/*str_appendf(&s, */
+			/*"id FROM messages WHERE id = %d AND peer_id = "_LD_" "*/
+			/*"ORDER BY \'date\';", tg->id, peer.id);*/
+	
+	/*//"ORDER BY \'date\' DESC LIMIT 20;", tg->id, peer.id);*/
+
+	/*int i = 0;*/
+	/*tg_sqlite3_for_each(tg, s.str, stmt){*/
+		/*tg_message_t m;*/
+		/*memset(&m, 0, sizeof(m));*/
+		
+		/*int col = 0;*/
+		/*#define TG_MESSAGE_ARG(t, n, type, name) \*/
+			/*m.n = sqlite3_column_int64(stmt, col++);*/
+		/*#define TG_MESSAGE_STR(t, n, type, name) \*/
+			/*if (sqlite3_column_bytes(stmt, col) > 0){ \*/
+				/*m.n = strndup(\*/
+					/*(char *)sqlite3_column_text(stmt, col),\*/
+					/*sqlite3_column_bytes(stmt, col));\*/
+			/*}\*/
+			/*col++;*/
+		/*#define TG_MESSAGE_PER(t, n, type, name) \*/
+			/*m.n = sqlite3_column_int64(stmt, col); \*/
+			/*m.type_##n = sqlite3_column_int64(stmt, col); \*/
+			/*col++; col++;*/
+		/*#define TG_MESSAGE_SPA(t, n, type, name) \*/
+			/*m.n = sqlite3_column_int64(stmt, col++);*/
+		/*#define TG_MESSAGE_SPS(t, n, type, name) \*/
+			/*if (sqlite3_column_bytes(stmt, col) > 0){ \*/
+				/*m.n = strndup(\*/
+					/*(char *)sqlite3_column_text(stmt, col),\*/
+					/*sqlite3_column_bytes(stmt, col));\*/
+			/*}\*/
+			/*col++;*/
+		/*#define TG_MESSAGE_RPL(t, n)*/
+		/*TG_MESSAGE_ARGS*/
+
+		/*#undef TG_MESSAGE_ARG*/
+		/*#undef TG_MESSAGE_STR*/
+		/*#undef TG_MESSAGE_PER*/
+		/*#undef TG_MESSAGE_SPA*/
+		/*#undef TG_MESSAGE_SPS*/
+		/*#undef TG_MESSAGE_RPL*/
+
+		/*i++;*/
+		
+		/*if (callback){*/
+			/*int ret = callback(data, &m);*/
+			/*if (ret){*/
+				/*tg_message_free(&m);*/
+				/*sqlite3_close(db);*/
+				/*//pthread_mutex_unlock(&tg->databasem); // unlock*/
+				/*return i;*/
+			/*}*/
+		/*}*/
+		/*// free data*/
+		/*tg_message_free(&m);*/
+	/*}	*/
+	
+	/*//pthread_mutex_unlock(&tg->databasem); // unlock*/
+	/*free(s.str);*/
+	/*return i;*/
 }
 
 int tg_messages_set_typing(tg_t *tg, tg_peer_t peer_, bool typing)

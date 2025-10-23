@@ -5,6 +5,15 @@
 #include "../libtg/tg/messages.h"
 #include "TGDialog.h"
 
+
+@interface TGMessageEntity : NSObject
+@property uint32_t entityType;
+@property uint32_t offset;
+@property uint32_t length;
+@property (strong) NSURL *url;
+@property (strong) NSString *language;
+@end
+
 @interface TGMessage : NSObject
 {
 }
@@ -45,6 +54,8 @@
 @property (strong) NSString *contactPhoneNumber;
 @property (strong) NSString *contactFirstName;
 @property (strong) NSString *contactLastName;
+@property (strong) NSURL *weburl;
+@property (strong) NSArray *entities;
 @property uint64_t geoAccessHash;
 @property double geoLat;
 @property double geoLong;

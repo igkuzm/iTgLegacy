@@ -17,7 +17,7 @@
 @interface TextEditViewController : UIViewController <UITextViewDelegate>
 
 @property (strong,nonatomic) id <TextEditViewControllerDelegate> delegate;
-@property (strong,nonatomic) NSString *text;
+@property (strong,nonatomic) NSAttributedString *text;
 @property (strong, nonatomic) UITextView *textView;
 @property (strong, nonatomic) UIScrollView *scrollView;
 

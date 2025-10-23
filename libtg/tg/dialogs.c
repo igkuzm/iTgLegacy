@@ -2,7 +2,7 @@
  * File              : dialogs.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 29.11.2024
- * Last Modified Date: 21.10.2025
+ * Last Modified Date: 23.10.2025
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "channel.h"
@@ -367,7 +367,7 @@ static int tg_dialogs_from_tl(
 									break;
 							}
 						}
-						//tg_message_to_database(tg, &tgm); -- last msg
+						tg_message_to_database(tg, &tgm); //last msg
 					}
 				}
 			} // done messages 

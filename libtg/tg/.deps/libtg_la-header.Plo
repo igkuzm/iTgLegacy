@@ -22,13 +22,14 @@ libtg_la-header.lo: header.c ../tg/tg.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/strings.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_string.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_common.h \
-  ../libtg.h ../tl/buf.h \
+  ../libtg.h ../../libtg/tl/buf.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdio.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_stdio.h \
-  ../tl/libtl.h ../tl/tl.h \
+  ../../libtg/tl/libtl.h ../../libtg/tl/tl.h \
   /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stdbool.h \
-  ../tl/api_layer.h ../tl/id.h ../tl/names.h ../tl/struct.h \
-  ../tl/types.h ../tl/methods.h ../tl/deserialize.h ../tl/str.h \
+  ../../libtg/tl/api_layer.h ../../libtg/tl/id.h ../../libtg/tl/names.h \
+  ../../libtg/tl/struct.h ../../libtg/tl/types.h \
+  ../../libtg/tl/methods.h ../../libtg/tl/deserialize.h ../tl/str.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdlib.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/wait.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/signal.h \
@@ -102,31 +103,31 @@ libtg_la-header.lo: header.c ../tg/tg.h \
 
 ../libtg.h:
 
-../tl/buf.h:
+../../libtg/tl/buf.h:
 
 /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/stdio.h:
 
 /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/secure/_stdio.h:
 
-../tl/libtl.h:
+../../libtg/tl/libtl.h:
 
-../tl/tl.h:
+../../libtg/tl/tl.h:
 
 /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stdbool.h:
 
-../tl/api_layer.h:
+../../libtg/tl/api_layer.h:
 
-../tl/id.h:
+../../libtg/tl/id.h:
 
-../tl/names.h:
+../../libtg/tl/names.h:
 
-../tl/struct.h:
+../../libtg/tl/struct.h:
 
-../tl/types.h:
+../../libtg/tl/types.h:
 
-../tl/methods.h:
+../../libtg/tl/methods.h:
 
-../tl/deserialize.h:
+../../libtg/tl/deserialize.h:
 
 ../tl/str.h:
 

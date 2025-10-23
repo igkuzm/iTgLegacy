@@ -611,28 +611,54 @@ static void * tg_run_queue(void * data)
 	// receive loop
 	enum RTL res; 
 	while (queue->loop) {
-		// receive
-		/*ON_LOG(queue->tg, "%s: receive...", __func__);*/
-		//usleep(1000); // in microseconds
-		res = _tg_receive(queue, queue->socket);
-		if (res == RTL_RS)
-		{	
-			if (tg_send(data))
-				continue;
+		// check opened sockets for not files download
+		if (queue->fileDownload){
+			res = _tg_receive(queue, queue->socket);
+			if (res == RTL_RS)
+			{	
+				if (tg_send(data))
+					continue;
+				else 
+					break;
+			}
+
+			if (res == RTL_EX || res == RTL_ER)
+				break;
+
+			continue;
 		}
 
-		if (res == RTL_EX || res == RTL_ER)
-			break;
+		if (pthread_mutex_trylock(&queue->tg->socket_mutex))
+		{
+			// receive
+			/*ON_LOG(queue->tg, "%s: receive...", __func__);*/
+			//usleep(1000); // in microseconds
+			res = _tg_receive(queue, queue->socket);
+			tg_mutex_unlock(&queue->tg->socket_mutex);
+			if (res == RTL_RS)
+			{	
+				if (tg_send(data))
+					continue;
+				else
+				 break;
+			}
+
+			if (res == RTL_EX || res == RTL_ER)
+				break;
+
+		} else // pthread_mutex_trylock
+			continue;
 	}
-	if (res != RTL_ER && queue->socket >= 0)
+	// close socket
+	if (queue->socket >= 0)
 		tg_net_close(queue->tg, queue->socket);
 
+	// remove fromqueue
 	tg_t *tg = queue->tg;
-	err = pthread_mutex_lock(&tg->queuem);
-	if (err){
+	tg_mutex_lock(tg, &tg->queuem,
 		ON_ERR(tg, "%s: can't lock mutex: %d", __func__, err);
-		pthread_exit(NULL);	
-	}
+		pthread_exit(NULL);
+	);	
 	list_cut(&tg->queue, &queue->msgid, cmp_msgid);
 		
 	/*buf_free(queue->query);*/

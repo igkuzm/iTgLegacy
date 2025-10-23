@@ -12,6 +12,7 @@ struct tg_queue_{
 	pthread_t timer;
 	int socket;
 	bool loop;
+	bool fileDownload;
 	buf_t query;
 	uint64_t msgid;
 	pthread_mutex_t m;

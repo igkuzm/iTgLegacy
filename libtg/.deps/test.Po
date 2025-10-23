@@ -52,7 +52,13 @@ test.o: test.c config.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/alloca.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/machine/types.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/arm/types.h \
-  tg/list.h tg/files.h tg/peer.h tg/messages.h tg/queue.h tl/alloc.h \
+  tg/list.h tg/files.h tg/peer.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/openssl/md5.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/openssl/e_os2.h \
+  /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/openssl/opensslconf.h \
+  /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stddef.h \
+  /home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/__stddef_max_align_t.h \
+  tg/messages.h tg/queue.h tl/alloc.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/unistd.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/unistd.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/select.h \
@@ -202,6 +208,16 @@ tg/list.h:
 tg/files.h:
 
 tg/peer.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/openssl/md5.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/openssl/e_os2.h:
+
+/home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/openssl/opensslconf.h:
+
+/home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/stddef.h:
+
+/home/kuzmich/.local/share/vim-lsp-settings/servers/clangd/lib/clang/15.0.0/include/__stddef_max_align_t.h:
 
 tg/messages.h:
 

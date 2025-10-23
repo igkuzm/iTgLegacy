@@ -1,4 +1,13 @@
-1.13.8
+1.15
+messages chaching
+fix multi socket hell 
+
+1.14
+fix TextView bounds
+download files with stream - not NSData
+font attributes in messages
+
+1.13
 some fixes to in socket queue
 
 1.12

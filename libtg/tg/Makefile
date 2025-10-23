@@ -132,7 +132,7 @@ libtg_la_DEPENDENCIES = ../tl/*.o ../mtx/src/*.o
 am__libtg_la_SOURCES_DIST = tg.c connect.c database.c auth.c strerr.c \
 	dialogs.c messages.c images.c peer.c files.c chat.c user.c \
 	channel.c updates.c encrypt.c header.c transport.c ack.c net.c \
-	ntp.c send_query.c answer.c queue.c http.c ds.c 2fa.c \
+	ntp.c send_query.c answer.c queue.c ds.c 2fa.c errors.c \
 	prepare_query.c ../crypto/pbkdf2.c ../crypto/hsh.c \
 	../crypto/aes.c ../crypto/cmn.c ../crypto/rsa.c \
 	darwin-posix-rt/clock_gettime.c
@@ -145,7 +145,7 @@ am_libtg_la_OBJECTS = libtg_la-tg.lo libtg_la-connect.lo \
 	libtg_la-encrypt.lo libtg_la-header.lo libtg_la-transport.lo \
 	libtg_la-ack.lo libtg_la-net.lo libtg_la-ntp.lo \
 	libtg_la-send_query.lo libtg_la-answer.lo libtg_la-queue.lo \
-	libtg_la-http.lo libtg_la-ds.lo libtg_la-2fa.lo \
+	libtg_la-ds.lo libtg_la-2fa.lo libtg_la-errors.lo \
 	libtg_la-prepare_query.lo libtg_la-pbkdf2.lo libtg_la-hsh.lo \
 	libtg_la-aes.lo libtg_la-cmn.lo libtg_la-rsa.lo \
 	$(am__objects_1)
@@ -181,8 +181,8 @@ am__depfiles_remade = ./$(DEPDIR)/libtg_la-2fa.Plo \
 	./$(DEPDIR)/libtg_la-database.Plo \
 	./$(DEPDIR)/libtg_la-dialogs.Plo ./$(DEPDIR)/libtg_la-ds.Plo \
 	./$(DEPDIR)/libtg_la-encrypt.Plo \
-	./$(DEPDIR)/libtg_la-files.Plo ./$(DEPDIR)/libtg_la-header.Plo \
-	./$(DEPDIR)/libtg_la-hsh.Plo ./$(DEPDIR)/libtg_la-http.Plo \
+	./$(DEPDIR)/libtg_la-errors.Plo ./$(DEPDIR)/libtg_la-files.Plo \
+	./$(DEPDIR)/libtg_la-header.Plo ./$(DEPDIR)/libtg_la-hsh.Plo \
 	./$(DEPDIR)/libtg_la-images.Plo \
 	./$(DEPDIR)/libtg_la-messages.Plo ./$(DEPDIR)/libtg_la-net.Plo \
 	./$(DEPDIR)/libtg_la-ntp.Plo ./$(DEPDIR)/libtg_la-pbkdf2.Plo \
@@ -304,17 +304,17 @@ OTOOL64 = :
 PACKAGE = itglegacy
 PACKAGE_BUGREPORT = 
 PACKAGE_NAME = iTgLegacy
-PACKAGE_STRING = iTgLegacy 1.13.1
+PACKAGE_STRING = iTgLegacy 1.15
 PACKAGE_TARNAME = itglegacy
 PACKAGE_URL = 
-PACKAGE_VERSION = 1.13.1
+PACKAGE_VERSION = 1.15
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SED = /usr/bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
-VERSION = 1.13.1
+VERSION = 1.15
 ZIP = /usr/bin/zip
 ZSIGN = /usr/local/bin/zsign
 abs_builddir = /home/kuzmich/src/iTgLegacy.sav/libtg/tg
@@ -378,7 +378,7 @@ libtg_la_CFLAGS = -fPIC
 libtg_la_SOURCES = tg.c connect.c database.c auth.c strerr.c dialogs.c \
 	messages.c images.c peer.c files.c chat.c user.c channel.c \
 	updates.c encrypt.c header.c transport.c ack.c net.c ntp.c \
-	send_query.c answer.c queue.c http.c ds.c 2fa.c \
+	send_query.c answer.c queue.c ds.c 2fa.c errors.c \
 	prepare_query.c ../crypto/pbkdf2.c ../crypto/hsh.c \
 	../crypto/aes.c ../crypto/cmn.c ../crypto/rsa.c \
 	$(am__append_1)
@@ -476,10 +476,10 @@ include ./$(DEPDIR)/libtg_la-database.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-dialogs.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-ds.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-encrypt.Plo # am--include-marker
+include ./$(DEPDIR)/libtg_la-errors.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-files.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-header.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-hsh.Plo # am--include-marker
-include ./$(DEPDIR)/libtg_la-http.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-images.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-messages.Plo # am--include-marker
 include ./$(DEPDIR)/libtg_la-net.Plo # am--include-marker
@@ -684,13 +684,6 @@ libtg_la-queue.lo: queue.c
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtg_la_CFLAGS) $(CFLAGS) -c -o libtg_la-queue.lo `test -f 'queue.c' || echo '$(srcdir)/'`queue.c
 
-libtg_la-http.lo: http.c
-	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtg_la_CFLAGS) $(CFLAGS) -MT libtg_la-http.lo -MD -MP -MF $(DEPDIR)/libtg_la-http.Tpo -c -o libtg_la-http.lo `test -f 'http.c' || echo '$(srcdir)/'`http.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/libtg_la-http.Tpo $(DEPDIR)/libtg_la-http.Plo
-#	$(AM_V_CC)source='http.c' object='libtg_la-http.lo' libtool=yes \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtg_la_CFLAGS) $(CFLAGS) -c -o libtg_la-http.lo `test -f 'http.c' || echo '$(srcdir)/'`http.c
-
 libtg_la-ds.lo: ds.c
 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtg_la_CFLAGS) $(CFLAGS) -MT libtg_la-ds.lo -MD -MP -MF $(DEPDIR)/libtg_la-ds.Tpo -c -o libtg_la-ds.lo `test -f 'ds.c' || echo '$(srcdir)/'`ds.c
 	$(AM_V_at)$(am__mv) $(DEPDIR)/libtg_la-ds.Tpo $(DEPDIR)/libtg_la-ds.Plo
@@ -704,6 +697,13 @@ libtg_la-2fa.lo: 2fa.c
 #	$(AM_V_CC)source='2fa.c' object='libtg_la-2fa.lo' libtool=yes \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtg_la_CFLAGS) $(CFLAGS) -c -o libtg_la-2fa.lo `test -f '2fa.c' || echo '$(srcdir)/'`2fa.c
+
+libtg_la-errors.lo: errors.c
+	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtg_la_CFLAGS) $(CFLAGS) -MT libtg_la-errors.lo -MD -MP -MF $(DEPDIR)/libtg_la-errors.Tpo -c -o libtg_la-errors.lo `test -f 'errors.c' || echo '$(srcdir)/'`errors.c
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libtg_la-errors.Tpo $(DEPDIR)/libtg_la-errors.Plo
+#	$(AM_V_CC)source='errors.c' object='libtg_la-errors.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtg_la_CFLAGS) $(CFLAGS) -c -o libtg_la-errors.lo `test -f 'errors.c' || echo '$(srcdir)/'`errors.c
 
 libtg_la-prepare_query.lo: prepare_query.c
 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtg_la_CFLAGS) $(CFLAGS) -MT libtg_la-prepare_query.lo -MD -MP -MF $(DEPDIR)/libtg_la-prepare_query.Tpo -c -o libtg_la-prepare_query.lo `test -f 'prepare_query.c' || echo '$(srcdir)/'`prepare_query.c
@@ -901,10 +901,10 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libtg_la-dialogs.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-ds.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-encrypt.Plo
+	-rm -f ./$(DEPDIR)/libtg_la-errors.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-files.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-header.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-hsh.Plo
-	-rm -f ./$(DEPDIR)/libtg_la-http.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-images.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-messages.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-net.Plo
@@ -979,10 +979,10 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libtg_la-dialogs.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-ds.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-encrypt.Plo
+	-rm -f ./$(DEPDIR)/libtg_la-errors.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-files.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-header.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-hsh.Plo
-	-rm -f ./$(DEPDIR)/libtg_la-http.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-images.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-messages.Plo
 	-rm -f ./$(DEPDIR)/libtg_la-net.Plo
