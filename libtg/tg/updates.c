@@ -360,32 +360,34 @@ static uint64_t message_update(tg_t *tg,
 	msg->ttl_period_ = up.ttl_period_;
 	/* TODO: entities <03-01-25, yourname> */
 
+	/*tg_message_to_database(tg, msg);*/
+
 	// save message to database
-	pthread_mutex_lock(&tg->databasem); // lock
-	struct str s;
-	str_init(&s);
-	str_appendf(&s,
-		"INSERT INTO \'messages\' (\'msg_id\') "
-		"SELECT %d "
-		"WHERE NOT EXISTS (SELECT 1 FROM messages WHERE msg_id = %d);\n"
-	, msg->id_, msg->id_);
-	str_appendf(&s, "UPDATE \'messages\' SET ");
-	if (msg->message_ && msg->message_[0]){
-		str_appendf(&s, "\'message\'" " = \'");
-		str_append(&s, (char*)msg->message_, strlen((char*)msg->message_));
-		str_appendf(&s, "\', ");
-	}
-	str_appendf(&s, "\'out\'" " = "_LD_", ", (uint64_t)msg->out_);
-	str_appendf(&s, "\'mentioned\'" " = "_LD_", ", (uint64_t)msg->mentioned_);
-	str_appendf(&s, "\'media_unread\'" " = "_LD_", ", (uint64_t)msg->media_unread_);
-	str_appendf(&s, "\'silent\'" " = "_LD_", ", (uint64_t)msg->silent_);
-	str_appendf(&s, "\'date\'" " = "_LD_", ", (uint64_t)msg->date_);
-	str_appendf(&s, "\'ttl_period\'" " = "_LD_", ", (uint64_t)msg->ttl_period_);
-	str_appendf(&s, "id = %d WHERE msg_id = %d;\n"
-			, tg->id, msg->id_);
-	tg_sqlite3_exec(tg, s.str);
-	pthread_mutex_unlock(&tg->databasem); // unlock
-	free(s.str);
+	//pthread_mutex_lock(&tg->databasem); // lock
+	//struct str s;
+	//str_init(&s);
+	//str_appendf(&s,
+		//"INSERT INTO \'messages\' (\'msg_id\') "
+		//"SELECT %d "
+		//"WHERE NOT EXISTS (SELECT 1 FROM messages WHERE msg_id = %d);\n"
+	//, msg->id_, msg->id_);
+	//str_appendf(&s, "UPDATE \'messages\' SET ");
+	//if (msg->message_ && msg->message_[0]){
+		//str_appendf(&s, "\'message\'" " = \'");
+		//str_append(&s, (char*)msg->message_, strlen((char*)msg->message_));
+		//str_appendf(&s, "\', ");
+	//}
+	//str_appendf(&s, "\'out\'" " = "_LD_", ", (uint64_t)msg->out_);
+	//str_appendf(&s, "\'mentioned\'" " = "_LD_", ", (uint64_t)msg->mentioned_);
+	//str_appendf(&s, "\'media_unread\'" " = "_LD_", ", (uint64_t)msg->media_unread_);
+	//str_appendf(&s, "\'silent\'" " = "_LD_", ", (uint64_t)msg->silent_);
+	//str_appendf(&s, "\'date\'" " = "_LD_", ", (uint64_t)msg->date_);
+	//str_appendf(&s, "\'ttl_period\'" " = "_LD_", ", (uint64_t)msg->ttl_period_);
+	//str_appendf(&s, "id = %d WHERE msg_id = %d;\n"
+			//, tg->id, msg->id_);
+	//tg_sqlite3_exec(tg, s.str);
+	//pthread_mutex_unlock(&tg->databasem); // unlock
+	/*free(s.str);*/
 	return chat_id;
 }
 

@@ -266,6 +266,24 @@ Someone = {1, 15, 11, 10};
 	}
 }
 
+-(Boolean)isOnBottom
+{
+	UIScrollView *scrollView = 
+		(UIScrollView *)self.bubbleTableView;
+
+	CGPoint offset = scrollView.contentOffset;
+	CGRect bounds = scrollView.bounds;
+	CGSize size = scrollView.contentSize;
+	UIEdgeInsets inset = scrollView.contentInset;
+	float y = offset.y + bounds.size.height + inset.bottom;
+	float h = size.height;
+	
+	if (y + bounds.size.height >= h)
+		return YES;
+
+	return NO;
+}
+
 -(void)timer:(id)sender{
 	// do timer funct
 	//[self cancelAll];
@@ -273,7 +291,7 @@ Someone = {1, 15, 11, 10};
 	{
 		[self.syncData addOperationWithBlock:^{
 			[self appendDataFrom:0 date:[NSDate date] 
-						scrollToBottom:NO local:NO];
+						scrollToBottom:[self isOnBottom] local:NO];
 		}];
 	}
 }
@@ -334,7 +352,8 @@ Someone = {1, 15, 11, 10};
 {
 	NSInteger count = self.bubbleDataArray.count;
 	// load more messages
-	[self appendMessagesFrom:count date:[NSDate date] scrollToBottom:NO local:local];
+	[self appendMessagesFrom:count date:[NSDate date] 
+						scrollToBottom:[self isOnBottom] local:local];
 	[self.bubbleTableView reloadData];
 	NSInteger delta = self.bubbleDataArray.count - count;
 	// now scroll delta messages from top
@@ -675,7 +694,7 @@ Someone = {1, 15, 11, 10};
 		tg_get_messages_from_database(
 				self.appDelegate.tg, 
 				peer, 
-				date?[date timeIntervalSince1970]:0, 
+				date?[date timeIntervalSince1970]:time(NULL), 
 				20, 
 				(__bridge void*)dict, 
 				messages_callback);
@@ -683,8 +702,12 @@ Someone = {1, 15, 11, 10};
 
 		// on done
 		dispatch_sync(dispatch_get_main_queue(), ^{
-					[self.refreshControl endRefreshing];
-					[self.spinner stopAnimating];
+			[self.refreshControl endRefreshing];
+			[self.spinner stopAnimating];
+			[self.bubbleTableView reloadData];
+			if (scrollToBottom)
+				[self.bubbleTableView 
+					scrollBubbleViewToBottomAnimated:YES];
 		});
 	}
 	else {
@@ -703,8 +726,12 @@ Someone = {1, 15, 11, 10};
 
 		// on done
 		dispatch_sync(dispatch_get_main_queue(), ^{
-					[self.refreshControl endRefreshing];
-					[self.spinner stopAnimating];
+			[self.refreshControl endRefreshing];
+			[self.spinner stopAnimating];
+			[self.bubbleTableView reloadData];
+			if (scrollToBottom)
+				[self.bubbleTableView 
+					scrollBubbleViewToBottomAnimated:YES];
 		});
 
 		// set read history
@@ -732,13 +759,6 @@ Someone = {1, 15, 11, 10};
 
 	[self appendMessagesFrom:offset 
 											date:date scrollToBottom:scrollToBottom local:local];
-	
-	dispatch_sync(dispatch_get_main_queue(), ^{
-		[self.bubbleTableView reloadData];
-		if (scrollToBottom)
-			[self.bubbleTableView 
-				scrollBubbleViewToBottomAnimated:scrollAnimated];
-	});
 }
 
 
@@ -784,7 +804,8 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
-						//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+						if ([self isOnBottom])
+							[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 
 			}
@@ -796,7 +817,8 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
-						//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+						if ([self isOnBottom])
+							[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_RECORD_AUDIO:
@@ -808,7 +830,8 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
-						//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+						if ([self isOnBottom])
+							[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_RECORD_ROUND:
@@ -820,7 +843,8 @@ static void on_update(void *d, int type, void *value)
 						self.bubbleTableView.typingBubble = 
 							NSBubbleTypingTypeSomebody;
 						[self.bubbleTableView reloadData];
-						//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+						if ([self isOnBottom])
+							[self.bubbleTableView scrollToBottomWithAnimation:YES];
 					});
 			}
 		case TG_UPDATE_USER_CANCEL:
@@ -834,7 +858,19 @@ static void on_update(void *d, int type, void *value)
 						[self.bubbleTableView reloadData];
 					});
 			}
-	
+		
+		case TG_UPDATE_CHAT_MESSAGE:
+			{
+				struct {uint64_t chat_id; tl_t *tl;} *t = value; 
+				if (self.dialog.peerId == t->chat_id)
+				{
+					[self.syncData addOperationWithBlock:^{
+						[self appendDataFrom:0 date:[NSDate date] 
+						scrollToBottom:[self isOnBottom] local:NO];
+					}];
+				}
+			}
+
 		default:
 			break;
 	}
@@ -1326,7 +1362,7 @@ didScroll:(UIScrollView *)scrollView
 {
 	[self.syncData addOperationWithBlock:^{
 		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:NO local:NO];
+					scrollToBottom:YES local:NO];
 	}];
 }
 
@@ -1817,6 +1853,9 @@ didScroll:(UIScrollView *)scrollView
 			else
 				[self.inputToolbar setToolbarDefault];
 		});
+
+		sleep(1); // wait
+
 		[self appendDataFrom:0 date:[NSDate date] 
 					scrollToBottom:YES local:NO];
 	}];
@@ -2054,6 +2093,8 @@ didScroll:(UIScrollView *)scrollView
 					self.appDelegate.tg, 
 					peer, text.UTF8String);
 				
+			sleep(1); // wait
+
 			[self appendDataFrom:0 date:[NSDate date] 
 							scrollToBottom:YES local:NO];
 		}];

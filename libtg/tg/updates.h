@@ -30,7 +30,7 @@ typedef enum {
 	TG_UPDATE_USER_UPLOAD_DOCUMENT,  // data is user_id
 	TG_UPDATE_USER_RECORD_AUDIO,  // data is struct {chat_id, user_id}
 	TG_UPDATE_USER_RECORD_ROUND,  // data is {chat_id, user_id}
-	TG_UPDATE_CHAT_MESSAGE,      // data is {chat_id, tg_message_t}
+	TG_UPDATE_CHAT_MESSAGE,      // data is {chat_id, tl_t*}
 	TG_UPDATE_CHAT_USER_TYPING,  // data is {chat_id, user_id}
 	TG_UPDATE_CHAT_USER_CANCEL,  // data is {chat_id, user_id}
 	TG_UPDATE_CHAT_USER_UPLOAD_VIDEO,  // data is {chat_id, user_id}
