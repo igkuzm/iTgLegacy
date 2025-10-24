@@ -1,3 +1,9 @@
+1.16
+remove curl dependences
+add version info in configView
+add unique column in database for messages (id_peer_id_msg_id_)
+add clear chaches in configView
+
 1.15
 messages chaching
 fix multi socket hell 

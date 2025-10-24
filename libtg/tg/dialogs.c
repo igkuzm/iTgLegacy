@@ -2,7 +2,7 @@
  * File              : dialogs.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 29.11.2024
- * Last Modified Date: 23.10.2025
+ * Last Modified Date: 24.10.2025
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "channel.h"
@@ -681,4 +681,12 @@ int tg_dialog_set_top_message(
 	pthread_mutex_unlock(&tg->databasem); // unlock
 	free(str.str);	
 	return ret;
+}
+
+void tg_dialogs_remove_all_from_database(tg_t *tg)
+{
+	pthread_mutex_lock(&tg->databasem); // lock
+	char sql[] = "DELETE * from \'dialogs\';";
+	tg_sqlite3_exec(tg, sql);
+	pthread_mutex_unlock(&tg->databasem); // unlock
 }

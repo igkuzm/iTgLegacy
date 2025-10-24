@@ -58,7 +58,7 @@ iTgLegacy_LDFLAGS = \
 			-framework UIKit -framework Foundation -framework QuickLook -framework SystemConfiguration -framework CoreGraphics -framework QuartzCore -framework MediaPlayer -framework AVFoundation -framework AudioToolbox -framework CoreMedia -framework AddressBook -framework AddressBookUI -framework MobileCoreServices -framework CoreLocation -framework MapKit ../libtg/tg/*.o ../libtg/tl/*.o ../libtg/mtx/src/*.o
 
 iTgLegacy_LDADD = \
-			-L../libs -Lopus/lib -lopus -lc++ -lsqlite3 -lz -lcurl -lcrypto
+			-L../libs -Lopus/lib -lopus -lc++ -lsqlite3 -lz -lcrypto
 
 bin_SCRIPTS = iTgLegacy.ipa
 CLEANiFILES = $(bin_SCRIPTS)
@@ -97,7 +97,9 @@ iTgLegacy.app: iTgLegacy _dir _plist _images
 	cd libs; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libssl.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libtg.dylib; \
+		$(INSTALL_NAME_TOOL) -change /usr/lib/libcrypto.0.9.8.dylib @executable_path/libs/libcrypto.dylib libcurl.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libssl.dylib; \
+		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libcurl.dylib; \
 		$(INSTALL_NAME_TOOL) -change /usr/lib/libgcc_s.1.dylib @executable_path/libs/libgcc_s.1.dylib libcrypto.dylib;
 
 

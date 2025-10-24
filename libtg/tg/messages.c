@@ -1015,19 +1015,23 @@ int tg_message_to_database(tg_t *tg, const tg_message_t *m)
 	// save message to database
 	char sql[BUFSIZ];
 	sprintf(sql,
-		"INSERT INTO \'messages\' (\'msg_id\') "
-		"SELECT %d "
-		"WHERE NOT EXISTS (SELECT 1 FROM \'messages\' WHERE msg_id = %d);\n"
-			, m->id_, m->id_);
+		"INSERT INTO \'messages\' (id_peer_id_msg_id_) "
+		"SELECT \'%d_"_LD_"_%d\' "
+		"WHERE NOT EXISTS (SELECT 1 FROM \'messages\' "
+		"WHERE id_peer_id_msg_id_ = \'%d_"_LD_"_%d\');\n"
+			, tg->id, m->peer_id_, m->id_
+			, tg->id, m->peer_id_, m->id_);
 	tg_sqlite3_exec(tg, sql);
 
 	sqlite3 *db =	tg_sqlite3_open(tg);
 	if (db){
 		sprintf(sql, 
 				"UPDATE \'messages\' SET id = %d, date = %d, "
-				"peer_id = "_LD_", message_data = (?) "
-				"WHERE msg_id = %d;", 
-				tg->id, m->date_, m->peer_id_, m->id_);
+				"msg_id_ = %d, peer_id = "_LD_", message_data = (?) "
+				"WHERE id_peer_id_msg_id_ = \'%d_"_LD_"_%d\';", 
+				tg->id, m->date_, 
+				m->id_, m->peer_id_, 
+				tg->id, m->peer_id_, m->id_);
 	
 	//#define TG_MESSAGE_STR(t, n, type, name) \
 	//if (m->n && m->n[0]){\
@@ -1091,7 +1095,17 @@ void tg_messages_create_table(tg_t *tg){
 	char sql[BUFSIZ]; 
 	
 	sprintf(sql,
-		"CREATE TABLE IF NOT EXISTS messages (id INT, msg_id INT UNIQUE); ");
+		"CREATE TABLE IF NOT EXISTS messages (id INT); ");
+	ON_LOG(tg, "%s", sql);
+	tg_sqlite3_exec(tg, sql);	
+
+	sprintf(sql,
+		"ALTER TABLE \'messages\' ADD COLUMN \'msg_id_\' INT; ");
+	ON_LOG(tg, "%s", sql);
+	tg_sqlite3_exec(tg, sql);	
+
+	sprintf(sql,
+		"ALTER TABLE \'messages\' ADD COLUMN \'id_peer_id_msg_id_\' TEXT; "); // unique for table
 	ON_LOG(tg, "%s", sql);
 	tg_sqlite3_exec(tg, sql);	
 	
@@ -1334,8 +1348,8 @@ int tg_messages_set_read(tg_t *tg, tg_peer_t peer, uint32_t max_id)
 	char sql[BUFSIZ];
 	sprintf(sql, 
 			"UPDATE TABLE \'dialogs\' "
-			"SET \'unread_count\' = 0 "
-			"WHERE \'peer_id\' = "_LD_" AND id = %d;"
+			"SET unread_count = 0 "
+			"WHERE peer_id = "_LD_" AND id = %d;"
 			, peer.id, tg->id);
 	pthread_mutex_lock(&tg->databasem); // lock
 	tg_sqlite3_exec(tg, sql);
@@ -1382,4 +1396,12 @@ int tg_messages_get_read_date(
 
 	free(tl);
 	return -1;
+}
+
+void tg_messages_remove_all_from_database(tg_t *tg)
+{
+	pthread_mutex_lock(&tg->databasem); // lock
+	char sql[] = "DELETE * from \'messages\';";
+	tg_sqlite3_exec(tg, sql);
+	pthread_mutex_unlock(&tg->databasem); // unlock
 }

@@ -12,6 +12,9 @@
 #include "Foundation/Foundation.h"
 #include "QuickLookController.h"
 #import "InputToolBar.h"
+#import "../libtg/config.h"
+#import "../libtg/tg/dialogs.h"
+#import "../libtg/tg/messages.h"
 
 @implementation ConfigViewController
 
@@ -44,7 +47,7 @@ enum {
 
 #pragma mark <TableViewDelegate Meythods>
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-	return 4;
+	return 6;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
@@ -61,7 +64,12 @@ enum {
 		case 3:
 			return @"Developing";
 			break;						
-
+		case 4:
+			return @"Version";
+			break;						
+		case 5:
+			return @"Clear";
+			break;						
 	}
 	return @"";
 }
@@ -76,6 +84,10 @@ enum {
 		rows = 2;
 	if (section == 3)
 		rows = 3;
+	if (section == 4)
+		rows = 1;
+	if (section == 5)
+		rows = 2;
 	
 	return rows;
 }
@@ -135,7 +147,7 @@ enum {
 				switch (indexPath.row) {
 					case 0:
 						{
-							cell.textLabel.text = @"Show notifications in dialogs";
+							cell.textLabel.text = @"Popup notifications";
 							cell.detailTextLabel.text = @"";
 							cell.selectionStyle = UITableViewCellSelectionStyleNone;
 							UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectZero];
@@ -234,10 +246,6 @@ enum {
 							cell.textLabel.text = @"Last log";
 						}
 						break;
-					case 3:
-						{
-							cell.textLabel.text = @"test input bar";
-						}
 					
 					default:
 						break;
@@ -245,6 +253,41 @@ enum {
 			}
 			break;
 	
+			case 4: 
+			{
+				switch (indexPath.row) {
+					case 0:
+						{
+							cell.textLabel.text = [NSString stringWithUTF8String:VERSION];
+						}
+						break;
+					
+
+					default:
+						break;
+				}
+			}
+			break;
+
+			case 5: 
+			{
+				switch (indexPath.row) {
+					case 0:
+						{
+							cell.textLabel.text = @"Clear files cache";
+						}
+						break;
+					case 1:
+						{
+							cell.textLabel.text = @"Clear messages cache";
+						}
+						break;
+
+					default:
+						break;
+				}
+			}
+			break;
 
 
 		default:
@@ -252,6 +295,83 @@ enum {
 	}
 	
 	return cell;
+}
+
+-(void)open_donation_url:(UITableView *)tableView indexPath:(NSIndexPath *)indexPath
+{
+	 UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+	 NSURL *url = [NSURL URLWithString:cell.detailTextLabel.text];
+	 [UIApplication.sharedApplication openURL:url];
+}
+
+-(void)showQR {
+	 // show QR-code
+	 NSString *qrcodePath = [[NSBundle mainBundle] 
+		 pathForResource:@"qrcode" ofType:@"jpg"];	 
+	 NSURL *url = [NSURL fileURLWithPath:qrcodePath];
+	QuickLookController *qlc = [[QuickLookController alloc]
+		initQLPreviewControllerWithData:@[url]];	
+	[self presentViewController:qlc 
+										 animated:TRUE completion:nil];
+}
+
+-(void)openLog{
+	NSString *cache = [NSSearchPathForDirectoriesInDomains(
+	NSCachesDirectory, 
+	NSUserDomainMask,
+	YES) objectAtIndex:0]; 
+
+	NSString *log = [cache 
+			stringByAppendingPathComponent:@"log.txt"];
+	//NSString *log = [NSTemporaryDirectory() 
+			//stringByAppendingPathComponent:@"log.txt"];
+	 NSURL *url = [NSURL fileURLWithPath:log];
+	QuickLookController *qlc = [[QuickLookController alloc]
+		initQLPreviewControllerWithData:@[url]];	
+	[self presentViewController:qlc 
+										 animated:TRUE completion:nil];
+}
+
+-(void)openLastLog{
+	NSString *log = [NSTemporaryDirectory() 
+			stringByAppendingPathComponent:@"lastlog.txt"];
+	 NSURL *url = [NSURL fileURLWithPath:log];
+	QuickLookController *qlc = [[QuickLookController alloc]
+		initQLPreviewControllerWithData:@[url]];	
+	[self presentViewController:qlc 
+										 animated:TRUE completion:nil];
+}
+
+-(void)clearCacheFiles{
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSString *cache = [NSSearchPathForDirectoriesInDomains(
+	NSCachesDirectory, 
+	NSUserDomainMask,
+	YES) objectAtIndex:0]; 
+	
+	for (NSString *dirname in 
+			@[@"docThumbs", @"files", @"images", @"peer", @"s", @"Snapshots"])
+	{
+		NSError *error = nil;
+		NSString *dir = [cache 
+			stringByAppendingPathComponent:dirname];
+
+		NSArray *directoryContents = [fm 
+			contentsOfDirectoryAtPath:[NSURL fileURLWithPath:dir] 
+													error:&error];
+		if (error == nil){
+			for (NSURL *file in directoryContents){
+				[fm removeItemAtURL:file error:nil];
+			}
+		}
+	}
+	[self.appDelegate showMessage:@"done!"];
+}
+
+-(void)clearTables{
+	 tg_dialogs_remove_all_from_database(self.appDelegate.tg);
+	 tg_messages_remove_all_from_database(self.appDelegate.tg);
+	 [self.appDelegate showMessage:@"done!"];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -262,101 +382,57 @@ enum {
 				switch (indexPath.row) 
 				{
 				 case 0:
-					 {
-						self.appDelegate.authorizationDelegate = self;
-						[self.appDelegate authorize];
-					 }
+					self.appDelegate.authorizationDelegate = self;
+					[self.appDelegate authorize];
 					 break;
-
 					default:
 						break;
 				}
-
 				break;
 			}
-
 		case 2: 
 			{
 				switch (indexPath.row) 
 				{
 				 case 0:
-					 {
-						 // open donation URL
-						 UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-						 NSURL *url = [NSURL URLWithString:cell.detailTextLabel.text];
-						 [UIApplication.sharedApplication openURL:url];
-					 }
+					 [self open_donation_url:tableView indexPath:indexPath];
 					 break;
 					case 1:
-					 {
-						 // show QR-code
-						 NSString *qrcodePath = [[NSBundle mainBundle] 
-							 pathForResource:@"qrcode" ofType:@"jpg"];	 
-						 NSURL *url = [NSURL fileURLWithPath:qrcodePath];
-						QuickLookController *qlc = [[QuickLookController alloc]
-							initQLPreviewControllerWithData:@[url]];	
-						[self presentViewController:qlc 
-															 animated:TRUE completion:nil];
-					 }
+					 [self showQR];
 					 break;
-
-
 					default:
 						break;
 				}
-
 				break;
 			}
-
 		case 3: 
 			{
 				switch (indexPath.row) 
 				{
 				 case 1:
-					 {
-						NSString *cache = [NSSearchPathForDirectoriesInDomains(
-						NSCachesDirectory, 
-						NSUserDomainMask,
-						YES) objectAtIndex:0]; 
-	
-						NSString *log = [cache 
-								stringByAppendingPathComponent:@"log.txt"];
-						//NSString *log = [NSTemporaryDirectory() 
-								//stringByAppendingPathComponent:@"log.txt"];
-						 NSURL *url = [NSURL fileURLWithPath:log];
-						QuickLookController *qlc = [[QuickLookController alloc]
-							initQLPreviewControllerWithData:@[url]];	
-						[self presentViewController:qlc 
-															 animated:TRUE completion:nil];
-					 }
+					 [self openLog];
+					 break;
+				 case 2:
+					 [self openLastLog];
+					 break;
+				 default:
+						break;
+				}
+			}
+		case 5: 
+			{
+				switch (indexPath.row) 
+				{
+				 case 0:
+					 [self clearCacheFiles];
 					 break;
 					
-				 case 2:
-					 {
-						NSString *log = [NSTemporaryDirectory() 
-								stringByAppendingPathComponent:@"lastlog.txt"];
-						 NSURL *url = [NSURL fileURLWithPath:log];
-						QuickLookController *qlc = [[QuickLookController alloc]
-							initQLPreviewControllerWithData:@[url]];	
-						[self presentViewController:qlc 
-															 animated:TRUE completion:nil];
-					 }
+				 case 1:
+					 [self clearTables];
 					 break;
-
-				 //case 3:
-					 //{
-						 //InputToolBar *ip = [[InputToolBar alloc]init];
-						 //ip.frame = CGRectMake(
-								 //0, self.view.frame.size.height-40, 
-								 //self.view.frame.size.width, 40);
-						 //[self.view addSubview:ip];
-					 //}
-						//break;
-
 					default:
 						break;
 				}
-
 				break;
 			}
 		default:
