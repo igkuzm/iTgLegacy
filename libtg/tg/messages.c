@@ -1100,27 +1100,27 @@ void tg_messages_create_table(tg_t *tg){
 	tg_sqlite3_exec(tg, sql);	
 
 	sprintf(sql,
-		"ALTER TABLE \'messages\' ADD COLUMN \'msg_id_\' INT; ");
+		"ALTER TABLE messages ADD COLUMN msg_id_ INT; ");
 	ON_LOG(tg, "%s", sql);
 	tg_sqlite3_exec(tg, sql);	
 
 	sprintf(sql,
-		"ALTER TABLE \'messages\' ADD COLUMN \'id_peer_id_msg_id_\' TEXT; "); // unique for table
+		"ALTER TABLE messages ADD COLUMN id_peer_id_msg_id_ TEXT; "); // unique for table
 	ON_LOG(tg, "%s", sql);
 	tg_sqlite3_exec(tg, sql);	
 	
 	sprintf(sql,
-		"ALTER TABLE \'messages\' ADD COLUMN \'message_data\' BLOB; ");
+		"ALTER TABLE messages ADD COLUMN message_data BLOB; ");
 	ON_LOG(tg, "%s", sql);
 	tg_sqlite3_exec(tg, sql);	
 	
 	sprintf(sql,
-		"ALTER TABLE \'messages\' ADD COLUMN \'date\' INT; ");
+		"ALTER TABLE messages ADD COLUMN date INT; ");
 	ON_LOG(tg, "%s", sql);
 	tg_sqlite3_exec(tg, sql);	
 
 	sprintf(sql,
-		"ALTER TABLE \'messages\' ADD COLUMN \'peer_id\' INT; ");
+		"ALTER TABLE messages ADD COLUMN peer_id INT; ");
 	ON_LOG(tg, "%s", sql);
 	tg_sqlite3_exec(tg, sql);	
 	
@@ -1201,7 +1201,7 @@ int tg_get_messages_from_database(
 	ON_LOG(tg, "%s", __func__);
 	char sql[BUFSIZ];
 	sprintf(sql, "SELECT message_data "
-			"from \'messages\' "
+			"FROM messages "
 			"WHERE id = %d AND peer_id = "_LD_" "
 			"AND date < %d AND date > 0 "
 			"ORDER BY \'date\' DESC LIMIT %d;"
@@ -1220,6 +1220,8 @@ int tg_get_messages_from_database(
 			tg_message_from_tl_unknown(tg, &tgm, tl);
 			if (callback)
 				callback(data, &tgm);
+
+			tl_free(tl);
 		}
 	}
 
@@ -1347,7 +1349,7 @@ int tg_messages_set_read(tg_t *tg, tg_peer_t peer, uint32_t max_id)
 	// update database
 	char sql[BUFSIZ];
 	sprintf(sql, 
-			"UPDATE TABLE \'dialogs\' "
+			"UPDATE TABLE dialogs "
 			"SET unread_count = 0 "
 			"WHERE peer_id = "_LD_" AND id = %d;"
 			, peer.id, tg->id);
@@ -1398,10 +1400,51 @@ int tg_messages_get_read_date(
 	return -1;
 }
 
+static int tg_messages_delete_message_(
+		tg_t *tg, uint64_t peer_id, uint32_t msg_id)
+{
+	buf_t query = 
+		tl_messages_deleteMessages(true, &msg_id, 1);
+
+	tl_t *tl = tg_send_query(tg, &query);
+	buf_free(query);
+	
+	if (tl == NULL)
+		return -1;
+
+	if (tl->_id == id_messages_affectedMessages){
+		tl_free(tl);
+		return 0;
+	}
+
+	free(tl);
+	return -1;
+}
+
+
+
+int tg_messages_delete_message(tg_t *tg, uint64_t peer_id, uint32_t msg_id)
+{
+	if (tg_messages_delete_message_(tg, peer_id, msg_id)){
+		ON_ERR(tg, "%s: can't delete message", __func__);
+		return -1;
+	}
+
+	pthread_mutex_lock(&tg->databasem); // lock
+	char sql[BUFSIZ];
+	sprintf(sql,
+			"DELETE from messages "
+			"WHERE id = %d AND peer_id = "_LD_" AND msg_id_ = %d;"
+			,tg->id, peer_id, msg_id);
+	tg_sqlite3_exec(tg, sql);
+	pthread_mutex_unlock(&tg->databasem); // unlock
+	return 0;
+}
+
 void tg_messages_remove_all_from_database(tg_t *tg)
 {
 	pthread_mutex_lock(&tg->databasem); // lock
-	char sql[] = "DELETE from \'messages\';";
+	char sql[] = "DELETE from messages;";
 	tg_sqlite3_exec(tg, sql);
 	pthread_mutex_unlock(&tg->databasem); // unlock
 }

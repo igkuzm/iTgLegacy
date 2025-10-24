@@ -77,7 +77,7 @@
 	NSLog(@"start...");
 
 	self.syncData = [[NSOperationQueue alloc]init];
-	self.syncData.maxConcurrentOperationCount = 1;
+	self.syncData.maxConcurrentOperationCount = 4;
 	
 	// set badge number
 	application.applicationIconBadgeNumber = 0;

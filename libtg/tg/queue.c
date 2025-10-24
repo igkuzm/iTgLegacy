@@ -71,16 +71,31 @@ static int flood_wait_for_seconds(
 }
 
 static int migrate_to_dc(
-		tg_queue_t *queue, const struct dc_t *dc)
+		tg_queue_t *queue, const struct dc_t *dc, tl_t *tl)
 {
-	ON_LOG(queue->tg, "%s: MIGRATE TO: %d", 
+	ON_ERR(queue->tg, "%s: MIGRATE TO: %d", 
 			__func__, dc->number);
+	// get ip
+	const char *ip = 
+		tg_ip_address_for_dc(queue->tg, dc->number);
+	if (ip == NULL){
+		ON_ERR(queue->tg, "%s: can't get ip from config", __func__);
+		ip = dc->ipv4;
+	}
+
+	// check if user/phone migrate
+	if (tg_error_file_migrate(queue->tg, RPC_ERROR(tl)) == NULL)
+	{
+		// change main ip address
+		tg_set_server_address(queue->tg, ip, queue->tg->port);
+		ip_address_to_database(queue->tg, ip);
+	}
 
 	// resend queue
 	tg_queue_new(
 			queue->tg, 
 			&queue->query, 
-			dc->ipv4,
+			ip,
 			queue->port,
 			queue->userdata, 
 			queue->on_done, 
@@ -193,14 +208,7 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 					tg_error_migrate(tg, RPC_ERROR(tl));
 				if (dc){
 					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
-					// check if user/phone migrate
-					if (tg_error_file_migrate(tg, RPC_ERROR(tl)) == NULL)
-					{
-						// change main ip address
-						tg_set_server_address(tg, dc->ipv4, tg->port);
-						ip_address_to_database(tg, dc->ipv4);
-					}
-					migrate_to_dc(queue, dc);
+					migrate_to_dc(queue, dc, tl);
 					queue->loop = false; // stop receive data!
 					pthread_mutex_unlock(&queue->m); // unlock
 					return; // do not run on_done!
@@ -320,11 +328,30 @@ static void handle_tl(tg_queue_t *queue, tl_t *tl)
 			break;
 		case id_rpc_error:
 			{
-				tl_rpc_error_t *rpc_error = 
-					(tl_rpc_error_t *)tl;
-				char *err = tg_strerr(tl);
-				ON_ERR(queue->tg, "%s: %s", __func__, err);
-				free(err);
+				// check file/user/phone migrate
+				const struct dc_t *dc = 
+					tg_error_migrate(queue->tg, RPC_ERROR(tl));
+				if (dc){
+					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
+					// check if user/phone migrate
+					migrate_to_dc(queue, dc, tl);
+					queue->loop = false; // stop receive data!
+					pthread_mutex_unlock(&queue->m); // unlock
+					break;
+				}
+
+				// check flood wait
+				int wait = tg_error_flood_wait(queue->tg, RPC_ERROR(tl));
+				if (wait){
+					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
+					flood_wait_for_seconds(queue, wait);
+					queue->loop = false; // stop receive data!
+					pthread_mutex_unlock(&queue->m); // unlock
+					break;
+				}
+
+				// print error
+				ON_ERR(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
 			}
 			break;
 		case id_msgs_ack:
@@ -514,7 +541,7 @@ static int tg_send(void *data)
 			return 1;
 		}
 		close(queue->socket);
-		api.app.open(queue->tg->ip, queue->tg->port);	
+		app_t app = api.app.open(queue->tg->ip, queue->tg->port);	
 		queue->tg->key = 
 			buf_add(shared_rc.key.data, shared_rc.key.size);
 		queue->tg->salt = 

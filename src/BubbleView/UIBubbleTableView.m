@@ -284,8 +284,11 @@ didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
 		swipeToLeftRecognizer.direction = UISwipeGestureRecognizerDirectionLeft;
 		[cell addGestureRecognizer:swipeToLeftRecognizer];
 		
-		//if (!data.message.mine)
-			//cell.accessoryType = UITableViewCellAccessoryDetailDisclosureButton;
+		if (data.message.mediaType == id_messageMediaGeo ||
+		    data.message.mediaType == id_messageMediaContact)
+		{
+			cell.accessoryType = UITableViewCellAccessoryDetailDisclosureButton;
+		}
 
 		//if ([cell.data.view isKindOfClass:[UITextView class]]){
 			//UITextView *tw = (UITextView *)cell.data.view;

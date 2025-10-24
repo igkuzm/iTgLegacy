@@ -1,6 +1,7 @@
 #include "AudioToolbox/AudioToolbox.h"
 #include "BubbleView/UIBubbleTableView.h"
 #import "MediaPlayer/MediaPlayer.h"
+#include "TGMessage.h"
 #import "AVFoundation/AVAudioRecorder.h"
 #import "FilePickerController.h"
 #include "UIKit/UIKit.h"
@@ -69,6 +70,7 @@ enum {
 @property (strong) UITextField *textField;
 //@property (strong) UITextView *textField;
 @property (strong, nonatomic) TGDialog *dialog;
+@property (strong, nonatomic) NSBubbleData *messageToRemove;
 @property (strong, nonatomic) NSString *currentImage;
 @property (nonatomic, strong) NSMutableArray *bubbleDataArray;
 @property (strong) UIImagePickerController *imagePicker;

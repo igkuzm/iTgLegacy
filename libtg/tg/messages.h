@@ -261,6 +261,8 @@ int tg_get_channel_messages(tg_t *, tg_peer_t *channel,
 		void *userdata, 
 		int (*callback)(void *userdata, const tg_message_t *message));
 
+int tg_messages_delete_message(tg_t*, uint64_t peer_id, uint32_t msg_id);
+
 void tg_messages_remove_all_from_database(tg_t *tg);
 
 #endif /* ifndef TG_MESSAGES_H */		

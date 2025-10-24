@@ -1086,6 +1086,28 @@ static int messages_callback(void *d, const tg_message_t *m){
 	return 0;
 }
 
+-(void)askToRemoveMessage{
+	if (self.messageToRemove){
+		[self.appDelegate askYesNo:@"Remove?" 
+												 onYes:^{
+
+			[self.syncData addOperationWithBlock:^{
+				
+				dispatch_sync(dispatch_get_main_queue(), ^{
+					[self.bubbleDataArray removeObject:self.messageToRemove];
+					[self.bubbleTableView reloadData];
+				});	
+
+				tg_messages_delete_message(
+								self.appDelegate.tg, 
+								self.dialog.peerId, 
+								self.messageToRemove.message.id);
+				self.messageToRemove = nil;
+			}];
+		}];
+	}
+}
+
 #pragma mark <Files Handler>
 int upload_progress(void *d, int size, int total){
 	ChatViewController *self = (__bridge ChatViewController *)d;
@@ -1375,22 +1397,20 @@ didScroll:(UIScrollView *)scrollView
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView 
 	accessoryButtonTappedForData:(NSBubbleData *)data 
 {
-	// create actionSheet
-	//self.actionSheetType = ActionSheetMessage;
-	//UIActionSheet *as = [[UIActionSheet alloc]
-		//initWithTitle:@"" 
-		//delegate:self 
-		//cancelButtonTitle:@"cancel" 
-		//destructiveButtonTitle:nil 
-		//otherButtonTitles:
-			//@"reply",
-		//nil];
-	//[as showFromToolbar:self.navigationController.toolbar];
+	TGMessage *m = data.message;
+	if (m){
+		if (m.mediaType == id_messageMediaGeo){
+			[self getGeo:data];
+		} else if (m.mediaType == id_messageMediaContact){
+			[self getContact:data];
+		}
+	}
 }
 
 - (void)performSwipeToLeftAction:(NSBubbleData *)data {
 	NSString *title = @"";
 	TGMessage *m = data.message;
+	self.messageToRemove = data;
 	if (m.message.length > 0){
 		if (m.message.length > 10)
 			title = [m.message substringToIndex:10];
@@ -1454,6 +1474,25 @@ didScroll:(UIScrollView *)scrollView
 			case 1:
 				{
 					[self cancelTransfer:NO];
+				}
+				break;
+			
+
+			default:
+				break;
+		}
+	}
+	else if (self.actionSheetType == ActionSheetMessage)
+	{
+		switch (buttonIndex){
+			case 0: // remove
+				{
+					[self askToRemoveMessage];
+				}
+				break;
+			case 1:
+				{
+
 				}
 				break;
 			

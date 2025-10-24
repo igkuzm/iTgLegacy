@@ -4,6 +4,8 @@ add version info in configView
 add unique column in database for messages (id_peer_id_msg_id_)
 add clear chaches in configView
 add chat scrolldown on new message
+file/user/phone migrate support
+remove message in chat
 
 1.15
 messages chaching
