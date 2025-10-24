@@ -686,7 +686,7 @@ int tg_dialog_set_top_message(
 void tg_dialogs_remove_all_from_database(tg_t *tg)
 {
 	pthread_mutex_lock(&tg->databasem); // lock
-	char sql[] = "DELETE * from \'dialogs\';";
+	char sql[] = "DELETE from \'dialogs\';";
 	tg_sqlite3_exec(tg, sql);
 	pthread_mutex_unlock(&tg->databasem); // unlock
 }

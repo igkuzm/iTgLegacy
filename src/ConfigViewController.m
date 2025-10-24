@@ -352,16 +352,18 @@ enum {
 	for (NSString *dirname in 
 			@[@"docThumbs", @"files", @"images", @"peer", @"s", @"Snapshots"])
 	{
+		NSLog(@"DIRNAME: %@", dirname);
+
 		NSError *error = nil;
 		NSString *dir = [cache 
 			stringByAppendingPathComponent:dirname];
 
 		NSArray *directoryContents = [fm 
-			contentsOfDirectoryAtPath:[NSURL fileURLWithPath:dir] 
+			contentsOfDirectoryAtPath:dir 
 													error:&error];
 		if (error == nil){
-			for (NSURL *file in directoryContents){
-				[fm removeItemAtURL:file error:nil];
+			for (NSString *file in directoryContents){
+				[fm removeItemAtPath:file error:nil];
 			}
 		}
 	}

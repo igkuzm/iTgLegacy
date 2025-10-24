@@ -1401,7 +1401,7 @@ int tg_messages_get_read_date(
 void tg_messages_remove_all_from_database(tg_t *tg)
 {
 	pthread_mutex_lock(&tg->databasem); // lock
-	char sql[] = "DELETE * from \'messages\';";
+	char sql[] = "DELETE from \'messages\';";
 	tg_sqlite3_exec(tg, sql);
 	pthread_mutex_unlock(&tg->databasem); // unlock
 }

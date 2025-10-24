@@ -259,6 +259,11 @@ Someone = {1, 15, 11, 10};
 		[self.refreshControl endRefreshing];
 	//[self.syncData cancelAllOperations];
 	//[self.download cancelAllOperations];
+	
+	if (self.appDelegate.tg){
+		pthread_mutex_unlock(&self.appDelegate.tg->send_query);
+		tg_new_session(self.appDelegate.tg);
+	}
 }
 
 -(void)timer:(id)sender{
@@ -638,8 +643,6 @@ Someone = {1, 15, 11, 10};
 - (void)appendMessagesFrom:(int)offset date:(NSDate *)date 
 						scrollToBottom:(Boolean)scrollToBottom local:(Boolean)local
 {
-	//[self.syncData cancelAllOperations];
-	
 	if (!self.dialog){
 		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
 		return;
@@ -652,8 +655,6 @@ Someone = {1, 15, 11, 10};
 		return;
 	}
 	
-	tg_new_session(self.appDelegate.tg);
-
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		[self.spinner startAnimating];
 	});
@@ -745,12 +746,10 @@ Someone = {1, 15, 11, 10};
 	if (!self.appDelegate.tg)
 		return;
 
-	//[self.syncData cancelAllOperations];
+	[self cancelAll];
 
 	// animate spinner
 	[self.spinner startAnimating];
-
-	//[self.bubbleDataArray removeAllObjects];
 
 	tg_peer_t peer = {
 			self.dialog.peerType,
@@ -760,20 +759,6 @@ Someone = {1, 15, 11, 10};
 
 	[self.syncData addOperationWithBlock:^{
 		
-		//NSDictionary *dict = @{@"self":self, @"update": @0, @"scroll": @0};
-		
-		//tg_get_messages_from_database(
-			//self.appDelegate.tg, 
-			//peer, 
-			//(__bridge void *)dict, 
-			//messages_callback);
-
-		//dispatch_sync(dispatch_get_main_queue(), ^{
-			////[self.spinner stopAnimating];
-			//[self.bubbleTableView reloadData];
-			//[self.bubbleTableView scrollToBottomWithAnimation:YES];
-		//});
-
 		// update data
 		[self appendDataFrom:0 date:[NSDate date] 
 					scrollToBottom:YES local:YES];
@@ -877,11 +862,6 @@ static int messages_callback(void *d, const tg_message_t *m){
 			item.message = 
 				[[TGMessage alloc]initWithMessage:m dialog:self.dialog];
 		
-			//if (item.message.isService){
-				//// update message
-				//[item initWithServiceMessage:item.message.message 
-															//date:item.message.date];
-			//} else {
 				if (m->photo_id){
 					[self getPhotoForMessageCached:item 
 						download:[update boolValue]];
@@ -893,7 +873,6 @@ static int messages_callback(void *d, const tg_message_t *m){
 				} else if (m->media_type == id_messageMediaGeo){
 
 				}
-			//} // not service message
 		});
 	} else {
 		item = [NSBubbleData alloc]; 
@@ -908,14 +887,6 @@ static int messages_callback(void *d, const tg_message_t *m){
 		item.message = 
 			[[TGMessage alloc]initWithMessage:m dialog:self.dialog];
 
-		//if (item.message.isService){
-			//dispatch_sync(dispatch_get_main_queue(), ^{
-				//[item initWithServiceMessage:item.message.message 
-																//date:item.message.date];
-			//});
-			//return 0;
-		//}
-		
 		NSBubbleType type = 
 			item.message.mine?BubbleTypeMine:BubbleTypeSomeoneElse; 
 		
@@ -1044,32 +1015,6 @@ static int messages_callback(void *d, const tg_message_t *m){
 							[NSString stringWithFormat:@"%lld", 
 								m->doc_size];
 				}
-
-			//} else if (item.message.isVoice) { 
-				//// setup voice
-				//NSString *filepath = [self.appDelegate.filesCache 
-					//stringByAppendingPathComponent:
-						//[NSString stringWithFormat:@"%lld.ogg", item.message.docId]];
-				//item.mpc = 
-					//[[MPMoviePlayerController alloc]init];
-				//[item.mpc setControlStyle:MPMovieControlStyleEmbedded];
-				//[item.mpc setScalingMode:MPMovieScalingModeFill];
-				//item.mpc.view.frame = CGRectMake(
-						//0, 0, 220, 60);
-
-				//[item initWithView:item.mpc.view 
-							//date:item.message.date 
-							//type:type 
-							//insets:item.message.mine?Mine:Someone];
-				
-				//item.mpc.view.hidden = YES;
-				
-				//if ([NSFileManager.defaultManager fileExistsAtPath:filepath])
-				//{
-					//item.mpc.contentURL = [NSURL fileURLWithPath:filepath];
-					//[item.mpc prepareToPlay];
-					//item.mpc.view.hidden = NO;
-				//}
 
 			} else if (m->media_type == id_messageMediaGeo) {
 				UIView *view = [[UIView alloc]init];
@@ -1210,36 +1155,6 @@ int upload_progress(void *d, int size, int total){
 			[mpc.moviePlayer prepareToPlay];
 			[mpc.moviePlayer play];
 
-			//[self.mpc.view removeFromSuperview];
-
-			//self.mpc = 
-				//[[MPMoviePlayerController alloc]init];
-			//[self.mpc setControlStyle:MPMovieControlStyleDefault];
-			//[self.mpc setScalingMode:MPMovieScalingModeFill];
-			//CGRect frame = bubbleData.view.bounds;
-			//frame.origin.y = frame.size.height - 50;
-			//self.mpc.view.frame = frame;
-			//self.mpc.view.backgroundColor = [UIColor clearColor];
-			//self.mpc.backgroundView.backgroundColor = 
-				//[UIColor clearColor];
-			//for(UIView* subV in self.mpc.view.subviews) {
-				//subV.backgroundColor = [UIColor clearColor];
-			//}
-			//for(UIView* subV in self.mpc.backgroundView.subviews) {
-				//subV.backgroundColor = [UIColor clearColor];
-			//}
-			//[bubbleData.view addSubview:self.mpc.view];
-			//self.mpc.contentURL = url;
-			//[self.mpc prepareToPlay];
-			//[self.mpc play];
-
-			//[item initWithView:item.mpc.view 
-						//date:item.message.date 
-						//type:type 
-						//insets:item.message.mine?Mine:Someone];
-				
-
-			
 			return;
 		}
 			
@@ -1295,61 +1210,12 @@ int upload_progress(void *d, int size, int total){
 
 -(void)getPhoto:(NSBubbleData *)data{
 	TGMessage *m = data.message;
-	//NSString *filepath = [self.appDelegate.imagesCache 
-				//stringByAppendingPathComponent:
-					//[NSString stringWithFormat:@"%lld.png", m.photoId]];
-		//NSURL *url = [NSURL fileURLWithPath:filepath]; 
-		//if ([NSFileManager.defaultManager fileExistsAtPath:filepath]){
-				//QuickLookController *qlc = [[QuickLookController alloc]
-					//initQLPreviewControllerWithData:@[url]];	
-				//[self presentViewController:qlc animated:TRUE completion:nil];
-		//} else {
-			//if (!self.appDelegate.tg ||
-					//!self.appDelegate.authorizedUser ||
-					//!self.appDelegate.reach.isReachable)
-				//return;
 
-			//// download photo
-			//if (data.spinner)
-				//[data.spinner startAnimating]; 
-
-			//[self.syncData addOperationWithBlock:^{
-				//char *photo = tg_get_photo_file(
-						//self.appDelegate.tg, 
-						//m.photoId, 
-						//m.photoAccessHash, 
-						//[m.photoFileReference UTF8String], 
-						//"x"); 
-
-				//// on done
-				//if (data.spinner){
-					//dispatch_sync(dispatch_get_main_queue(), ^{
-						//[data.spinner stopAnimating]; 
-					//});
-				//}
-				//if (photo){
-					//NSData *data = [NSData dataFromBase64String:
-						//[NSString stringWithUTF8String:photo]];
-					//if (data){
-						//[data writeToFile:filepath atomically:YES];
-						//dispatch_sync(dispatch_get_main_queue(), ^{
-							NSURL *url = [NSURL fileURLWithPath:m.photoPath]; 
-							QuickLookController *qlc = [[QuickLookController alloc]
-								initQLPreviewControllerWithData:@[url]];	
-							[self presentViewController:qlc 
-																 animated:TRUE completion:nil];
-						//});
-					//}
-					//free(photo);
-
-				//} else { // no photo
-					//dispatch_sync(dispatch_get_main_queue(), ^{
-						//[self.appDelegate 
-							//showMessage:@"can't download full-sized photo"];
-					//});
-				//}
-			//}];
-		//}
+	NSURL *url = [NSURL fileURLWithPath:m.photoPath]; 
+	QuickLookController *qlc = [[QuickLookController alloc]
+		initQLPreviewControllerWithData:@[url]];	
+	[self presentViewController:qlc 
+										 animated:TRUE completion:nil];
 }
 
 
@@ -1432,18 +1298,6 @@ int upload_progress(void *d, int size, int total){
 }
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView didSelectData:(NSBubbleData *)data 
 {
-	//TGMessage *m = data.message;
-	//if (m){
-		//if (m.mediaType == id_messageMediaGeo){
-			//[self getGeo:data];
-		//} else if (m.mediaType == id_messageMediaContact){
-			//[self getContact:data];
-		//} else if (m.photoId){
-			//[self getPhoto:data];
-		//}	else if (m.docId){
-			//[self getDoc:data];
-		//}
-	//}
 }
 
 - (void)bubbleTableView:(UIBubbleTableView *)bubbleTableView
@@ -1458,17 +1312,12 @@ didScroll:(UIScrollView *)scrollView
 
 - (void)bubbleTableViewDidBeginDragging:(UIBubbleTableView *)bubbleTableView 
 {
-	//[self.inputToolbar.textView.internalTextView resignFirstResponder];
-	//[self.inputToolbar resignFirstResponder];
-	//[self becomeFirstResponder];
 }
 
 - (void)bubbleTableViewOnTap:(UIBubbleTableView *)bubbleTableView
 {
 	[self.inputToolbar.textView resignFirstResponder];
-	//[self.inputToolbar.textView.internalTextView resignFirstResponder];
 	[self.inputToolbar.textView clearText];
-	//self.inputToolbar.textView.internalTextView.text = @"";
 	[self becomeFirstResponder];
 }
 
@@ -1554,119 +1403,6 @@ didScroll:(UIScrollView *)scrollView
 {
 	return self.bubbleDataArray.count;
 }
-//#pragma mark <UITextView Delegate>
-//-(void)textViewDidBeginEditing:(UITextView *)textView {
-	//int numLines = 
-		//textView.contentSize.height / textView.font.lineHeight;
-	//[self textViewSetHeight:textView numLines:numLines];
-	
-	//[self toolbarAsEntryTyping];
-	//if (self.appDelegate.isOnLineAndAuthorized)
-	//{
-		//[self.syncData addOperationWithBlock:^{
-			//tg_peer_t peer = {
-						//self.dialog.peerType, 
-						//self.dialog.peerId, 
-						//self.dialog.accessHash
-			//};
-			//tg_messages_set_typing(
-					//self.appDelegate.tg, 
-					//peer, 
-					//true);
-		//}];
-	//}
-
-//}
-
-//-(void)textViewDidEndEditing:(UITextView *)textView {
-	//[self toolbarAsEntry];
-	//if (self.appDelegate.tg &&
-			//self.appDelegate.authorizedUser && 
-			//self.appDelegate.reach.isReachable)
-	//{
-		//[self.syncData addOperationWithBlock:^{
-			//tg_peer_t peer = {
-						//self.dialog.peerType, 
-						//self.dialog.peerId, 
-						//self.dialog.accessHash
-			//};
-			//tg_messages_set_typing(
-					//self.appDelegate.tg, 
-					//peer, 
-					//false);
-		//}];
-	//}
-//}
-
-//-(void)textViewSetHeight:(UITextView *)textView numLines:(int)numLines{
-	//CGRect frame = self.navigationController.toolbar.frame;
-	//if (numLines < 8){
-		////CGFloat height = textView.contentSize.height;
-		//frame.origin.y -= (numLines - self.numLines)*textView.font.lineHeight; 
-		//frame.size.height += (numLines - self.numLines)*textView.font.lineHeight; 
-		//self.navigationController.toolbar.frame = frame;
-		//self.numLines = numLines;
-		//textView.showsVerticalScrollIndicator = NO;
-	//} else
-		//textView.showsVerticalScrollIndicator = YES;
-//}
-
-//- (void)textViewDidChange:(UITextView *)textView {
-	//// resize text view
-	//int numLines = 
-		//textView.contentSize.height / textView.font.lineHeight;
-	//[self textViewSetHeight:textView numLines:numLines];
-//}
-
-//#pragma mark <UITextField Delegate>
-//- (void)textFieldDidBeginEditing:(UITextField *)textField {
-	//[self toolbarAsEntryTyping];
-	//if (self.appDelegate.isOnLineAndAuthorized)
-	//{
-		//[self.syncData addOperationWithBlock:^{
-			//tg_peer_t peer = {
-						//self.dialog.peerType, 
-						//self.dialog.peerId, 
-						//self.dialog.accessHash
-			//};
-			//tg_messages_set_typing(
-					//self.appDelegate.tg, 
-					//peer, 
-					//true);
-		//}];
-	//}
-
-	////self.bubbleTableView.typingBubble = NSBubbleTypingTypeMe;
-	////[self.bubbleTableView reloadData];
-	////[self.bubbleTableView scrollToBottomWithAnimation:YES];
-//}
-
-//- (void)textFieldDidEndEditing:(UITextField *)textField {
-	//[self toolbarAsEntry];
-	//if (self.appDelegate.tg &&
-			//self.appDelegate.authorizedUser && 
-			//self.appDelegate.reach.isReachable)
-	//{
-		//[self.syncData addOperationWithBlock:^{
-			//tg_peer_t peer = {
-						//self.dialog.peerType, 
-						//self.dialog.peerId, 
-						//self.dialog.accessHash
-			//};
-			//tg_messages_set_typing(
-					//self.appDelegate.tg, 
-					//peer, 
-					//false);
-		//}];
-	//}
-
-	////self.bubbleTableView.typingBubble = NSBubbleTypingTypeNobody;
-	////[self.bubbleTableView reloadData];
-//}
-
-//- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
-	//return self.textFieldIsEditable;
-//}
 
 #pragma mark <ACTION SHEET DELEGATE>
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
@@ -1873,74 +1609,12 @@ didScroll:(UIScrollView *)scrollView
 
 - (void)moveFrameToVerticalPosition:(float)position forDuration:(float)duration {
 		CGRect frame = self.bubbleTableView.frame;
-		//CGRect toolbarFrame = self.navigationController.toolbar.frame;
-		//CGRect toolbarFrame = self.inputToolbar.frame;
 		frame.origin.y = position;
-		//if (position){
-			//self.toolbarOrigY = toolbarFrame.origin.y;
-			//toolbarFrame.origin.y += position;
-		//} else {
-			//toolbarFrame.origin.y = 
-				//self.view.bounds.size.height - kDefaultToolbarHeight;
-			
-			////newVerticalPosition = -keyboardSize.height;
-			
-			//UIInterfaceOrientation interfaceOrientation = 
-				//UIApplication.sharedApplication.statusBarOrientation;
-
-			//if (UIInterfaceOrientationIsPortrait(interfaceOrientation)){
-				//toolbarFrame.origin.y = 
-					//self.appDelegate.window.bounds.size.height -
-					////self.navigationController.toolbar.bounds.size.height;
-					//self.inputToolbar.bounds.size.height;
-			//} else {
-				//toolbarFrame.origin.y = 
-					//self.appDelegate.window.bounds.size.width -
-					////self.navigationController.toolbar.bounds.size.height;
-					//self.inputToolbar.bounds.size.height;
-			//} 
-		//}
-
+		
 		[UIView animateWithDuration:duration animations:^{
 				self.bubbleTableView.frame = frame;
-				//self.navigationController.toolbar.frame = toolbarFrame;
-				//self.inputToolbar.frame = toolbarFrame;
 		}];
 }
-
-//- (void)keyboardWillShow:(NSNotification *)notification 
-//{
-    //[> Move the toolbar to above the keyboard <]
-	//[UIView beginAnimations:nil context:NULL];
-	//[UIView setAnimationDuration:0.3];
-	//CGRect frame = self.inputToolbar.frame;
-    //if (UIInterfaceOrientationIsPortrait(self.interfaceOrientation)) {
-        //frame.origin.y = self.view.frame.size.height - frame.size.height - kKeyboardHeightPortrait;
-    //}
-    //else {
-        //frame.origin.y = self.view.frame.size.width - frame.size.height - kKeyboardHeightLandscape - kStatusBarHeight - 40;
-    //}
-	//self.inputToolbar.frame = frame;
-	//[UIView commitAnimations];
-    //keyboardIsVisible = YES;
-//}
-
-//- (void)keyboardWillHide:(NSNotification *)notification 
-//{
-    //[> Move the toolbar back to bottom of the screen <]
-	//[UIView beginAnimations:nil context:NULL];
-	//[UIView setAnimationDuration:0.3];
-	//CGRect frame = self.inputToolbar.frame;
-    //if (UIInterfaceOrientationIsPortrait(self.interfaceOrientation)) {
-        //frame.origin.y = self.view.frame.size.height - frame.size.height;
-    //}
-    //else {
-        //frame.origin.y = self.view.frame.size.width - frame.size.height;
-    //}
-	//self.inputToolbar.frame = frame;
-	//[UIView commitAnimations];
-    //keyboardIsVisible = NO;
-//}
 
 #pragma mark <Audio Recording>
 //-(void)startRecording:(id)sender{
@@ -2086,6 +1760,7 @@ didScroll:(UIScrollView *)scrollView
 }
 
 - (void)sendDocument:(tg_document_t *)document {
+	[self cancelAll];
 	[self.download addOperationWithBlock:^{
 		if (!self.appDelegate.isOnLineAndAuthorized)
 		{
@@ -2310,6 +1985,7 @@ didScroll:(UIScrollView *)scrollView
 	clickedButtonAtIndex:(NSInteger)buttonIndex
 {	
 	if (buttonIndex == 1){
+		[self cancelAll];
 		// send location
 		NSLog(@"SEND LOCATION: %lf: %lf",
 						self.locationManager.location.coordinate.latitude, 
@@ -2359,11 +2035,11 @@ didScroll:(UIScrollView *)scrollView
 }
 
 #pragma mark - UIInputToolbar
-
 -(void)inputButtonPressed:(NSString *)inputText
 {
     /* Called when toolbar button is pressed */
     //NSLog(@"Pressed button with text: '%@'", inputText);
+	[self cancelAll];
 	
 	NSString *text = inputText;
 	if (self.appDelegate.isOnLineAndAuthorized)
@@ -2374,19 +2050,12 @@ didScroll:(UIScrollView *)scrollView
 					self.dialog.peerId, 
 					self.dialog.accessHash
 			};
-			//if (
-					tg_message_send(
+			tg_message_send(
 					self.appDelegate.tg, 
 					peer, text.UTF8String);
-				//)
-			//{
-				//dispatch_sync(dispatch_get_main_queue(), ^{
-					//[self.appDelegate showMessage:@"can't send message"];
-				//});
-			//} else {
-				[self appendDataFrom:0 date:[NSDate date] 
+				
+			[self appendDataFrom:0 date:[NSDate date] 
 							scrollToBottom:YES local:NO];
-			//}
 		}];
 	} else {
 		[self.appDelegate showMessage:@"no network!"];
@@ -2416,21 +2085,7 @@ didScroll:(UIScrollView *)scrollView
 
 -(void)downloadManagerStart:(NSURL *)url
 {
-	/*
-	if (self.isPlayerOpened == NO){
-		NSLog(@"INIT MOVIE PLAYER WITH URL: %@", url);
-		self.isPlayerOpened = YES;
-		dispatch_sync(dispatch_get_main_queue(), ^{
-			MPMoviePlayerViewController *mpc = 
-					[[MPMoviePlayerViewController alloc]initWithContentURL:url];
-			[self presentMoviePlayerViewControllerAnimated:mpc];
-			[mpc.moviePlayer prepareToPlay];
-			[mpc.moviePlayer play];
-		});
-	}
-	*/
 }
-
 
 -(void)downloadManagerDownloading:(NSURL *)url
 {
