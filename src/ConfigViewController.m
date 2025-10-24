@@ -420,6 +420,7 @@ enum {
 				 default:
 						break;
 				}
+				break;
 			}
 		case 5: 
 			{
