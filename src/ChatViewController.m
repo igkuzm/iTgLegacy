@@ -278,7 +278,7 @@ Someone = {1, 15, 11, 10};
 	float y = offset.y + bounds.size.height + inset.bottom;
 	float h = size.height;
 	
-	if (y + bounds.size.height >= h)
+	if (y + bounds.size.height/2 >= h)
 		return YES;
 
 	return NO;
