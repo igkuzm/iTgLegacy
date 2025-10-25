@@ -1,3 +1,6 @@
+1.17
+fix dialogs loading
+
 1.16
 remove curl dependences
 add version info in configView

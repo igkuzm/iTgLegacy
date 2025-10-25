@@ -463,3 +463,10 @@ int tg_channel_set_read(tg_t *tg, tg_peer_t peer, uint32_t max_id)
 	return 0;
 }
 
+void tg_channels_remove_all_from_database(tg_t *tg)
+{
+	pthread_mutex_lock(&tg->databasem); // lock
+	char sql[] = "DELETE from \'channels\';";
+	tg_sqlite3_exec(tg, sql);
+	pthread_mutex_unlock(&tg->databasem); // unlock
+}

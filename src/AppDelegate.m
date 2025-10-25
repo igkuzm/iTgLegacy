@@ -506,6 +506,10 @@ static void on_log(void *d, const char *msg)
 				 code:(NSString *)code 
 		 sentCode:(tl_auth_sentCode_t *)sentCode
 {
+	// set first launch
+	[[NSUserDefaults standardUserDefaults] setBool:NO 
+																					forKey:@"isNotFirstLaunch"];
+
 	tl_user_t *user = tg_auth_signIn(
 			self.tg, 
 			sentCode, 

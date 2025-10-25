@@ -384,11 +384,11 @@ int main(int argc, char *argv[])
 	/*tg_get_dialogs_from_database(tg, tg, */
 			/*dialogs_callback);*/
 
-	int count = tg_get_dialogs(tg, 40,
-			 time(NULL),
-			 NULL, NULL,
-			 NULL, dialogs_callback);
-	printf("GOT %d dialogs\n", count);
+	//int count = tg_get_dialogs(tg, 40,
+			 //time(NULL),
+			 //NULL, NULL,
+			 //NULL, dialogs_callback);
+	//printf("GOT %d dialogs\n", count);
 
 	/*tg_get_dialogs_async(tg,100,*/
 			 /*time(NULL),*/

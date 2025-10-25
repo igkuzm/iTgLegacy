@@ -104,4 +104,5 @@ int tg_channel_search_global(tg_t *tg, const char *query,
 
 int tg_channel_set_read(tg_t *tg, tg_peer_t peer, uint32_t max_id);
 
+void tg_channels_remove_all_from_database(tg_t *tg);
 #endif /* ifndef TG_CHANNEL_H */

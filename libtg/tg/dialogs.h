@@ -44,6 +44,18 @@ void tg_dialogs_create_table(tg_t *tg);
 /* saves dialog in database */
 int tg_dialog_to_database(tg_t *tg, const tg_dialog_t *d);
 
+/* get dialogs - full list of chats with messages and
+ * auxilary data
+ * limit = -1 - to load all dialogs */
+void tg_get_dialogs(
+		tg_t *tg, 
+		int limit, 
+		uint32_t offset_date, 
+		uint64_t * hash, 
+		uint32_t * folder_id, 
+		void *data,
+		int (*callback)(void *data, const tg_dialog_t *dialog));
+
 /* get %limit number of dialogs older then %date and
  * %top_msg_id, callback dialogs array and update messages
  * %hash (if not NULL) 
@@ -51,7 +63,7 @@ int tg_dialog_to_database(tg_t *tg, const tg_dialog_t *d);
  * non-hidden dialogs, pointer to 1 for hidden dialogs 
  * all loaded dialogs saves to database 
  * return number of dialogs */ 
-int tg_get_dialogs(
+int tg_get_dialogs2(
 		tg_t *tg, 
 		int limit,
 		time_t date, 
@@ -59,23 +71,6 @@ int tg_get_dialogs(
 		uint32_t *folder_id, 
 		void *data,
 		int (*callback)(void *data, const tg_dialog_t *dialog));
-
-pthread_t tg_get_dialogs_async(
-		tg_t *tg, 
-		int limit,
-		time_t date, 
-		uint64_t * hash, 
-		uint32_t *folder_id, 
-		void *data,
-		int (*callback)(void *data, const tg_dialog_t *dialog),
-		void (*on_done)(void *data));
-
-int tg_get_dialogs_all(
-		tg_t *tg, 
-		uint64_t * hash, 
-		void *data,
-		int (*callback)(void *data, const tg_dialog_t *dialog));
-
 
 int tg_get_dialogs_from_database(tg_t *tg, void *data,
 		int (*callback)(void *data, const tg_dialog_t *dialog));

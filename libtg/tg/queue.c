@@ -639,7 +639,7 @@ static void * tg_run_queue(void * data)
 	enum RTL res; 
 	while (queue->loop) {
 		// check opened sockets for not files download
-		if (queue->fileDownload){
+		/*if (queue->fileDownload){*/
 			res = _tg_receive(queue, queue->socket);
 			if (res == RTL_RS)
 			{	
@@ -652,29 +652,29 @@ static void * tg_run_queue(void * data)
 			if (res == RTL_EX || res == RTL_ER)
 				break;
 
-			continue;
-		}
+			/*continue;*/
+		/*}*/
 
-		if (pthread_mutex_trylock(&queue->tg->socket_mutex))
-		{
-			// receive
-			/*ON_LOG(queue->tg, "%s: receive...", __func__);*/
-			//usleep(1000); // in microseconds
-			res = _tg_receive(queue, queue->socket);
-			tg_mutex_unlock(&queue->tg->socket_mutex);
-			if (res == RTL_RS)
-			{	
-				if (tg_send(data))
-					continue;
-				else
-				 break;
-			}
+		/*if (pthread_mutex_trylock(&queue->tg->socket_mutex))*/
+		/*{*/
+			/*// receive*/
+			/*[>ON_LOG(queue->tg, "%s: receive...", __func__);<]*/
+			/*//usleep(1000); // in microseconds*/
+			/*res = _tg_receive(queue, queue->socket);*/
+			/*tg_mutex_unlock(&queue->tg->socket_mutex);*/
+			/*if (res == RTL_RS)*/
+			/*{	*/
+				/*if (tg_send(data))*/
+					/*continue;*/
+				/*else*/
+				 /*break;*/
+			/*}*/
 
-			if (res == RTL_EX || res == RTL_ER)
-				break;
+			/*if (res == RTL_EX || res == RTL_ER)*/
+				/*break;*/
 
-		} else // pthread_mutex_trylock
-			continue;
+		/*} else // pthread_mutex_trylock*/
+			/*continue;*/
 	}
 	// close socket
 	if (queue->socket >= 0)

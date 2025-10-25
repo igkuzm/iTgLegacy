@@ -306,3 +306,11 @@ void tg_chats_save(tg_t *tg, int count, tl_t **array)
 		}
 	}
 }
+
+void tg_chats_remove_all_from_database(tg_t *tg)
+{
+	pthread_mutex_lock(&tg->databasem); // lock
+	char sql[] = "DELETE from \'chats\';";
+	tg_sqlite3_exec(tg, sql);
+	pthread_mutex_unlock(&tg->databasem); // unlock
+}

@@ -366,3 +366,11 @@ void tg_users_save(tg_t *tg, int count, tl_t **array)
 		tg_user_free(&tgm);
 	}
 }
+
+void tg_users_remove_all_from_database(tg_t *tg)
+{
+	pthread_mutex_lock(&tg->databasem); // lock
+	char sql[] = "DELETE from \'users\';";
+	tg_sqlite3_exec(tg, sql);
+	pthread_mutex_unlock(&tg->databasem); // unlock
+}

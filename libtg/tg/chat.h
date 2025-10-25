@@ -80,4 +80,5 @@ int tg_chat_save(tg_t *tg, const tg_chat_t *chat);
 void tg_chats_save(tg_t *tg, int count, tl_t **array);
 tg_chat_t * tg_chat_get(tg_t *tg, uint64_t chat_id);
 
+void tg_chats_remove_all_from_database(tg_t *tg);
 #endif /* ifndef TG_CHAT_T */

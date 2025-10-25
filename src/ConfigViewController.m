@@ -15,6 +15,9 @@
 #import "../libtg/config.h"
 #import "../libtg/tg/dialogs.h"
 #import "../libtg/tg/messages.h"
+#import "../libtg/tg/chat.h"
+#import "../libtg/tg/user.h"
+#import "../libtg/tg/channel.h"
 
 @implementation ConfigViewController
 
@@ -373,6 +376,9 @@ enum {
 -(void)clearTables{
 	 tg_dialogs_remove_all_from_database(self.appDelegate.tg);
 	 tg_messages_remove_all_from_database(self.appDelegate.tg);
+	 tg_channels_remove_all_from_database(self.appDelegate.tg);
+	 tg_chats_remove_all_from_database(self.appDelegate.tg);
+	 tg_users_remove_all_from_database(self.appDelegate.tg);
 	 [self.appDelegate showMessage:@"done!"];
 }
 

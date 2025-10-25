@@ -196,6 +196,9 @@
 -(void)filterData{
 	[self.filterQueue cancelAllOperations];
 
+	if (self.loadedData == nil)
+		return;
+
 	[self.filterQueue addOperationWithBlock:^{
 		NSPredicate *predicate = [NSPredicate predicateWithBlock:
 				^BOOL(id evaluatedObject, NSDictionary *bindings)
@@ -261,6 +264,8 @@
 	// do operation in thread
 	[self.syncData addOperationWithBlock:^{
 		
+		// if not firs launch load from database first
+		if ([[NSUserDefaults standardUserDefaults]valueForKey:@"isNotFirstLaunch"])	
 		tg_get_dialogs_from_database(
 				self.appDelegate.tg, 
 				(__bridge void *)self, 
@@ -283,6 +288,7 @@
 			[self.spinner startAnimating];
 
 		[self.syncData addOperationWithBlock:^{
+				//uint32_t folderId = self.isHidden?1:0; no working?
 				tg_get_dialogs(
 						self.appDelegate.tg, 
 						40, 
@@ -343,6 +349,9 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 			current.title =
 				[NSString stringWithUTF8String:dialog->name];
 	}
+	
+	[[NSUserDefaults standardUserDefaults] setBool:YES 
+																					forKey:@"isNotFirstLaunch"];
 
 	return 0;
 }

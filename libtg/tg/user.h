@@ -82,4 +82,5 @@ void tg_users_save(tg_t *tg, int count, tl_t **array);
 tg_user_t * tg_user_get(tg_t *tg, uint64_t user_id);
 tg_user_t * tg_user_get_by_phone(tg_t *tg, const char *phone);
 
+void tg_users_remove_all_from_database(tg_t *tg);
 #endif /* ifndef TG_USER_T */

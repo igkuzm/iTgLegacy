@@ -2,7 +2,7 @@
  * File              : dialogs.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 29.11.2024
- * Last Modified Date: 24.10.2025
+ * Last Modified Date: 25.10.2025
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "channel.h"
@@ -27,6 +27,7 @@
 #include <assert.h>
 #include "peer.h"
 #include "messages.h"
+#include "errors.h"
 
 // #include <stdint.h>
 #if INTPTR_MAX == INT32_MAX
@@ -45,13 +46,26 @@
 	({buf_t i = image_from_photo_stripped(_b); \
 	 buf_to_base64(i);}) 
 
+struct tg_get_dialogs_t {
+	tg_t *tg; 
+	void *data; 
+	int (*callback)(void *data, const tg_dialog_t *dialog);
+	int count;
+	int total;
+	uint64_t *hash; 
+	uint32_t offset_id; 
+	uint32_t offset_date; 
+	bool stop;
+};
+
 static int tg_dialogs_from_tl(
-		tg_t *tg, const tl_t *tl,
-		uint64_t *hash,
+		struct tg_get_dialogs_t *t,
+		const tl_t *tl,
 		void *data,
 		int (*callback)(void *data, const tg_dialog_t *dialog))
 {
 	int i, n=0;
+	tg_t *tg = t->tg;
 
 	if (!tl){
 		return 0;
@@ -75,10 +89,9 @@ static int tg_dialogs_from_tl(
 		{
 			tl_messages_dialogsSlice_t *mds = 
 				(tl_messages_dialogsSlice_t *)tl;
-			ON_LOG(tg, "DIALOG SLISE len: %d", mds->count_);
-			ON_LOG(tg, "DIALOG SLISE dialogs: %d", mds->dialogs_len);
-			ON_LOG(tg, "DIALOG SLISE chats: %d", mds->chats_len);
-			ON_LOG(tg, "DIALOG SLISE users: %d", mds->users_len);
+
+			// set total count of dialogs
+			t->total = mds->count_;
 
 			md = NEW(tl_messages_dialogs_t, return 0;);
 			free_md = true;
@@ -98,6 +111,10 @@ static int tg_dialogs_from_tl(
 			md = (tl_messages_dialogs_t *)tl;
 		}
 
+		t->count += md->dialogs_len;
+		ON_LOG(t->tg, "%s: got %d dialogs of: %d", __func__, 
+			t->count, t->total);
+
 		if (md->dialogs_ == NULL){
 			ON_ERR(tg, "dialogs pointer is NULL!");
 			return 0;
@@ -109,9 +126,9 @@ static int tg_dialogs_from_tl(
 				md->chats_len, md->users_len);
 
 		// update users
-		tg_users_save(tg, md->users_len, md->users_);
+		//tg_users_save(tg, md->users_len, md->users_);
 		// update chats
-		tg_chats_save(tg, md->chats_len, md->chats_);
+		//tg_chats_save(tg, md->chats_len, md->chats_);
 		
 		for (i = 0; i < md->dialogs_len; ++i) {
 			if (md->dialogs_[i] == NULL)
@@ -376,15 +393,19 @@ static int tg_dialogs_from_tl(
 			tg_dialog_to_database(tg, &d);
 
 			// update hash
-			if (hash){
+			if (t->hash){
 				ON_LOG(tg, "update_hash");
-				update_hash(hash, d.top_message_id);
+				update_hash(t->hash, d.top_message_id);
 			}
 
 			// callback dialog
-			if (callback)
-				if (callback(data, &d))
+			if (callback){
+				if (callback(data, &d)){
+					n = -1;
+					tg_dialog_free(&d);
 					break;
+				}
+			}
 
 			// free dialog
 			tg_dialog_free(&d);
@@ -404,130 +425,116 @@ static int tg_dialogs_from_tl(
 	return n;
 }
 
-struct tg_get_dialogs_async_t {
-	tg_t *tg;
-	void *data;
-	uint64_t *hash;
-	int (*callback)(void *data, const tg_dialog_t *dialog);
-	void (*on_done)(void *data);
-};
-
-void tg_get_dialogs_async_cb(void *data, const tl_t *tl)
+static void tg_get_dialogs_callback(void *data, const tl_t *tl)
 {
-	struct tg_get_dialogs_async_t *t = data;
-	assert(t);
+	assert(data && tl);
+	struct tg_get_dialogs_t *t = (struct tg_get_dialogs_t *)data;
 	
-	if (tl == NULL){
-		if (t->on_done)
-			t->on_done(t->data);
-		free(t);
-		return;
+	ON_LOG(t->tg, "%s", __func__);
+
+	// handle FLOOD WAIT
+	if (tl->_id == id_rpc_error){
+		// ckeck FLOOD_WAIT
+		int wait = tg_error_flood_wait(t->tg, RPC_ERROR(tl));
+		if (wait){
+			ON_LOG(t->tg, "%s: waiting for %d seconds", __func__, wait);
+#ifdef _WIN32
+			Sleep(wait * 1000);
+#else
+			sleep(wait);
+#endif
+		}
 	}
 
-	tg_dialogs_from_tl(
-			t->tg, tl, 
-			t->hash, 
+	int n = tg_dialogs_from_tl(t, tl, 
 			t->data, t->callback);
 
-	if (t->on_done)
-		t->on_done(t->data);
-
-	free(t);
+	if (n < 0)
+		t->stop = true;
+	
 }
 
-pthread_t tg_get_dialogs_async(
-		tg_t *tg, 
-		int limit,
-		time_t date, 
-		uint64_t * hash, 
-		uint32_t *folder_id, 
-		void *data,
-		int (*callback)(void *data, const tg_dialog_t *dialog),
-		void (*on_done)(void *data))
-{
-	int i = 0, k;
-
-	InputPeer inputPeer = tl_inputPeerSelf();
-
-	buf_t getDialogs = 
-		tl_messages_getDialogs(
-				NULL,
-				folder_id, 
-				date,
-				-1, 
-				&inputPeer, 
-				limit,
-				hash?*hash:0);
-
-	struct tg_get_dialogs_async_t *t = 
-		NEW(struct tg_get_dialogs_async_t, 
-				ON_ERR(tg, "%s: can't allocate memory", __func__);
-					return 0;);
-	t->tg = tg;
-	t->data = data;
-	t->hash = hash;
-	t->callback = callback;
-	t->on_done = on_done;
-
-	pthread_t p = tg_send_query_async(
-			tg, 
-			&getDialogs, 
-			t, tg_get_dialogs_async_cb);
-	buf_free(getDialogs);
-	return p;
-}
-
-int tg_get_dialogs(
+void tg_get_dialogs(
 		tg_t *tg, 
 		int limit, 
-		time_t date, 
-		uint64_t * hash, 
+		uint32_t offset_date, 
+		uint64_t *hash, 
 		uint32_t *folder_id, 
-		void *data,
+		void *data, 
 		int (*callback)(void *data, const tg_dialog_t *dialog))
 {
-	int i = 0, k;
+	ON_LOG(tg, "%s", __func__);
+	struct tg_get_dialogs_t t =
+	{tg, data, callback,
+  	0, 1, hash, -1,
+	offset_date, false};
 
 	InputPeer inputPeer = tl_inputPeerSelf();
 
-	buf_t getDialogs = 
-		tl_messages_getDialogs(
-				NULL,
+	for (t.count = 0; t.count < t.total; ) {
+		buf_t getDialogs = 
+			tl_messages_getDialogs(
+					NULL,
 				folder_id, 
-				date,
-				-1, 
+				t.offset_date,
+				t.offset_id, 
 				&inputPeer, 
-				limit,
-				hash?*hash:0);
+				limit>0?limit:20,
+				hash?*t.hash:0);
 
-	tl_t *tl = tg_send_query(tg, &getDialogs);
-	buf_free(getDialogs);
-	if (tl == NULL){
-		ON_ERR(tg, "%s: tl is NULL", __func__);
-		return 0;
+		pthread_t p = tg_send_query_async(tg, &getDialogs, 
+				&t, tg_get_dialogs_callback);
+
+		pthread_join(p, NULL);
+		
+		buf_free(getDialogs);
+		if (limit > 0)
+			break;
+
+		if (t.stop)
+			break;
 	}
 
-	i = tg_dialogs_from_tl(tg, tl, hash, data, callback);
-
-	// free tl
-	tl_free(tl);
-
-	return i;
+	buf_free(inputPeer);
 }
 
-int tg_get_dialogs_all(
-		tg_t *tg, 
-		uint64_t * hash, 
-		void *data,
-		int (*callback)(void *data, const tg_dialog_t *dialog))
-{
-	// get slice
-	
-	// run get dialogs
-	return 0;
-}
+/*int tg_get_dialogs2(*/
+		/*tg_t *tg, */
+		/*int limit, */
+		/*time_t date, */
+		/*uint64_t * hash, */
+		/*uint32_t *folder_id, */
+		/*void *data,*/
+		/*int (*callback)(void *data, const tg_dialog_t *dialog))*/
+/*{*/
+	/*int i = 0, k;*/
 
+	/*InputPeer inputPeer = tl_inputPeerSelf();*/
 
+	/*buf_t getDialogs = */
+		/*tl_messages_getDialogs(*/
+				/*NULL,*/
+				/*folder_id, */
+				/*date,*/
+				/*-1, */
+				/*&inputPeer, */
+				/*limit,*/
+				/*hash?*hash:0);*/
+
+	/*tl_t *tl = tg_send_query(tg, &getDialogs);*/
+	/*buf_free(getDialogs);*/
+	/*if (tl == NULL){*/
+		/*ON_ERR(tg, "%s: tl is NULL", __func__);*/
+		/*return 0;*/
+	/*}*/
+
+	/*i = tg_dialogs_from_tl(tg, tl, hash, data, callback);*/
+
+	/*// free tl*/
+	/*tl_free(tl);*/
+
+	/*return i;*/
+/*}*/
 
 void tg_dialogs_create_table(tg_t *tg){
 	// create table
