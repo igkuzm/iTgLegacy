@@ -257,8 +257,29 @@
 		tg_user_t *user = tg_user_get(
 			self.appDelegate.tg, m->from_id_);	
 		if (user){
-			
-			self.fromName = [self messageFrom:m user:user];	
+			if (user->first_name_)
+				self.fromName = 
+					[NSString stringWithUTF8String:user->first_name_];
+			else if (user->username_) 	
+				self.fromName = 
+					[NSString stringWithFormat:@"@%s", user->username_];
+			else 
+				self.fromName = 
+					[NSString stringWithFormat:@"id%lld", m->from_id_];
+
+			// set color
+			if (self.appDelegate.colorset.count){
+				for	(NSDictionary *c in self.appDelegate.colorset){
+					NSNumber *color_id = [c valueForKey:@"color_id"];
+					if (color_id.intValue == user->color){
+						NSNumber *color = [c valueForKey:@"rgb0"];
+						int rgb = color.intValue;
+
+						self.fromColor = [UIColor colorFromHex:rgb];
+						break;
+					}
+				}
+			}
 
 			// add avatar
 			NSString *photoPath = 
@@ -305,34 +326,6 @@
 			}
 		}
 	return self;
-}
-
--(NSString *)messageFrom:(const tg_message_t *)m user:(tg_user_t *)user{
-	if (user){
-		if (user->first_name_)
-			self.fromName = 
-				[NSString stringWithUTF8String:user->first_name_];
-		else if (user->username_) 	
-			self.fromName = 
-				[NSString stringWithFormat:@"@%s", user->username_];
-		else 
-			self.fromName = 
-				[NSString stringWithFormat:@"id%lld", m->from_id_];
-
-		// set color
-		if (self.appDelegate.colorset.count){
-			for	(NSDictionary *c in self.appDelegate.colorset){
-				NSNumber *color_id = [c valueForKey:@"color_id"];
-				if (color_id.intValue == user->color){
-					NSNumber *color = [c valueForKey:@"rgb0"];
-					int rgb = color.intValue;
-
-					self.fromColor = [UIColor colorFromHex:rgb];
-					break;
-				}
-			}
-		}
-	}
 }
 
 @end
