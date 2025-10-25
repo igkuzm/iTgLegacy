@@ -291,7 +291,7 @@ Someone = {1, 15, 11, 10};
 	{
 		[self.syncData addOperationWithBlock:^{
 			[self appendDataFrom:0 date:[NSDate date] 
-						scrollToBottom:[self isOnBottom] local:NO];
+						scrollToBottom:1 local:NO];
 		}];
 	}
 }
@@ -353,7 +353,7 @@ Someone = {1, 15, 11, 10};
 	NSInteger count = self.bubbleDataArray.count;
 	// load more messages
 	[self appendMessagesFrom:count date:[NSDate date] 
-						scrollToBottom:[self isOnBottom] local:local];
+						scrollToBottom:0 local:local];
 	[self.bubbleTableView reloadData];
 	NSInteger delta = self.bubbleDataArray.count - count;
 	// now scroll delta messages from top
@@ -660,7 +660,7 @@ Someone = {1, 15, 11, 10};
 }
 
 - (void)appendMessagesFrom:(int)offset date:(NSDate *)date 
-						scrollToBottom:(Boolean)scrollToBottom local:(Boolean)local
+						scrollToBottom:(int)scrollToBottom local:(Boolean)local
 {
 	if (!self.dialog){
 		[self.appDelegate showMessage:@"ERR. Dialog is NULL"];
@@ -705,7 +705,7 @@ Someone = {1, 15, 11, 10};
 			[self.refreshControl endRefreshing];
 			[self.spinner stopAnimating];
 			[self.bubbleTableView reloadData];
-			if (scrollToBottom)
+			if (scrollToBottom == 2 || (scrollToBottom == 1 && [self isOnBottom]))
 				[self.bubbleTableView 
 					scrollBubbleViewToBottomAnimated:YES];
 		});
@@ -729,7 +729,7 @@ Someone = {1, 15, 11, 10};
 			[self.refreshControl endRefreshing];
 			[self.spinner stopAnimating];
 			[self.bubbleTableView reloadData];
-			if (scrollToBottom)
+			if (scrollToBottom == 2 || (scrollToBottom == 1 && [self isOnBottom]))
 				[self.bubbleTableView 
 					scrollBubbleViewToBottomAnimated:YES];
 		});
@@ -753,7 +753,7 @@ Someone = {1, 15, 11, 10};
 }
 
 - (void)appendDataFrom:(int)offset date:(NSDate *)date 
-				scrollToBottom:(Boolean)scrollToBottom local:(Boolean)local
+				scrollToBottom:(int)scrollToBottom local:(Boolean)local
 {
 	Boolean scrollAnimated = self.bubbleDataArray.count?YES:NO;
 
@@ -781,10 +781,10 @@ Someone = {1, 15, 11, 10};
 		
 		// update data
 		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:YES local:YES];
+					scrollToBottom:2 local:YES];
 		
 		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:YES local:NO];
+					scrollToBottom:1 local:NO];
 		
 	}];
 }
@@ -866,7 +866,7 @@ static void on_update(void *d, int type, void *value)
 				{
 					[self.syncData addOperationWithBlock:^{
 						[self appendDataFrom:0 date:[NSDate date] 
-						scrollToBottom:[self isOnBottom] local:NO];
+							scrollToBottom:1 local:NO];
 					}];
 				}
 			}
@@ -930,81 +930,17 @@ static int messages_callback(void *d, const tg_message_t *m){
 			if (self.dialog.peerType != TG_PEER_TYPE_USER && 
 					!item.message.mine && !item.message.isBroadcast)
 			{
-				// add sender name
-				tg_user_t *user = tg_user_get(
-					self.appDelegate.tg, m->from_id_);	
-				if (user){
-					if (user->first_name_)
-						item.name = 
-							[NSString stringWithUTF8String:user->first_name_];
-					else if (user->username_) 	
-						item.name = 
-							[NSString stringWithFormat:@"@%s", user->username_];
-					else 
-						item.name = 
-							[NSString stringWithFormat:@"id%lld", m->from_id_];
-
-					// set color
-					if (self.appDelegate.colorset.count){
-						for	(NSDictionary *c in self.appDelegate.colorset){
-							NSNumber *color_id = [c valueForKey:@"color_id"];
-							if (color_id.intValue == user->color){
-								NSNumber *color = [c valueForKey:@"rgb0"];
-								int rgb = color.intValue;
-
-								item.nameColor = [UIColor colorFromHex:rgb];
-
-								break;
-							}
-						}
-					}
-
-					// add avatar
-					if (self.bubbleTableView.showAvatars){
-
-							NSString *photoPath = 
-							[NSString stringWithFormat:@"%@/%lld.%lld", 
-								self.appDelegate.peerPhotoCache, 
-								user->id_, user->photo_id];
-						
-								tg_peer_t peer = {
-										TG_PEER_TYPE_USER,
-										user->id_,
-										user->access_hash_
-								};
-
-							item.avatar = [UIImage 
-								imageWithPlaceholder:
-								 [UIImage imageNamed:@"missingAvatar.png"] 
-								cachePath:photoPath 
-								view:nil 
-								downloadBlock:^NSData *(void){
-									if (!self.appDelegate.isOnLineAndAuthorized)
-											return nil;
-									char *photo = tg_get_peer_photo_file(
-												self.appDelegate.tg, 
-												&peer, 
-												false, 
-												user->photo_id);
-									if (photo){
-										NSData *data = [NSData 
-											dataFromBase64String:
-												[NSString stringWithUTF8String:photo]];
-										return data;
-									}
-									return nil;
-								} 
-								onUpdate:^(UIImage *image){
-					 
-								}];
-							
-
-						}
-						
-					// free user
-					tg_user_free(user);	
-					}
+				item.name = item.message.fromName;
+				// add avatar
+				if (self.bubbleTableView.showAvatars){
+					item.message.onAvatarUpdate = ^(UIImage *avatar){
+						item.avatar = avatar;
+						if (item.avatarImage)
+							[item.avatarImage setImage:item.avatar];
+					};
+					item.avatar = item.message.avatar;
 				}
+			}
 
 			if (m->photo_id){
 				[self getPhotoForMessageCached:item 
@@ -1384,7 +1320,7 @@ didScroll:(UIScrollView *)scrollView
 {
 	[self.syncData addOperationWithBlock:^{
 		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:YES local:NO];
+					scrollToBottom:1 local:NO];
 	}];
 }
 
@@ -1896,7 +1832,7 @@ didScroll:(UIScrollView *)scrollView
 		sleep(1); // wait
 
 		[self appendDataFrom:0 date:[NSDate date] 
-					scrollToBottom:YES local:NO];
+					scrollToBottom:1 local:NO];
 	}];
 }
 
@@ -1928,7 +1864,7 @@ didScroll:(UIScrollView *)scrollView
 }
 -(void)authorizedAs:(tl_user_t *)user{
 	[self appendDataFrom:0 date:[NSDate date] 
-				scrollToBottom:YES local:NO];
+				scrollToBottom:1 local:NO];
 }
 
 #pragma mark <FilePickerController Delegate>
@@ -2019,7 +1955,7 @@ didScroll:(UIScrollView *)scrollView
 					NULL);
 			
 			[self appendDataFrom:0 date:[NSDate date] 
-						scrollToBottom:YES local:NO];
+						scrollToBottom:1 local:NO];
 		}];
 		[peoplePicker dismissViewControllerAnimated:true completion:nil];
 	}];
@@ -2089,7 +2025,7 @@ didScroll:(UIScrollView *)scrollView
 						NULL);
 
 				[self appendDataFrom:0 date:[NSDate date] 
-							scrollToBottom:YES local:NO];
+							scrollToBottom:1 local:NO];
 			}];
 		} else {
 			[self.appDelegate showMessage:@"no network!"];
@@ -2135,7 +2071,7 @@ didScroll:(UIScrollView *)scrollView
 			sleep(1); // wait
 
 			[self appendDataFrom:0 date:[NSDate date] 
-							scrollToBottom:YES local:NO];
+							scrollToBottom:1 local:NO];
 		}];
 	} else {
 		[self.appDelegate showMessage:@"no network!"];

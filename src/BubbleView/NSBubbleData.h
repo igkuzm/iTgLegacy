@@ -35,14 +35,17 @@ typedef enum _NSBubbleType
 @property (nonatomic, strong) NSString *name;
 @property (nonatomic, strong) UILabel *nameLabel;
 @property (nonatomic, strong) UIColor *nameColor;
+@property (strong) TGMessage *cyteMessage;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *sizeLabel;
 @property (nonatomic, strong) UILabel *text;
+@property (nonatomic, strong) UILabel *cyteLabel;
 @property (nonatomic, strong) UIImageView *imageView;
 @property (nonatomic, strong) UIImageView *videoPlayButton;
 @property (strong) UIActivityIndicatorView *spinner;
 @property (readonly, nonatomic) UIEdgeInsets insets;
 @property (nonatomic, strong) UIImage *avatar;
+@property (nonatomic, strong) UIImageView *avatarImage;
 @property NSInteger index;
 @property Boolean isImage;
 @property (strong) TGMessage *message;

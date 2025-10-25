@@ -4,6 +4,7 @@
 #include "../libtg/tg/peer.h"
 #include "../libtg/tg/messages.h"
 #include "TGDialog.h"
+#import "AppDelegate.h"
 
 
 @interface TGMessageEntity : NSObject
@@ -17,6 +18,7 @@
 @interface TGMessage : NSObject
 {
 }
+@property (strong) AppDelegate *appDelegate;
 @property Boolean mine;
 @property Boolean silent;
 @property Boolean pinned;
@@ -44,6 +46,10 @@
 @property (strong) NSString *docFileName;
 @property tg_peer_t peer;
 @property tg_peer_t from;
+@property (strong) NSString *fromName;
+@property (strong) UIColor *fromColor;
+@property (strong) UIImage *avatar;
+@property (strong, nonatomic) void (^onAvatarUpdate)(UIImage *avatar);
 @property (strong) NSDate *date;
 @property (strong) NSData *photoData;
 @property (strong) UIImage *photo;

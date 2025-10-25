@@ -6,6 +6,7 @@ add clear chaches in configView
 add chat scrolldown on new message
 file/user/phone migrate support
 remove message in chat
+some fixes memory leak
 
 1.15
 messages chaching

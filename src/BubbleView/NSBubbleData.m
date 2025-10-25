@@ -40,6 +40,7 @@
 	UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]];
     
 	// username Label
+	int y = 8;
 	CGSize nameSize = {0,0};
 	if (self.name){
 		nameSize = [self.name 
@@ -48,7 +49,7 @@
 			lineBreakMode:NSLineBreakByWordWrapping];
 
 		self.nameLabel = [[UILabel alloc] initWithFrame:CGRectMake(
-				8, 8, self.width, 20)];
+				8, y, self.width, 20)];
 		self.nameLabel.backgroundColor = [UIColor clearColor];
 		self.nameLabel.text = self.name;
 		if (self.nameColor){
@@ -58,8 +59,35 @@
 		}
 		self.nameLabel.font = 
 			[UIFont systemFontOfSize:[UIFont systemFontSize]];
+		
+		y += 20;
 	}
 
+	// Cyte label
+	CGSize cyteSize = {0,0};
+	if (self.cyteMessage){
+		cyteSize = [self.name 
+			sizeWithFont:font 
+			constrainedToSize:CGSizeMake(self.width - 20, 40) 
+			lineBreakMode:NSLineBreakByWordWrapping];
+
+		self.cyteLabel = [[UILabel alloc] initWithFrame:CGRectMake(
+				18, y, self.width - 20, 40)];
+		self.cyteLabel.backgroundColor = [UIColor whiteColor];
+		self.cyteLabel.text = [NSString 
+			stringWithFormat:@"%@\n%@",
+				self.cyteMessage.fromName,
+				self.cyteMessage.message];
+		if (self.cyteMessage.fromColor){
+			self.nameLabel.textColor = self.cyteMessage.fromColor;
+		} else {
+			self.cyteLabel.textColor = [UIColor lightGrayColor];
+		}
+		self.cyteLabel.font = 
+			[UIFont systemFontOfSize:[UIFont systemFontSize]];
+		
+		y+=40;
+	}
 	// imageView
 	CGSize imageSize = {0,0};
 	if (image){
@@ -73,7 +101,7 @@
 
 	self.imageView = [[UIImageView alloc] 
 		initWithFrame:CGRectMake(
-      	0, self.name?28:8,
+      	0, y,
 			 	imageSize.width, imageSize.height)];
 	self.imageView.image = image;
 	self.imageView.layer.cornerRadius = 5.0;
@@ -103,6 +131,8 @@
 				self.imageView.bounds.size.height/2);
 	[self.imageView addSubview:self.spinner];
 
+	y+=imageSize.height+4;
+
 
 	// text view
 	//if (text.length < 2 && !image){
@@ -117,7 +147,7 @@
 	self.text = [[UILabel alloc] 
 		initWithFrame:CGRectMake(
 				0, 
-				self.name?imageSize.height + 28 + 4:imageSize.height +8 + 4, 
+				y, 
 				textSize.width, 
 				textSize.height)];
 	self.text.text = text;
@@ -159,6 +189,8 @@
 	// add subviews
 	if (self.name)
 		[view addSubview:self.nameLabel];
+	if (self.cyteMessage)
+		[view addSubview:self.cyteLabel];
 	if (image)	
 		[view addSubview:self.imageView];
 	
@@ -190,46 +222,6 @@
     return [self initWithView:view 
 												 date:date type:type insets:insets];       
 }
-
-
-//- (id)initWithServiceMessage:(NSString *)text date:(NSDate *)date
-//{
-	//if (!self.width)
-		//self.width = 220;
-	
-	//UIFont *font = [UIFont systemFontOfSize:[UIFont systemFontSize]-2];
-   
-	//CGSize textSize = [text 
-		//sizeWithFont:font 
-		//constrainedToSize:CGSizeMake(self.width, 9999) 
-		//lineBreakMode:NSLineBreakByWordWrapping];
-
-	//self.text = [[UILabel alloc] 
-		//initWithFrame:CGRectMake(
-				//self.width/2 - textSize.width/2, 
-				//0, 
-				//textSize.width, 
-				//textSize.height)];
-	
-	//self.text.text = text;
-	//self.text.font = font; 
-	//self.text.textColor = [UIColor lightGrayColor];
-	//self.text.backgroundColor = [UIColor clearColor];
-	//self.text.numberOfLines = 0;
-	//self.text.lineBreakMode = NSLineBreakByWordWrapping;
-
-	//UIView *view = [[UIView alloc]
-		//initWithFrame:CGRectMake(
-				//0, 
-				//0, 
-				//self.width, 
-				//textSize.height)];
-	//[view addSubview:self.text];
-	
-  //UIEdgeInsets insets = {0,0,0,0}; 
-  //return [self initWithView:view 
-						//date:date type:BubbleTypeMine insets:insets];       
-//}
 
 #pragma mark - Custom view bubble
 

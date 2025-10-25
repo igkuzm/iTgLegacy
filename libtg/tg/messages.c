@@ -1222,6 +1222,7 @@ int tg_get_messages_from_database(
 				callback(data, &tgm);
 
 			tl_free(tl);
+			tg_message_free(&tgm);
 		}
 	}
 

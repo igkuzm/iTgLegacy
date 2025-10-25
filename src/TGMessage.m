@@ -6,13 +6,19 @@
 #import "AppDelegate.h"
 #include "Foundation/Foundation.h"
 #import "Base64/Base64.h"
+#import "../libtg/tg/user.h"
+#import "../libtg/tg/peer.h"
+#import "../libtg/tg/files.h"
+#import "UIImage+Utils/UIImage+Utils.h"
 
 @implementation TGMessageEntity
 
 @end
 
 @implementation TGMessage
+
 - (id)initWithMessage:(const tg_message_t *)m dialog:(const TGDialog *)d{
+	self.appDelegate = UIApplication.sharedApplication.delegate;
 	if (self = [super init]) {
 		self.isBroadcast = d.broadcast;
 		self.silent = m->silent_;
@@ -246,8 +252,87 @@
 		{
 			self.isVoice = YES;
 		}
-	}
+
+		// from
+		tg_user_t *user = tg_user_get(
+			self.appDelegate.tg, m->from_id_);	
+		if (user){
+			
+			self.fromName = [self messageFrom:m user:user];	
+
+			// add avatar
+			NSString *photoPath = 
+			[NSString stringWithFormat:@"%@/%lld.%lld", 
+				self.appDelegate.peerPhotoCache, 
+				user->id_, user->photo_id];
+		
+				tg_peer_t peer = {
+						TG_PEER_TYPE_USER,
+						user->id_,
+						user->access_hash_
+				};
+
+			self.avatar = [UIImage 
+				imageWithPlaceholder:
+				 [UIImage imageNamed:@"missingAvatar.png"] 
+				cachePath:photoPath 
+				view:nil 
+				downloadBlock:^NSData *(void){
+					if (!self.appDelegate.isOnLineAndAuthorized)
+							return nil;
+					char *photo = tg_get_peer_photo_file(
+								self.appDelegate.tg, 
+								&peer, 
+								false, 
+								user->photo_id);
+					if (photo){
+						NSData *data = [NSData 
+							dataFromBase64String:
+								[NSString stringWithUTF8String:photo]];
+						return data;
+					}
+					return nil;
+				} 
+				onUpdate:^(UIImage *image){
+					self.avatar = image; 
+					if (self.onAvatarUpdate)
+						self.onAvatarUpdate(image);
+					self.onAvatarUpdate = nil;
+				}];
+				
+			// free user
+			tg_user_free(user);	
+			}
+		}
 	return self;
+}
+
+-(NSString *)messageFrom:(const tg_message_t *)m user:(tg_user_t *)user{
+	if (user){
+		if (user->first_name_)
+			self.fromName = 
+				[NSString stringWithUTF8String:user->first_name_];
+		else if (user->username_) 	
+			self.fromName = 
+				[NSString stringWithFormat:@"@%s", user->username_];
+		else 
+			self.fromName = 
+				[NSString stringWithFormat:@"id%lld", m->from_id_];
+
+		// set color
+		if (self.appDelegate.colorset.count){
+			for	(NSDictionary *c in self.appDelegate.colorset){
+				NSNumber *color_id = [c valueForKey:@"color_id"];
+				if (color_id.intValue == user->color){
+					NSNumber *color = [c valueForKey:@"rgb0"];
+					int rgb = color.intValue;
+
+					self.fromColor = [UIColor colorFromHex:rgb];
+					break;
+				}
+			}
+		}
+	}
 }
 
 @end
