@@ -447,10 +447,10 @@ int tg_do_updates(tg_t *tg, tl_t *tl)
 				tl_updatesCombined_t *up = (tl_updatesCombined_t *)tl; 
 				
 				// handle users
-				tg_users_save(tg, up->users_len, up->users_);
+				//tg_users_save(tg, up->users_len, up->users_);
 				
 				// handle chats
-				tg_chats_save(tg, up->chats_len, up->chats_);
+				/*tg_chats_save(tg, up->chats_len, up->chats_);*/
 
 				// handle updates
 				for (i = 0; i < up->updates_len; ++i) {
@@ -468,10 +468,10 @@ int tg_do_updates(tg_t *tg, tl_t *tl)
 				tl_updates_t *up = (tl_updates_t *)tl; 
 				
 				// handle users
-				tg_users_save(tg, up->users_len, up->users_);
+				/*tg_users_save(tg, up->users_len, up->users_);*/
 				
 				// handle chats
-				tg_chats_save(tg, up->chats_len, up->chats_);
+				/*tg_chats_save(tg, up->chats_len, up->chats_);*/
 
 				// handle updates
 				for (i = 0; i < up->updates_len; ++i) {

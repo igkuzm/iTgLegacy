@@ -12,7 +12,7 @@ struct tg_queue_{
 	pthread_t timer;
 	int socket;
 	bool loop;
-	bool fileDownload;
+	bool multithread;
 	buf_t query;
 	uint64_t msgid;
 	pthread_mutex_t m;
@@ -24,7 +24,7 @@ struct tg_queue_{
 
 tg_queue_t * tg_queue_new(
 		tg_t *tg, buf_t *query, 
-		const char *ip, int port,
+		const char *ip, int port, bool multithread,
 		void *userdata, void (*on_done)(void *userdata, const tl_t *tl),
 		void *progressp, 
 		int (*progress)(void *progressp, int size, int total));

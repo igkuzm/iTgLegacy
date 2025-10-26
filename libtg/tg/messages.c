@@ -886,6 +886,7 @@ pthread_t tg_messages_get_history_async(
 	pthread_t p = tg_send_query_async(
 			tg,
 		 	&getHistory, 
+			true,
 			t, 
 			tg_messages_get_history_async_cb);
 	buf_free(getHistory);

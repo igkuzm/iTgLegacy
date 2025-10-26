@@ -2,7 +2,7 @@
  * File              : dialogs.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 29.11.2024
- * Last Modified Date: 25.10.2025
+ * Last Modified Date: 26.10.2025
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "channel.h"
@@ -28,6 +28,7 @@
 #include "peer.h"
 #include "messages.h"
 #include "errors.h"
+#include "queue.h"
 
 // #include <stdint.h>
 #if INTPTR_MAX == INT32_MAX
@@ -451,7 +452,6 @@ static void tg_get_dialogs_callback(void *data, const tl_t *tl)
 
 	if (n < 0)
 		t->stop = true;
-	
 }
 
 void tg_get_dialogs(
@@ -482,10 +482,13 @@ void tg_get_dialogs(
 				limit>0?limit:20,
 				hash?*t.hash:0);
 
-		pthread_t p = tg_send_query_async(tg, &getDialogs, 
-				&t, tg_get_dialogs_callback);
-
-		pthread_join(p, NULL);
+		tg_queue_t *queue = 
+			tg_queue_new(tg, &getDialogs, 
+				tg->ip, 80, true,
+				&t, tg_get_dialogs_callback,
+			 	NULL, NULL);
+	
+		pthread_join(queue->p, NULL);
 		
 		buf_free(getDialogs);
 		if (limit > 0)

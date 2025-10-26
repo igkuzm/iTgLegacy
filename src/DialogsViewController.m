@@ -265,7 +265,7 @@
 	[self.syncData addOperationWithBlock:^{
 		
 		// if not firs launch load from database first
-		if ([[NSUserDefaults standardUserDefaults]valueForKey:@"isNotFirstLaunch"])	
+		if ([[NSUserDefaults standardUserDefaults]boolForKey:@"isNotFirstLaunch"])	
 		tg_get_dialogs_from_database(
 				self.appDelegate.tg, 
 				(__bridge void *)self, 
@@ -281,7 +281,6 @@
 }
 
 -(void)getDialogsFrom:(NSDate *)date{
-	//[self cancelAll];
 	if (self.appDelegate.isOnLineAndAuthorized){
 	
 		if (!self.refreshControl.refreshing)
@@ -289,12 +288,13 @@
 
 		[self.syncData addOperationWithBlock:^{
 				//uint32_t folderId = self.isHidden?1:0; no working?
+				Boolean isNotFirstLaunch = 
+					[[NSUserDefaults standardUserDefaults]boolForKey:@"isNotFirstLaunch"];	
 				tg_get_dialogs(
 						self.appDelegate.tg, 
-						40, 
+						isNotFirstLaunch?40:-1, 
 						[date timeIntervalSince1970], 
-						//&_hash, 
-						0, 
+						NULL, 
 						NULL, 
 						(__bridge void *)self, 
 						get_dialogs_cb);

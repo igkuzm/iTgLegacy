@@ -62,6 +62,7 @@ static int flood_wait_for_seconds(
 			&queue->query, 
 			queue->ip,
 			queue->port,
+			queue->multithread,
 			queue->userdata, 
 			queue->on_done, 
 			queue->progressp, 
@@ -97,6 +98,7 @@ static int migrate_to_dc(
 			&queue->query, 
 			ip,
 			queue->port,
+			queue->multithread,
 			queue->userdata, 
 			queue->on_done, 
 			queue->progressp, 
@@ -639,7 +641,7 @@ static void * tg_run_queue(void * data)
 	enum RTL res; 
 	while (queue->loop) {
 		// check opened sockets for not files download
-		if (queue->fileDownload){
+		if (queue->multithread){
 			res = _tg_receive(queue, queue->socket);
 			if (res == RTL_RS)
 			{	
@@ -706,7 +708,7 @@ static void * tg_run_timer(void * data)
 
 tg_queue_t * tg_queue_new(
 		tg_t *tg, buf_t *query, 
-		const char *ip, int port,
+		const char *ip, int port, bool multithread,
 		void *userdata, void (*on_done)(void *userdata, const tl_t *tl),
 		void *progressp, 
 		int (*progress)(void *progressp, int size, int total))
@@ -726,6 +728,7 @@ tg_queue_t * tg_queue_new(
 	queue->query = buf_add_buf(*query);
 	strncpy(queue->ip, ip, sizeof(queue->ip)-1);
 	queue->port = port;
+	queue->multithread = multithread,
 	queue->userdata = userdata;
 	queue->on_done = on_done;
 	queue->progressp = progressp;
@@ -752,7 +755,8 @@ tg_queue_t * tg_queue_new(
 	return queue;
 }
 
-pthread_t tg_send_query_async_with_progress(tg_t *tg, buf_t *query,
+pthread_t tg_send_query_async_with_progress(
+		tg_t *tg, buf_t *query, bool multithread,
 		void *userdata, void (*callback)(void *userdata, const tl_t *tl),
 		void *progressp, 
 		int (*progress)(void *progressp, int size, int total))
@@ -762,19 +766,20 @@ pthread_t tg_send_query_async_with_progress(tg_t *tg, buf_t *query,
 		 	__func__, tg, query, userdata, callback, progressp, progress);
 	tg_queue_t *queue = 
 		tg_queue_new(tg, query, 
-				tg->ip, tg->port,
+				tg->ip, tg->port, multithread,
 				userdata, callback,
 			 	progressp, progress);
 	return queue->p;
 }
 
-pthread_t tg_send_query_async(tg_t *tg, buf_t *query,
+pthread_t tg_send_query_async(
+		tg_t *tg, buf_t *query, bool multithread,
 		void *userdata, void (*callback)(void *userdata, const tl_t *tl))
 {
 	ON_LOG(tg, "%s: tg: %p, query: %p, userdata: %p, callback: %p",
 		 	__func__, tg, query, userdata, callback);
 	return tg_send_query_async_with_progress(
-			tg, query, 
+			tg, query, multithread, 
 			userdata, callback,
 			NULL, NULL);
 }
@@ -792,7 +797,7 @@ tl_t *tg_send_query_sync_with_progress(tg_t *tg, buf_t *query,
 {
 	tl_t *tl = NULL;
 	pthread_t p = 
-		tg_send_query_async_with_progress(tg, query, 
+		tg_send_query_async_with_progress(tg, query, false, 
 				&tl, tg_send_query_sync_cb, 
 				progressp, progress);
 	
@@ -808,7 +813,7 @@ tl_t *tg_send_query_sync(tg_t *tg, buf_t *query)
 {
 	tl_t *tl = NULL;
 	pthread_t p = 
-		tg_send_query_async(tg, query, 
+		tg_send_query_async(tg, query, false, 
 				&tl, tg_send_query_sync_cb);
 	
 	pthread_join(p, NULL);

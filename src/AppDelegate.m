@@ -70,6 +70,12 @@
 		fclose(lastlogp);
 	}
 
+	// setup update interwal
+	NSInteger sec = [NSUserDefaults.standardUserDefaults 
+			integerForKey:@"chatUpdateInterval"];
+	if (sec == 0)
+		[NSUserDefaults.standardUserDefaults setInteger:30 forKey:@"chatUpdateInterval"];
+
 	// remove log file
 	[[NSFileManager defaultManager] removeItemAtPath:log error:nil];
 	self.log = freopen([log UTF8String], "a+", stderr);
