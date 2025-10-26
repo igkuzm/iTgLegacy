@@ -429,7 +429,6 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 
 	[self.searchBar resignFirstResponder];
-	[self cancelAll];
 
 	if (!self.appDelegate.isOnLineAndAuthorized){
 		[self.appDelegate showMessage:@"no network"];
