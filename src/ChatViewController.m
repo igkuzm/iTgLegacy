@@ -797,66 +797,68 @@ static void on_update(void *d, int type, void *value)
 	switch (type) {
 		case TG_UPDATE_USER_TYPING:
 			{
-				uint64_t *user_id = value;
-				if (self.dialog.peerType == TG_PEER_TYPE_USER &&
-						*user_id == self.dialog.peerId)
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						self.bubbleTableView.typingBubble = 
-							NSBubbleTypingTypeSomebody;
-						[self.bubbleTableView reloadData];
-						if ([self isOnBottom])
-							[self.bubbleTableView scrollToBottomWithAnimation:YES];
-					});
+				//segmentation falt!
+				//
+				//uint64_t *user_id = value;
+				//if (self.dialog.peerType == TG_PEER_TYPE_USER &&
+						//*user_id == self.dialog.peerId)
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//self.bubbleTableView.typingBubble = 
+							//NSBubbleTypingTypeSomebody;
+						//[self.bubbleTableView reloadData];
+						//if ([self isOnBottom])
+							//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+					//});
 
 			}
 		case TG_UPDATE_CHAT_USER_TYPING:
 			{
-				struct {uint64_t chat_id; uint64_t user_id;} *t = value; 
-				if (self.dialog.peerId == t->chat_id)
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						self.bubbleTableView.typingBubble = 
-							NSBubbleTypingTypeSomebody;
-						[self.bubbleTableView reloadData];
-						if ([self isOnBottom])
-							[self.bubbleTableView scrollToBottomWithAnimation:YES];
-					});
+				//struct {uint64_t chat_id; uint64_t user_id;} *t = value; 
+				//if (self.dialog.peerId == t->chat_id)
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//self.bubbleTableView.typingBubble = 
+							//NSBubbleTypingTypeSomebody;
+						//[self.bubbleTableView reloadData];
+						//if ([self isOnBottom])
+							//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+					//});
 			}
 		case TG_UPDATE_USER_RECORD_AUDIO:
 			{
-				uint64_t *user_id = value;
-				if (self.dialog.peerType == TG_PEER_TYPE_USER &&
-						*user_id == self.dialog.peerId)
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						self.bubbleTableView.typingBubble = 
-							NSBubbleTypingTypeSomebody;
-						[self.bubbleTableView reloadData];
-						if ([self isOnBottom])
-							[self.bubbleTableView scrollToBottomWithAnimation:YES];
-					});
+				//uint64_t *user_id = value;
+				//if (self.dialog.peerType == TG_PEER_TYPE_USER &&
+						//*user_id == self.dialog.peerId)
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//self.bubbleTableView.typingBubble = 
+							//NSBubbleTypingTypeSomebody;
+						//[self.bubbleTableView reloadData];
+						//if ([self isOnBottom])
+							//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+					//});
 			}
 		case TG_UPDATE_USER_RECORD_ROUND:
 			{
-				uint64_t *user_id = value;
-				if (self.dialog.peerType == TG_PEER_TYPE_USER &&
-						*user_id == self.dialog.peerId)
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						self.bubbleTableView.typingBubble = 
-							NSBubbleTypingTypeSomebody;
-						[self.bubbleTableView reloadData];
-						if ([self isOnBottom])
-							[self.bubbleTableView scrollToBottomWithAnimation:YES];
-					});
+				//uint64_t *user_id = value;
+				//if (self.dialog.peerType == TG_PEER_TYPE_USER &&
+						//*user_id == self.dialog.peerId)
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//self.bubbleTableView.typingBubble = 
+							//NSBubbleTypingTypeSomebody;
+						//[self.bubbleTableView reloadData];
+						//if ([self isOnBottom])
+							//[self.bubbleTableView scrollToBottomWithAnimation:YES];
+					//});
 			}
 		case TG_UPDATE_USER_CANCEL:
 			{
-				uint64_t *user_id = value;
-				if (self.dialog.peerType == TG_PEER_TYPE_USER &&
-						*user_id == self.dialog.peerId)
-					dispatch_sync(dispatch_get_main_queue(), ^{
-						self.bubbleTableView.typingBubble = 
-							NSBubbleTypingTypeNobody;
-						[self.bubbleTableView reloadData];
-					});
+				//uint64_t *user_id = value;
+				//if (self.dialog.peerType == TG_PEER_TYPE_USER &&
+						//*user_id == self.dialog.peerId)
+					//dispatch_sync(dispatch_get_main_queue(), ^{
+						//self.bubbleTableView.typingBubble = 
+							//NSBubbleTypingTypeNobody;
+						//[self.bubbleTableView reloadData];
+					//});
 			}
 		
 		case TG_UPDATE_CHAT_MESSAGE:
