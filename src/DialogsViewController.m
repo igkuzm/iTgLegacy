@@ -70,6 +70,31 @@
 		UIViewAutoresizingFlexibleBottomMargin;
 	[self.navigationController.navigationBar addSubview:self.spinner]; 
 
+	// first launch spinner
+	self.firstLaunchSpinner = [[UIActivityIndicatorView alloc]
+		initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+	self.firstLaunchSpinner.center = 
+		CGPointMake(
+				self.tableView.bounds.size.width/2, 
+				self.tableView.bounds.size.height/2 - 20);
+	self.firstLaunchSpinner.autoresizingMask = 
+		UIViewAutoresizingFlexibleLeftMargin|
+		UIViewAutoresizingFlexibleTopMargin |
+		UIViewAutoresizingFlexibleBottomMargin;
+	[self.tableView addSubview:self.firstLaunchSpinner]; 
+
+	// first launch label
+	self.firstLaunchLabel = [[UILabel alloc] initWithFrame:
+			CGRectMake(
+					self.tableView.bounds.size.width/2 - 75, 
+					self.tableView.bounds.size.height/2, 
+					150, 
+					20)];
+	self.firstLaunchLabel.text = @"First launch. Wait...";
+	self.firstLaunchLabel.hidden = YES;
+	self.firstLaunchLabel.textColor = [UIColor darkGrayColor];
+	[self.tableView addSubview:self.firstLaunchLabel]; 
+
 	// search bar
 	self.searchBar = 
 		[[UISearchBar alloc] initWithFrame:CGRectMake(0,70,320,44)];
@@ -162,10 +187,7 @@
 
 -(void)refresh:(id)sender{
 	[self cancelAll];
-	[NSUserDefaults.standardUserDefaults 
-		setBool:NO forKey:@"isNotFirstLaunch"];
-	[self.loadedData removeAllObjects];
-	[self.tableView reloadData];
+	self.loadAddDialogs = YES;
 	[self reloadData];
 }
 
@@ -293,17 +315,29 @@
 				//uint32_t folderId = self.isHidden?1:0; no working?
 				Boolean isNotFirstLaunch = 
 					[[NSUserDefaults standardUserDefaults]boolForKey:@"isNotFirstLaunch"];	
+				if (!isNotFirstLaunch){
+					dispatch_sync(dispatch_get_main_queue(), ^{
+						self.loadAddDialogs = YES;
+						self.firstLaunchLabel.hidden = NO;
+						[self.firstLaunchSpinner startAnimating];
+					});
+				}
+				
 				tg_get_dialogs(
 						self.appDelegate.tg, 
-						isNotFirstLaunch?40:-1, 
+						self.loadAddDialogs?0:40, 
 						[date timeIntervalSince1970], 
 						NULL, 
 						NULL, 
 						(__bridge void *)self, 
 						get_dialogs_cb);
 
+				self.loadAddDialogs = NO;
+
 				dispatch_sync(dispatch_get_main_queue(), ^{
 					//[self.appDelegate showMessage:@"done"];
+					self.firstLaunchLabel.hidden = YES;
+					[self.firstLaunchSpinner stopAnimating];
 					[self.refreshControl endRefreshing];
 					[self.spinner stopAnimating];
 					[self filterData];

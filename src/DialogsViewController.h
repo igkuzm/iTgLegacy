@@ -28,6 +28,9 @@
 @property Boolean updatePhotos;
 @property Boolean showNavigationBar;
 @property Boolean isHidden;
+@property Boolean loadAddDialogs;
+@property (strong) UIActivityIndicatorView *firstLaunchSpinner;
+@property (strong) UILabel *firstLaunchLabel;
 
 -(void)getDialogsFrom:(NSDate *)date;
 @end

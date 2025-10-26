@@ -291,11 +291,7 @@ tl_t *tg_tl_from_gzip(tg_t *tg, tl_t *tl)
 void tg_new_session(tg_t *tg)
 {
 	assert(tg);
-	int err = pthread_mutex_lock(&tg->queuem);
-	if (err){
-		ON_ERR(tg, "%s: can't lock mutex: %d", __func__, err);
-		return;
-	}
+	tg_mutex_lock(tg, &tg->queuem, return);
 
 	buf_free(tg->ssid);	
 	tg->ssid = buf_rand(8);

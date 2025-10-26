@@ -484,7 +484,7 @@ void tg_get_dialogs(
 
 		tg_queue_t *queue = 
 			tg_queue_new(tg, &getDialogs, 
-				tg->ip, 80, true,
+				tg->ip, 80, false,
 				&t, tg_get_dialogs_callback,
 			 	NULL, NULL);
 	

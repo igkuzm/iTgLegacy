@@ -317,6 +317,7 @@
 }
 
 -(void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo{
+	NSLog(@"%@", userInfo);
 	//[self showMessage:[NSString stringWithFormat:@"%@", userInfo]];
 	NSNumber *from_id = [userInfo valueForKey:@"from_id"];
 	NSNumber *msg_id = [userInfo valueForKey:@"msg_id"];
@@ -328,6 +329,9 @@
 		[NSUserDefaults.standardUserDefaults setObject:self.unread 
 																						 forKey:@"unread"];
 	}
+
+	NSDictionary *aps = [userInfo valueForKey:@"aps"];
+	//NSString *badge = [aps valueForKey:@"badge"];
 
 	if(application.applicationState == UIApplicationStateInactive) 
 	{
@@ -374,7 +378,6 @@
 			//}
 
 			// show allert
-			NSDictionary *aps = [userInfo valueForKey:@"aps"];
 			NSDictionary *alert = [aps valueForKey:@"alert"];
 			NSString *title = [alert valueForKey:@"title"];
 			NSString *body = [alert valueForKey:@"body"];
