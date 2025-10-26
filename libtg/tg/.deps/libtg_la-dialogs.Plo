@@ -58,7 +58,7 @@ libtg_la-dialogs.lo: dialogs.c channel.h tg.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/sys/_select.h \
   net.h \
   /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/assert.h \
-  messages.h
+  messages.h errors.h dc.h queue.h
 
 channel.h:
 
@@ -213,3 +213,9 @@ net.h:
 /home/kuzmich/src/cctools-port/usage_examples/ios_toolchain/target/bin/../SDK/iPhoneOS6.1.sdk/usr/include/assert.h:
 
 messages.h:
+
+errors.h:
+
+dc.h:
+
+queue.h:

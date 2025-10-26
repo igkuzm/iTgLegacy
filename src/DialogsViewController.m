@@ -162,6 +162,10 @@
 
 -(void)refresh:(id)sender{
 	[self cancelAll];
+	[NSUserDefaults.standardUserDefaults 
+		setBool:NO forKey:@"isNotFirstLaunch"];
+	[self.loadedData removeAllObjects];
+	[self.tableView reloadData];
 	[self reloadData];
 }
 
@@ -250,7 +254,6 @@
 
 -(void)reloadData{
 	[self.spinner stopAnimating];
-	[self cancelAll];
 
 	if (!self.appDelegate.tg)
 		return;
