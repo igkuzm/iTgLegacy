@@ -2,7 +2,7 @@
  * File              : send_query.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 03.02.2025
- * Last Modified Date: 22.10.2025
+ * Last Modified Date: 03.12.2025
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -87,6 +87,11 @@ static uint64_t tg_send(tg_t *tg, buf_t *query, int *socket)
 		buf_free(b);
 		return 0;
 	}
+
+	// log
+	uint32_t query_id = *(uint32_t *)query->data;
+	ON_ERR(tg, "%s: %s with id: "_LD_"",
+			__func__, TL_NAME_FROM_ID(query_id), msg_id);
 
 	return msg_id;
 }
@@ -327,3 +332,5 @@ tl_t *tg_send_query_with_progress(tg_t *tg, buf_t *query,
 			//tg, query, tg->ip, tg->port, 
 			//NULL, NULL);
 //}
+
+
