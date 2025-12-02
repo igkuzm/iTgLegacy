@@ -531,61 +531,56 @@ static void tg_send_ack(void *data)
 
 static int tg_send(void *data)
 {
-	int err = 0;
 	// send query
 	tg_queue_t *queue = data;
+	tg_t *tg = queue->tg;
 	ON_LOG(queue->tg, "%s", __func__);
+	
 	// auth_key
 	if (!queue->tg->key.size){
-		err = pthread_mutex_lock(&queue->tg->queuem);
-		if (err){
-			ON_ERR(queue->tg, "%s: can't lock mutex: %d", __func__, err);
-			return 1;
-		}
+		tg_mutex_lock(tg, &tg->queuem,
+			ON_ERR(tg, "%s: can't lock mutex", __func__);
+			return 1);
 		close(queue->socket);
 		app_t app = api.app.open(queue->tg->ip, queue->tg->port);	
-		queue->tg->key = 
+		tg->key = 
 			buf_add(shared_rc.key.data, shared_rc.key.size);
-		queue->tg->salt = 
+		tg->salt = 
 			buf_add(shared_rc.salt.data, shared_rc.salt.size);
 		queue->socket = shared_rc.net.sockfd;
-		queue->tg->seqn = shared_rc.seqnh + 1;
-		pthread_mutex_unlock(&queue->tg->queuem);
+		tg->seqn = shared_rc.seqnh + 1;
+		tg_mutex_unlock(&tg->queuem);
 	}
 
 	// session id
 	if (!queue->tg->ssid.size){
-		err = pthread_mutex_lock(&queue->tg->queuem);
-		if (err){
-			ON_ERR(queue->tg, "%s: can't lock mutex: %d", __func__, err);
-			return 1;
-		}
-		queue->tg->ssid = buf_rand(8);
-		pthread_mutex_unlock(&queue->tg->queuem);
+		tg_mutex_lock(tg, &tg->queuem,
+			ON_ERR(tg, "%s: can't lock mutex", __func__);
+			return 1);
+		tg->ssid = buf_rand(8);
+		tg_mutex_unlock(&tg->queuem);
 	}
 
 	// server salt
 	if (!queue->tg->salt.size){
-		err = pthread_mutex_lock(&queue->tg->queuem);
-		if (err){
-			ON_ERR(queue->tg, "%s: can't lock mutex: %d", __func__, err);
-			return 1;
-		}
-		queue->tg->salt = buf_rand(8);
-		pthread_mutex_unlock(&queue->tg->queuem);
+		tg_mutex_lock(tg, &tg->queuem,
+			ON_ERR(tg, "%s: can't lock mutex", __func__);
+			return 1);
+		tg->salt = buf_rand(8);
+		tg_mutex_unlock(&tg->queuem);
 	}
 
 	// prepare query
 	buf_t b = tg_prepare_query(
-			queue->tg, 
+			tg, 
 			&queue->query, 
 			true, 
 			&queue->msgid);
 	if (!b.size)
 	{
-		ON_ERR(queue->tg, "%s: can't prepare query", __func__);
+		ON_ERR(tg, "%s: can't prepare query", __func__);
 		buf_free(b);
-		tg_net_close(queue->tg, queue->socket);
+		tg_net_close(tg, queue->socket);
 		return 1;
 	}
 
@@ -593,14 +588,14 @@ static int tg_send(void *data)
 	int s = 
 		send(queue->socket, b.data, b.size, 0);
 	if (s < 0){
-		ON_ERR(queue->tg, "%s: socket error: %d", __func__, s);
+		ON_ERR(tg, "%s: socket error: %d", __func__, s);
 		buf_free(b);
-		tg_net_close(queue->tg, queue->socket);
+		tg_net_close(tg, queue->socket);
 		return 1;
 	}
 	
 	/*ON_LOG(queue->tg, "%s: %s, msgid: "_LD_"", */
-	ON_ERR(queue->tg, "%s: %s, msgid: "_LD_"", 
+	ON_ERR(tg, "%s: %s, msgid: "_LD_"", 
 			__func__, 
 			TL_NAME_FROM_ID(buf_get_ui32(queue->query)), 
 			queue->msgid);
@@ -620,7 +615,7 @@ static void * tg_run_queue(void * data)
 		tg_net_open(tg, queue->ip, queue->port);
 	if (queue->socket < 0)
 	{
-		ON_ERR(queue->tg, "%s: can't open socket", __func__);
+		ON_ERR(tg, "%s: can't open socket", __func__);
 		buf_free(queue->query);
 		free(queue);
 		pthread_exit(NULL);	
@@ -631,8 +626,8 @@ static void * tg_run_queue(void * data)
 		ON_ERR(tg, "%s: can't lock mutex", __func__);
 		pthread_exit(NULL);
 	);
-	list_add(&queue->tg->queue, data);
-	tg_mutex_unlock(&queue->tg->queuem);
+	list_add(&tg->queue, data);
+	tg_mutex_unlock(&tg->queuem);
 
 	// send ack - use container method in header.c
 	//tg_send_ack(data);
@@ -661,13 +656,13 @@ static void * tg_run_queue(void * data)
 			continue;
 		}
 
-		if (pthread_mutex_trylock(&queue->tg->socket_mutex))
+		if (pthread_mutex_trylock(&tg->socket_mutex))
 		{
 			// receive
 			/*ON_LOG(queue->tg, "%s: receive...", __func__);*/
 			//usleep(1000); // in microseconds
 			res = _tg_receive(queue, queue->socket);
-			tg_mutex_unlock(&queue->tg->socket_mutex);
+			tg_mutex_unlock(&tg->socket_mutex);
 			if (res == RTL_RS)
 			{	
 				if (tg_send(data) == 0)
@@ -684,7 +679,7 @@ static void * tg_run_queue(void * data)
 	}
 	// close socket
 	if (queue->socket >= 0)
-		tg_net_close(queue->tg, queue->socket);
+		tg_net_close(tg, queue->socket);
 
 	// remove from queue
 	tg_mutex_lock(tg, &tg->queuem,
