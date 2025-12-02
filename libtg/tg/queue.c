@@ -598,6 +598,12 @@ static int tg_send(void *data)
 		tg_net_close(queue->tg, queue->socket);
 		return 1;
 	}
+	
+	/*ON_LOG(queue->tg, "%s: %s, msgid: "_LD_"", */
+	ON_ERR(queue->tg, "%s: %s, msgid: "_LD_"", 
+			__func__, 
+			TL_NAME_FROM_ID(buf_get_ui32(queue->query)), 
+			queue->msgid);
 		
 	/*tg_net_close(queue->tg, queue->socket);*/
 	return 0;
