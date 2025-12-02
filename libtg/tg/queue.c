@@ -612,10 +612,12 @@ static int tg_send(void *data)
 static void * tg_run_queue(void * data)
 {
 	tg_queue_t *queue = data;
-	ON_LOG(queue->tg, "%s", __func__);
+	tg_t *tg = queue->tg;
+	
+	ON_LOG(tg, "%s", __func__);
 	// open socket
 	queue->socket = 
-		tg_net_open(queue->tg, queue->ip, queue->port);
+		tg_net_open(tg, queue->ip, queue->port);
 	if (queue->socket < 0)
 	{
 		ON_ERR(queue->tg, "%s: can't open socket", __func__);
@@ -625,16 +627,12 @@ static void * tg_run_queue(void * data)
 	}
 
 	// add to list
-	int err = 0;
-	err = pthread_mutex_lock(&queue->tg->queuem);
-	if (err){
-		ON_ERR(queue->tg, "%s: can't lock mutex: %d", __func__, err);
-		buf_free(queue->query);
-		free(queue);
-		pthread_exit(NULL);	
-	}
+	tg_mutex_lock(tg, &tg->queuem,
+		ON_ERR(tg, "%s: can't lock mutex", __func__);
+		pthread_exit(NULL);
+	);
 	list_add(&queue->tg->queue, data);
-	pthread_mutex_unlock(&queue->tg->queuem);
+	tg_mutex_unlock(&queue->tg->queuem);
 
 	// send ack - use container method in header.c
 	//tg_send_ack(data);
@@ -651,7 +649,7 @@ static void * tg_run_queue(void * data)
 			res = _tg_receive(queue, queue->socket);
 			if (res == RTL_RS)
 			{	
-				if (tg_send(data))
+				if (tg_send(data) == 0)
 					continue;
 				else 
 					break;
@@ -672,7 +670,7 @@ static void * tg_run_queue(void * data)
 			tg_mutex_unlock(&queue->tg->socket_mutex);
 			if (res == RTL_RS)
 			{	
-				if (tg_send(data))
+				if (tg_send(data) == 0)
 					continue;
 				else
 				 break;
@@ -688,17 +686,16 @@ static void * tg_run_queue(void * data)
 	if (queue->socket >= 0)
 		tg_net_close(queue->tg, queue->socket);
 
-	// remove fromqueue
-	tg_t *tg = queue->tg;
+	// remove from queue
 	tg_mutex_lock(tg, &tg->queuem,
-		ON_ERR(tg, "%s: can't lock mutex: %d", __func__, err);
+		ON_ERR(tg, "%s: can't lock mutex", __func__);
 		pthread_exit(NULL);
 	);	
 	list_cut(&tg->queue, &queue->msgid, cmp_msgid);
 		
 	/*buf_free(queue->query);*/
 	free(queue);
-	pthread_mutex_unlock(&tg->queuem);
+	tg_mutex_unlock(&tg->queuem);
 	pthread_exit(NULL);	
 }
 
