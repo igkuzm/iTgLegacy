@@ -79,7 +79,7 @@ tg_t *tg_new(
 	// init queue manager
 	tg->queue = NULL;		
 	if (pthread_mutex_init(
-				&tg->queuem, NULL))
+				&tg->queue_lock, NULL))
 	{
 		ON_ERR(tg, "%s: can't init mutex", __func__);
 		return NULL;
@@ -291,10 +291,10 @@ tl_t *tg_tl_from_gzip(tg_t *tg, tl_t *tl)
 void tg_new_session(tg_t *tg)
 {
 	assert(tg);
-	tg_mutex_lock(tg, &tg->queuem, return);
+	tg_mutex_lock(tg, &tg->queue_lock, return);
 
 	buf_free(tg->ssid);	
 	tg->ssid = buf_rand(8);
 	
-	pthread_mutex_unlock(&tg->queuem);
+	tg_mutex_unlock(&tg->queue_lock);
 }

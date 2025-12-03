@@ -46,6 +46,34 @@ static int cmp_msgid(void *msgidp, void *itemp)
 	return 0;
 }
 
+static tg_queue_t * tg_queue_cut(tg_t *tg, uint64_t msg_id)
+{
+	tg_queue_t *queue = NULL;
+	assert(tg);
+
+	tg_mutex_lock(tg, &tg->queue_lock, 
+			ON_ERR(tg, "%s: can't lock queue list", __func__);
+			return queue);
+	queue = list_cut(
+				&tg->queue, 
+				&msg_id, 
+				cmp_msgid);
+	tg_mutex_unlock(&tg->queue_lock);
+	return queue;	
+}
+
+static void tg_queue_add(tg_t *tg, tg_queue_t * queue)
+{
+	assert(tg);
+	assert(queue);
+
+	tg_mutex_lock(tg, &tg->queue_lock, 
+			ON_ERR(tg, "%s: can't lock queue list", __func__);
+			return);
+	list_add(&tg->queue, queue);
+	tg_mutex_unlock(&tg->queue_lock);
+}
+
 static int flood_wait_for_seconds(
 		tg_queue_t *queue, int seconds)
 {
@@ -109,26 +137,16 @@ static int migrate_to_dc(
 
 static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 {
+	tg_queue_t *queue = NULL;
+
 	assert(tg);
 	ON_LOG(tg, "%s", __func__);
 
 	// get queue
-	int err = pthread_mutex_lock(&tg->queuem);
-	if (err){
-		ON_ERR(tg, "%s: can't lock mutex: %d", __func__, err);
-		return;
-	}
-	
-	tg_queue_t *queue = list_cut(
-				&tg->queue, 
-				&msg_id, 
-				cmp_msgid);
-		
-
+	queue = tg_queue_cut(tg, msg_id);
 	if (queue == NULL){
 		ON_ERR(tg, "can't find queue for msg_id: "_LD_" with tl: %s"
 				, msg_id, tl?TL_NAME_FROM_ID(tl->_id):"NULL");
-		pthread_mutex_unlock(&tg->queuem);
 		// drop answer
 		//tg_add_todrop(tg, msg_id);
 		return;
@@ -138,18 +156,15 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 				, __func__, msg_id);
 
 	// lock queue
-	err = pthread_mutex_lock(&queue->m);
-	pthread_mutex_unlock(&tg->queuem); // unlock list
-	if (err){
-		ON_ERR(tg, "%s: can't lock mutex: %d", __func__, err);
-		return;
-	}
+	tg_mutex_lock(tg, &queue->lock, 
+			ON_LOG(tg, "%s: can't lock queue", __func__);
+			return);
 
 	if (tl == NULL){
 		ON_ERR(tg, "%s: tl is NULL", __func__);
 		if (queue->on_done)
 			queue->on_done(queue->userdata, tl);
-		pthread_mutex_unlock(&queue->m); // unlock
+		tg_mutex_unlock(&queue->lock); // unlock
 		return;
 	}
 		
@@ -181,7 +196,7 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 					tl_free(ttl);
 
 				queue->loop = false; // stop receive data!
-				pthread_mutex_unlock(&queue->m); // unlock
+				tg_mutex_unlock(&queue->lock); // unlock
 				return; // do not run on_done!
 			}
 			break;
@@ -195,9 +210,9 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 				free(err);
 				tl = NULL;
 				// add time diff
-				pthread_mutex_lock(&queue->tg->seqnm);
+				tg_mutex_lock(tg, &queue->tg->seqnm, break);
 				queue->tg->timediff = ntp_time_diff();
-				pthread_mutex_unlock(&queue->tg->seqnm);
+			  tg_mutex_unlock(&queue->tg->seqnm);
 			}
 			break;
 		case id_rpc_error:
@@ -212,7 +227,7 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
 					migrate_to_dc(queue, dc, tl);
 					queue->loop = false; // stop receive data!
-					pthread_mutex_unlock(&queue->m); // unlock
+					tg_mutex_unlock(&queue->lock); // unlock
 					return; // do not run on_done!
 				}
 
@@ -222,7 +237,7 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
 					flood_wait_for_seconds(queue, wait);
 					queue->loop = false; // stop receive data!
-					pthread_mutex_unlock(&queue->m); // unlock
+					tg_mutex_unlock(&queue->lock); // unlock
 					return; // do not run on_done!
 				}
 				
@@ -244,7 +259,7 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 	// stop query
 	queue->loop = false;
 
-	pthread_mutex_unlock(&queue->m); // unlock
+	tg_mutex_unlock(&queue->lock); // unlock
 }
 
 static void handle_tl(tg_queue_t *queue, tl_t *tl)
@@ -323,9 +338,9 @@ static void handle_tl(tg_queue_t *queue, tl_t *tl)
 				ON_ERR(queue->tg, "%s", err);
 				free(err);
 				// add time diff
-				pthread_mutex_lock(&queue->tg->seqnm);
+				tg_mutex_lock(queue->tg, &queue->tg->seqnm, break);
 				queue->tg->timediff = ntp_time_diff();
-				pthread_mutex_unlock(&queue->tg->seqnm);
+				tg_mutex_unlock(&queue->tg->seqnm);
 			}
 			break;
 		case id_rpc_error:
@@ -338,7 +353,6 @@ static void handle_tl(tg_queue_t *queue, tl_t *tl)
 					// check if user/phone migrate
 					migrate_to_dc(queue, dc, tl);
 					queue->loop = false; // stop receive data!
-					pthread_mutex_unlock(&queue->m); // unlock
 					break;
 				}
 
@@ -348,7 +362,6 @@ static void handle_tl(tg_queue_t *queue, tl_t *tl)
 					ON_LOG(queue->tg, "%s: %s", __func__, RPC_ERROR(tl));
 					flood_wait_for_seconds(queue, wait);
 					queue->loop = false; // stop receive data!
-					pthread_mutex_unlock(&queue->m); // unlock
 					break;
 				}
 
@@ -529,47 +542,40 @@ static void tg_send_ack(void *data)
 	}
 }
 
-static int tg_send(void *data)
+static void tg_prepare_mtproto(tg_queue_t *queue)
 {
-	// send query
-	tg_queue_t *queue = data;
 	tg_t *tg = queue->tg;
-	ON_LOG(queue->tg, "%s", __func__);
-	
-	// auth_key
-	if (!queue->tg->key.size){
-		tg_mutex_lock(tg, &tg->queuem,
-			ON_ERR(tg, "%s: can't lock mutex", __func__);
-			return 1);
-		close(queue->socket);
+	if (!tg->key.size){
 		app_t app = api.app.open(queue->tg->ip, queue->tg->port);	
 		tg->key = 
 			buf_add(shared_rc.key.data, shared_rc.key.size);
 		tg->salt = 
 			buf_add(shared_rc.salt.data, shared_rc.salt.size);
 		queue->socket = shared_rc.net.sockfd;
-		tg->seqn = shared_rc.seqnh + 1;
-		tg_mutex_unlock(&tg->queuem);
+		tg->seqn = shared_rc.seqnh + 1;	
 	}
 
-	// session id
-	if (!queue->tg->ssid.size){
-		tg_mutex_lock(tg, &tg->queuem,
-			ON_ERR(tg, "%s: can't lock mutex", __func__);
-			return 1);
+	if (!tg->ssid.size)
 		tg->ssid = buf_rand(8);
-		tg_mutex_unlock(&tg->queuem);
-	}
 
-	// server salt
-	if (!queue->tg->salt.size){
-		tg_mutex_lock(tg, &tg->queuem,
-			ON_ERR(tg, "%s: can't lock mutex", __func__);
-			return 1);
+	if (!queue->tg->salt.size)
 		tg->salt = buf_rand(8);
-		tg_mutex_unlock(&tg->queuem);
-	}
+}
 
+static int tg_send(void *data)
+{
+	// send query
+	tg_queue_t *queue = data;
+	tg_t *tg = queue->tg;
+	ON_LOG(queue->tg, "%s", __func__);
+		
+	// prepare protocol
+	tg_mutex_lock(tg, &tg->queue_lock,
+		ON_ERR(tg, "%s: can't lock mutex", __func__);
+		return 1);
+	tg_prepare_mtproto(queue);
+	tg_mutex_unlock(&tg->queue_lock);
+	
 	// prepare query
 	buf_t b = tg_prepare_query(
 			tg, 
@@ -578,12 +584,18 @@ static int tg_send(void *data)
 			&queue->msgid);
 	if (!b.size)
 	{
-		ON_ERR(tg, "%s: can't prepare query", __func__);
 		buf_free(b);
 		tg_net_close(tg, queue->socket);
 		return 1;
 	}
 
+	// log
+	/*ON_LOG(queue->tg, "%s: %s, msgid: "_LD_"", */
+	ON_ERR(tg, "%s: %s, msgid: "_LD_"", 
+			__func__, 
+			TL_NAME_FROM_ID(buf_get_ui32(queue->query)), 
+			queue->msgid);
+		
 	// send query
 	int s = 
 		send(queue->socket, b.data, b.size, 0);
@@ -594,20 +606,33 @@ static int tg_send(void *data)
 		return 1;
 	}
 	
-	/*ON_LOG(queue->tg, "%s: %s, msgid: "_LD_"", */
-	ON_ERR(tg, "%s: %s, msgid: "_LD_"", 
-			__func__, 
-			TL_NAME_FROM_ID(buf_get_ui32(queue->query)), 
-			queue->msgid);
-		
-	/*tg_net_close(queue->tg, queue->socket);*/
+	buf_free(b);
 	return 0;
+}
+
+static void tg_queue_free(tg_queue_t *queue)
+{
+	/* TODO:  <03-12-25, yourname> */
+	// check of free works
+	//buf_free(queue->query);
+	free(queue);
+}
+
+static void *tg_run_queue_exit(tg_queue_t *queue, void *ret)
+{
+	tg_mutex_unlock(&queue->inloop_lock);
+	return ret;
 }
 
 static void * tg_run_queue(void * data)
 {
 	tg_queue_t *queue = data;
 	tg_t *tg = queue->tg;
+
+	// lock queue
+	tg_mutex_lock(tg, &queue->inloop_lock, 
+			ON_ERR(tg, "%s: can't lock queue loop", __func__);
+			return NULL);
 	
 	ON_LOG(tg, "%s", __func__);
 	// open socket
@@ -616,18 +641,11 @@ static void * tg_run_queue(void * data)
 	if (queue->socket < 0)
 	{
 		ON_ERR(tg, "%s: can't open socket", __func__);
-		buf_free(queue->query);
-		free(queue);
-		pthread_exit(NULL);	
+		return tg_run_queue_exit(queue, NULL);
 	}
 
 	// add to list
-	tg_mutex_lock(tg, &tg->queuem,
-		ON_ERR(tg, "%s: can't lock mutex", __func__);
-		pthread_exit(NULL);
-	);
-	list_add(&tg->queue, data);
-	tg_mutex_unlock(&tg->queuem);
+	tg_queue_add(tg, queue);
 
 	// send ack - use container method in header.c
 	//tg_send_ack(data);
@@ -639,7 +657,19 @@ static void * tg_run_queue(void * data)
 	// receive loop
 	enum RTL res; 
 	while (queue->loop) {
-		// check opened sockets for not files download
+		res = _tg_receive(queue, queue->socket);
+		if (res == RTL_RS)
+		{	
+			if (tg_send(data) == 0)
+				continue;
+			else 
+				break;
+		}
+
+		if (res == RTL_EX || res == RTL_ER)
+			break;
+
+		/*
 		if (queue->multithread){
 			res = _tg_receive(queue, queue->socket);
 			if (res == RTL_RS)
@@ -659,7 +689,7 @@ static void * tg_run_queue(void * data)
 		if (pthread_mutex_trylock(&tg->socket_mutex))
 		{
 			// receive
-			/*ON_LOG(queue->tg, "%s: receive...", __func__);*/
+			//ON_LOG(queue->tg, "%s: receive...", __func__);
 			//usleep(1000); // in microseconds
 			res = _tg_receive(queue, queue->socket);
 			tg_mutex_unlock(&tg->socket_mutex);
@@ -676,31 +706,37 @@ static void * tg_run_queue(void * data)
 
 		} else // pthread_mutex_trylock
 			continue;
+		*/
 	}
+
 	// close socket
 	if (queue->socket >= 0)
 		tg_net_close(tg, queue->socket);
 
-	// remove from queue
-	tg_mutex_lock(tg, &tg->queuem,
-		ON_ERR(tg, "%s: can't lock mutex", __func__);
-		pthread_exit(NULL);
-	);	
-	list_cut(&tg->queue, &queue->msgid, cmp_msgid);
-		
-	/*buf_free(queue->query);*/
-	free(queue);
-	tg_mutex_unlock(&tg->queuem);
-	pthread_exit(NULL);	
+	// remove from queue list
+	tg_queue_cut(tg, queue->msgid);
+
+	return tg_run_queue_exit(queue, NULL);
 }
 
 static void * tg_run_timer(void * data)
 {
+	// stop queue and free memory
 	tg_queue_t *queue = data;
-	ON_LOG(queue->tg, "%s", __func__);
+	tg_t *tg = queue->tg;
+
+	ON_LOG(tg, "%s", __func__);
 	//usleep(1000); // in microseconds
 	sleep(2);
+	// stop queue
 	queue->loop = false;
+	// wait to stop
+	tg_mutex_lock(tg, &queue->inloop_lock, 
+			ON_ERR(tg, "%s: can't lock queue loop", __func__);
+			return NULL);
+	
+	// free queue
+	tg_queue_free(queue);
 	pthread_exit(NULL);	
 }
 
@@ -716,7 +752,11 @@ tg_queue_t * tg_queue_new(
 			ON_ERR(tg, "%s: can't allocate memory", __func__);
 			return NULL;);
 
-	if (pthread_mutex_init(&queue->m, NULL)){
+	if (pthread_mutex_init(&queue->inloop_lock, NULL)){
+		ON_ERR(tg, "%s: can't init mutex", __func__);
+		return NULL;
+	}
+	if (pthread_mutex_init(&queue->lock, NULL)){
 		ON_ERR(tg, "%s: can't init mutex", __func__);
 		return NULL;
 	}
@@ -744,11 +784,11 @@ tg_queue_t * tg_queue_new(
 	}
 
 	// start timer
-	//pthread_create(
-			//&(queue->p), 
-			//NULL, 
-			//tg_run_timer, 
-			//queue);
+	pthread_create(
+			&(queue->p), 
+			NULL, 
+			tg_run_timer, 
+			queue);
 
 	return queue;
 }
@@ -824,58 +864,42 @@ tl_t *tg_send_query_sync(tg_t *tg, buf_t *query)
 
 void tg_queue_cancell_all(tg_t *tg)
 {
+	tg_queue_t *queue = NULL;
 	ON_LOG(tg, "%s", __func__);
-	int err = pthread_mutex_lock(&tg->queuem);
-	if (err){
-		ON_ERR(tg, "%s: can't lock mutex: %d", __func__, err);
-		return;
-	}
-	tg_queue_t *queue;
+	assert(tg);
+
+	tg_mutex_lock(tg, &tg->queue_lock, 
+			ON_ERR(tg, "%s: can't lock queue list", __func__);
+			return);
+	
 	list_for_each(tg->queue, queue)
 	{
-		// lock queue - (it may be locked by catche_tl)
-		if (pthread_mutex_trylock(&queue->m) == 0){
+		if (pthread_mutex_trylock(&queue->lock) == 0){
 			queue->loop = false;
-			pthread_mutex_unlock(&queue->m);
+			tg_mutex_unlock(&queue->lock);
 		}
 	}
 
 	list_free(&tg->queue);
-	pthread_mutex_unlock(&tg->queuem);
+	tg_mutex_unlock(&tg->queue_lock);
 }
 
-int tg_queue_cancell_queue(tg_t *tg, uint64_t msg_id){
-
-	int err = pthread_mutex_lock(&tg->queuem);
-	if (err){
-		ON_ERR(tg, "%s: can't lock mutex: %d", __func__, err);
-		return 1;
-	}
-	
-	tg_queue_t *queue = list_cut(
-				&tg->queue, 
-				&msg_id, 
-				cmp_msgid);
-		
-
+int tg_queue_cancell_queue(tg_t *tg, uint64_t msg_id)
+{
+	tg_queue_t *queue = tg_queue_cut(tg, msg_id);
 	if (queue == NULL){
 		ON_ERR(tg, "%s: can't find queue for msg_id: "_LD_""
 				, __func__, msg_id);
-		pthread_mutex_unlock(&tg->queuem);
 		return 1;
 	}
 
-	// lock queue
-	err = pthread_mutex_lock(&queue->m);
-	pthread_mutex_unlock(&tg->queuem); // unlock list
-	if (err){
-		ON_ERR(tg, "%s: can't lock mutex: %d", __func__, err);
-		return 1;
-	}
-	
 	// stop query
+	tg_mutex_lock(tg, &queue->lock, 
+		ON_ERR(tg, "%s: can't lock queue with msg_id: "_LD_"",
+			__func__, msg_id);
+		return 1);
 	queue->loop = false;
-	pthread_mutex_unlock(&queue->m); // unlock
+	tg_mutex_unlock(&queue->lock); // unlock
 	
 	return 0;
 }

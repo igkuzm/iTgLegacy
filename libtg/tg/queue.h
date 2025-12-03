@@ -15,7 +15,8 @@ struct tg_queue_{
 	bool multithread;
 	buf_t query;
 	uint64_t msgid;
-	pthread_mutex_t m;
+	pthread_mutex_t lock;
+	pthread_mutex_t inloop_lock;
 	void *userdata;
 	void (*on_done)(void *userdata, const tl_t *tl);
 	void *progressp;

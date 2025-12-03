@@ -25,7 +25,7 @@ struct tg_ {
 	char ip[16];
 	int port;
 	list_t *queue;
-	pthread_mutex_t queuem;
+	pthread_mutex_t queue_lock;
 	pthread_mutex_t send_query;
 	socet_t socket;
 	pthread_mutex_t socket_mutex;
