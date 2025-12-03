@@ -155,6 +155,10 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 	ON_ERR(tg, "%s: GOT queue for msg_id: "_LD_"!"
 				, __func__, msg_id);
 
+	// check if in loop
+	if (!queue->loop)
+		return;
+
 	// lock queue
 	tg_mutex_lock(tg, &queue->lock, 
 			ON_LOG(tg, "%s: can't lock queue", __func__);
