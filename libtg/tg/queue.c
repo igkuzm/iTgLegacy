@@ -725,11 +725,12 @@ static void * tg_run_timer(void * data)
 	tg_queue_t *queue = data;
 	tg_t *tg = queue->tg;
 
-	ON_LOG(tg, "%s", __func__);
 	//usleep(1000); // in microseconds
 	sleep(2);
-	// stop queue
+	ON_LOG(tg, "%s: stop queue", __func__);
+	
 	queue->loop = false;
+	
 	// wait to stop
 	tg_mutex_lock(tg, &queue->inloop_lock, 
 			ON_ERR(tg, "%s: can't lock queue loop", __func__);
