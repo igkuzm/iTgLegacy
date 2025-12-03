@@ -31,10 +31,10 @@
 #endif
 
 enum RTL{
-	RTL_EX, // exit loop
-	RTL_ER, // error socket
-	RTL_RQ, // read socket again
-	RTL_RS, // resend query
+	RTL_EXIT,   // exit loop
+	RTL_ERROR,  // error
+	RTL_REREAD, // read socket again
+	RTL_RESEND, // resend query
 };
 
 static int cmp_msgid(void *msgidp, void *itemp)
@@ -427,7 +427,7 @@ static enum RTL _tg_receive(tg_queue_t *queue, int sockfd)
 		ON_ERR(queue->tg, "%s: %d: socket error: %d", 
 				__func__, __LINE__, s);
 		buf_free(r);
-		return RTL_ER;
+		return RTL_ERROR;
 	}
 
 	ON_LOG(queue->tg, "%s: prepare to receive len: %d", __func__, len);
@@ -435,7 +435,7 @@ static enum RTL _tg_receive(tg_queue_t *queue, int sockfd)
 		// this is error - report it
 		ON_ERR(queue->tg, "%s: received wrong length: %d", __func__, len);
 		buf_free(r);
-		return RTL_EX;
+		return RTL_ERROR;
 	}
 
 	// realloc buf to be enough size
@@ -443,7 +443,7 @@ static enum RTL _tg_receive(tg_queue_t *queue, int sockfd)
 		// handle error
 		ON_ERR(queue->tg, "%s: error buf realloc to size: %d", __func__, len);
 		buf_free(r);
-		return RTL_EX;
+		return RTL_ERROR;
 	}
 
 	// get data
@@ -458,7 +458,7 @@ static enum RTL _tg_receive(tg_queue_t *queue, int sockfd)
 			ON_ERR(queue->tg, "%s: %d: socket error: %d", 
 					__func__, __LINE__, s);
 			buf_free(r);
-			return RTL_ER;
+			return RTL_ERROR;
 		}
 		received += s;
 		
@@ -472,7 +472,7 @@ static enum RTL _tg_receive(tg_queue_t *queue, int sockfd)
 				ON_LOG(queue->tg, "%s: download canceled", __func__);
 				// drop
 				tg_add_todrop(queue->tg, queue->msgid);
-				return RTL_EX;
+				return RTL_EXIT;
 			}
 		}
 	}
@@ -482,14 +482,14 @@ static enum RTL _tg_receive(tg_queue_t *queue, int sockfd)
 	if (r.size == 4 && buf_get_ui32(r) == 0xfffffe6c){
 		buf_free(r);
 		ON_ERR(queue->tg, "%s: 404 ERROR", __func__);
-		return RTL_EX;
+		return RTL_ERROR;
 	}
 
 	// decrypt
 	buf_t d = tg_decrypt(queue->tg, r, true);
 	if (!d.size){
 		buf_free(r);
-		return RTL_EX;
+		return RTL_ERROR;
 	}
 	buf_free(r);
 
@@ -505,7 +505,7 @@ static enum RTL _tg_receive(tg_queue_t *queue, int sockfd)
 	if (tl->_id == id_bad_server_salt){
 		ON_LOG(queue->tg, "BAD SERVER SALT: resend query");
 		// resend query
-		return RTL_RS;
+		return RTL_RESEND;
 	}
 
 	// handle tl
@@ -513,7 +513,7 @@ static enum RTL _tg_receive(tg_queue_t *queue, int sockfd)
 	if (tl)
 		tl_free(tl);
 	
-	return RTL_RQ; // read socket again
+	return RTL_REREAD; // read again
 }
 
 static void tg_send_ack(void *data)
@@ -658,15 +658,14 @@ static void * tg_run_queue(void * data)
 	enum RTL res; 
 	while (queue->loop) {
 		res = _tg_receive(queue, queue->socket);
-		if (res == RTL_RS)
+		if (res == RTL_RESEND)
 		{	
 			if (tg_send(data) == 0)
 				continue;
-			else 
-				break;
+			break;
 		}
 
-		if (res == RTL_EX || res == RTL_ER)
+		if (res == RTL_EXIT || res == RTL_ERROR)
 			break;
 
 		/*
