@@ -224,6 +224,9 @@ static void catched_tl(tg_t *tg, uint64_t msg_id, tl_t *tl)
 				tl_rpc_error_t *rpc_error = 
 					(tl_rpc_error_t *)tl;
 
+				ON_ERR(tg, "RPC_ERROR: %s for msgid: "_LD_"",
+						RPC_ERROR(tl), msg_id);
+
 				// check file/user/phone migrate
 				const struct dc_t *dc = 
 					tg_error_migrate(tg, RPC_ERROR(tl));
@@ -618,7 +621,7 @@ static void tg_queue_free(tg_queue_t *queue)
 {
 	/* TODO:  <03-12-25, yourname> */
 	// check of free works
-	//buf_free(queue->query);
+	buf_free(queue->query);
 	free(queue);
 }
 
@@ -662,20 +665,19 @@ static void * tg_run_queue(void * data)
 	enum RTL res; 
 	while (queue->loop) {
 		res = _tg_receive(queue, queue->socket);
-		if (res == RTL_RESEND)
-		{	
-			if (tg_send(data) == 0)
-				continue;
-			break;
-		}
+		//if (res == RTL_RESEND)
+		//{	
+			//if (tg_send(data) == 0)
+				//continue;
+			//break;
+		//}
 
-		if (res == RTL_EXIT || res == RTL_ERROR)
-			break;
+		//if (res == RTL_EXIT || res == RTL_ERROR)
+			//break;
 
-		/*
 		if (queue->multithread){
 			res = _tg_receive(queue, queue->socket);
-			if (res == RTL_RS)
+			if (res == RTL_RESEND)
 			{	
 				if (tg_send(data) == 0)
 					continue;
@@ -683,7 +685,7 @@ static void * tg_run_queue(void * data)
 					break;
 			}
 
-			if (res == RTL_EX || res == RTL_ER)
+			if (res == RTL_EXIT || res == RTL_ERROR)
 				break;
 
 			continue;
@@ -696,7 +698,7 @@ static void * tg_run_queue(void * data)
 			//usleep(1000); // in microseconds
 			res = _tg_receive(queue, queue->socket);
 			tg_mutex_unlock(&tg->socket_mutex);
-			if (res == RTL_RS)
+			if (res == RTL_RESEND)
 			{	
 				if (tg_send(data) == 0)
 					continue;
@@ -704,12 +706,11 @@ static void * tg_run_queue(void * data)
 				 break;
 			}
 
-			if (res == RTL_EX || res == RTL_ER)
+			if (res == RTL_EXIT || res == RTL_ERROR)
 				break;
 
 		} else // pthread_mutex_trylock
 			continue;
-		*/
 	}
 
 	// close socket

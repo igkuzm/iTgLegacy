@@ -288,6 +288,8 @@
 	
 	// do operation in thread
 	[self.syncData addOperationWithBlock:^{
+
+		[self setLoadDialogsCached:YES];
 		
 		// if not firs launch load from database first
 		if ([[NSUserDefaults standardUserDefaults]boolForKey:@"isNotFirstLaunch"])	
@@ -310,6 +312,8 @@
 	
 		if (!self.refreshControl.refreshing)
 			[self.spinner startAnimating];
+		
+		[self setLoadDialogsCached:NO];
 
 		[self.syncData addOperationWithBlock:^{
 				//uint32_t folderId = self.isHidden?1:0; no working?
@@ -390,6 +394,11 @@ static int get_dialogs_cb(void *d, const tg_dialog_t *dialog)
 	[[NSUserDefaults standardUserDefaults] setBool:YES 
 																					forKey:@"isNotFirstLaunch"];
 
+	dispatch_sync(dispatch_get_main_queue(), ^{
+					//[self.appDelegate showMessage:@"done"];
+					if (!self.loadDialogsCached)
+						[self filterData];
+				});
 	return 0;
 }
 

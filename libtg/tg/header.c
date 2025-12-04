@@ -76,7 +76,7 @@ buf_t tg_mtp_message(tg_t *tg, buf_t *payload,
 	return msg;
 }
 
-buf_t tg_header(tg_t *tg, buf_t b, bool enc, 
+buf_t tg_header(tg_t *tg, buf_t query, bool enc, 
 		bool content, uint64_t *msgid)
 {
 	/*ON_LOG(tg, "%s", __func__);*/
@@ -107,6 +107,7 @@ buf_t tg_header(tg_t *tg, buf_t b, bool enc,
 	if (*msgid)
 		*msgid = 0;
 
+	buf_t buf = buf_new();
 	buf_t ack = tg_ack(tg);
 	if (ack.size > 0){ // need to add acknolege
 		//ON_LOG_BUF(tg, b, "SEND DATA:");
@@ -116,26 +117,25 @@ buf_t tg_header(tg_t *tg, buf_t b, bool enc,
 		// container does not have vertor serialization in it
 		buf_t msgs[2];
 		uint64_t msg_id;
-		msgs[0] = tg_mtp_message(tg, &b, 
+		msgs[0] = tg_mtp_message(tg, &query, 
 				&msg_id, true);	
 		msgs[1] = tg_mtp_message(tg, &ack, 
 				NULL, false);	
-		buf_free(b);
 		
 		// add container id
-		b = buf_add_ui32(id_msg_container);
+		buf = buf_add_ui32(id_msg_container);
 
 		// add size
 		buf_t todrop = buf_new();
 		int len = tg_to_drop(tg, &todrop);
-		b =  buf_cat_ui32(b, 2+len);
+		buf =  buf_cat_ui32(buf, 2+len);
 
 		// add data
-		b =  buf_cat(b,msgs[0]);
-		b =  buf_cat(b,msgs[1]);
+		buf =  buf_cat(buf,msgs[0]);
+		buf =  buf_cat(buf,msgs[1]);
 
 		// add tg_to_drop
-		b = buf_cat(b, todrop);
+		buf = buf_cat(buf, todrop);
 
 		//ON_LOG_BUF(tg, b, "CONTAINER TO SEND: ");
 		// set msgid
@@ -145,6 +145,9 @@ buf_t tg_header(tg_t *tg, buf_t b, bool enc,
 		buf_free(msgs[0]);
 		buf_free(msgs[1]);
 		buf_free(todrop);
+	} else {
+		// no need to ack
+		buf = buf_cat(buf, query);
 	}
 	buf_free(ack);
 		// salt  session_id message_id seq_no message_data_length  message_data padding12..1024
@@ -187,14 +190,16 @@ buf_t tg_header(tg_t *tg, buf_t b, bool enc,
 		pthread_mutex_unlock(&tg->seqnm);
 
 		//message_data_length
-		s = buf_cat_ui32(s, b.size);
+		s = buf_cat_ui32(s, buf.size);
 		
 		//message_data
-		s = buf_cat(s, b);
+		s = buf_cat(s, buf);
 		
 		//padding
-		uint32_t pad =  16 + (16 - (b.size % 16)) % 16;
+		uint32_t pad =  16 + (16 - (buf.size % 16)) % 16;
 		s = buf_cat_rand(s, pad);
+
+		buf_free(buf);
 
 	} else {
 		//auth_key_id = 0 message_id message_data_length message_data
@@ -207,10 +212,10 @@ buf_t tg_header(tg_t *tg, buf_t b, bool enc,
 		s = buf_cat_ui64(s, tg_get_current_time(tg));
 		
 		//message_data_length
-		s = buf_cat_ui32(s, b.size);
+		s = buf_cat_ui32(s, query.size);
 		
 		// message_data
-		s = buf_cat(s, b);
+		s = buf_cat(s, query);
   }
 
 	/*ON_LOG_BUF(tg, s, "%s: ", __func__);*/

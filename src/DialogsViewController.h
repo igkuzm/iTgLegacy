@@ -29,6 +29,7 @@
 @property Boolean showNavigationBar;
 @property Boolean isHidden;
 @property Boolean loadAddDialogs;
+@property Boolean loadDialogsCached;
 @property (strong) UIActivityIndicatorView *firstLaunchSpinner;
 @property (strong) UILabel *firstLaunchLabel;
 
